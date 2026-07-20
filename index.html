@@ -10,6 +10,8 @@
 <title>OT_Record — অতিরিক্ত কর্মঘন্টা ব্যবস্থাপনা</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<script src="https://apis.google.com/js/api.js"></script>
 <style>
 :root{
   --ink:#0F2E2C;
@@ -176,13 +178,23 @@ textarea{resize:vertical;min-height:64px;}
 }
 .slot-item span{font-size:12px;color:var(--ink-soft);}
 
-/* login */
+/* select-all bar */
+.selectall-bar{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:9px 10px;background:var(--paper);border-radius:10px;margin-bottom:8px;
+  border:1px dashed var(--line);
+}
+.selectall-bar span{font-size:12.5px;font-weight:600;color:var(--ink-soft);}
+
+/* login / connect */
 .login-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;}
 .login-card{width:100%;max-width:380px;background:#fff;border-radius:20px;padding:32px 26px;box-shadow:0 10px 40px rgba(15,46,44,.15);border:1px solid var(--line);}
 .login-logo{width:56px;height:56px;border-radius:14px;background:linear-gradient(135deg,var(--amber),var(--rust));display:flex;align-items:center;justify-content:center;color:#fff;font-family:'Space Grotesk';font-weight:700;font-size:22px;margin:0 auto 16px;}
 .role-toggle{display:flex;background:var(--paper-2);border-radius:10px;padding:3px;margin-bottom:18px;}
 .role-toggle button{flex:1;padding:9px;border:none;background:transparent;border-radius:8px;font-weight:600;font-size:13px;color:var(--ink-soft);cursor:pointer;font-family:inherit;}
 .role-toggle button.active{background:var(--ink);color:var(--paper);}
+.spin{width:34px;height:34px;border:3px solid var(--paper-2);border-top-color:var(--amber);border-radius:50%;margin:0 auto 16px;animation:spin 0.8s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
 
 /* summary table */
 .tbl-wrap{overflow-x:auto;border-radius:10px;border:1px solid var(--line);}
@@ -257,12 +269,22 @@ tr:nth-child(even) td:first-child{background:#FBFAF7;}
 .pill{flex-shrink:0;padding:7px 14px;border-radius:20px;background:#fff;border:1.5px solid var(--line);font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;}
 .pill.active{background:var(--ink);color:#fff;border-color:var(--ink);}
 
-.swipe-actions{display:flex;gap:6px;}
 ::-webkit-scrollbar{height:5px;width:5px;}
 ::-webkit-scrollbar-thumb{background:var(--line);border-radius:10px;}
 
 .warn-box{background:rgba(176,72,59,.08);border:1px solid rgba(176,72,59,.25);color:var(--rust);border-radius:10px;padding:10px 12px;font-size:12.5px;margin-bottom:12px;font-weight:500;}
 .info-box{background:rgba(75,122,90,.08);border:1px solid rgba(75,122,90,.25);color:var(--moss);border-radius:10px;padding:10px 12px;font-size:12.5px;margin-bottom:12px;}
+
+/* cloud sync */
+.sync-dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px;}
+.sync-dot.on{background:var(--moss);box-shadow:0 0 0 3px rgba(75,122,90,.15);}
+.sync-dot.off{background:#C7C2B4;}
+.sync-dot.busy{background:var(--amber);animation:pulse 1s infinite;}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:.3;}}
+.steps-box{font-size:12px;color:var(--ink-soft);line-height:1.85;background:var(--paper);border-radius:10px;padding:12px 14px;}
+.steps-box b{color:var(--ink);}
+.steps-box a{color:var(--amber);text-decoration:none;font-weight:600;}
+.topbar-sync{display:flex;align-items:center;font-size:10px;color:#9FC2B8;}
 </style>
 </head>
 <body>
@@ -271,8 +293,9 @@ tr:nth-child(even) td:first-child{background:#FBFAF7;}
 
 <script>
 /* =========================================================
-   OT_Record — single-file mobile web app
-   Local-first storage via localStorage. No backend required.
+   OT_Record — GitHub-Pages web app backed by Google Sheets
+   Data lives in a Google Spreadsheet the user owns; images
+   live in a Drive folder. Auth via Google OAuth (GIS).
    ========================================================= */
 
 /* ---------- i18n ---------- */
@@ -286,7 +309,7 @@ const T = {
     date:'তারিখ', division:'বিভাগ', workDesc:'অতিরিক্ত কাজের বিবরণী', remarks:'মন্তব্য',
     timeSlots:'সময়সূচী', addSlot:'+ সময় যোগ করুন', start:'শুরু', end:'শেষ',
     selectEmployees:'কর্মচারী নির্বাচন করুন', actualTime:'প্রকৃত সময় সমন্বয়',
-    uploadImage:'ওটি শিটের ছবি (ঐচ্ছিক)', tapUpload:'ছবি আপলোড করতে ট্যাপ করুন',
+    uploadImage:'ওটি শিটের ছবি (ঐচ্ছিক)', tapUpload:'ছবি আপলোড করতে ট্যাপ করুন', uploading:'আপলোড হচ্ছে...',
     save:'সংরক্ষণ করুন', cancel:'বাতিল', update:'আপডেট করুন',
     recordsTitle:'ওটি শিট রেকর্ডস', recordsSub:'শিট অনুযায়ী প্রদর্শিত',
     noRecords:'কোনো ওটি শিট পাওয়া যায়নি', createFirst:'নতুন শিট তৈরি করুন',
@@ -304,16 +327,33 @@ const T = {
     fillRequired:'অনুগ্রহ করে সব আবশ্যক তথ্য পূরণ করুন', selectAtLeastOne:'অন্তত একজন কর্মচারী নির্বাচন করুন',
     savedOk:'সফলভাবে সংরক্ষিত হয়েছে', deletedOk:'মুছে ফেলা হয়েছে', updatedOk:'আপডেট হয়েছে',
     hours:'ঘন্টা', slotDefault:'ডিফল্ট সেশন', removeSlot:'অপসারণ', na:'নেই',
-    imageOf:'ছবি —', close:'বন্ধ করুন', currentMonth:'চলতি মাস',
+    close:'বন্ধ করুন',
     noData:'কোনো তথ্য নেই', searchEmp:'কর্মচারী খুঁজুন...', all:'সকল',
     account:'অ্যাকাউন্ট', loggedInAs:'লগইন করা হয়েছে', changePw:'পাসওয়ার্ড পরিবর্তন',
     newPw:'নতুন পাসওয়ার্ড', pwChanged:'পাসওয়ার্ড পরিবর্তিত হয়েছে',
-    exportSheets:'শিট তালিকা এক্সপোর্ট (CSV)', downloadImg:'ছবি ডাউনলোড',
+    downloadImg:'ছবি ডাউনলোড',
     empDeleted:'কর্মচারী মুছে ফেলা হয়েছে', divDeleted:'বিভাগ মুছে ফেলা হয়েছে',
-    calendar:'দৈনিক ক্যালেন্ডার', sheetsFor:'-এর জন্য শিট',
+    calendar:'দৈনিক ক্যালেন্ডার',
     otSheetsCount:'টি শিট', noEmployees:'কোনো কর্মচারী যোগ করা হয়নি', addSome:'সেটিংসে গিয়ে কর্মচারী যোগ করুন',
-    permAdminOnly:'শুধুমাত্র অ্যাডমিন এই কাজটি করতে পারবেন',
-    weekTbl:'সাপ্তাহিক দৃশ্য',
+    permNoExport:'শুধুমাত্র অ্যাডমিন CSV এক্সপোর্ট করতে পারবেন',
+    permNoAddEmp:'শুধুমাত্র অ্যাডমিন নতুন কর্মচারী যোগ করতে পারবেন',
+    selectAll:'সকল কর্মচারী নির্বাচন করুন', deselectAll:'সকল বাদ দিন',
+    cloudTab:'গুগল সিঙ্ক', syncTab:'গুগল শীট সিঙ্ক',
+    connectGoogle:'গুগল একাউন্ট কানেক্ট করুন', connecting:'সংযোগ হচ্ছে...',
+    setupClientTitle:'গুগল API সেটআপ',
+    clientIdLabel:'OAuth ক্লায়েন্ট আইডি', apiKeyLabel:'API কী (Picker-এর জন্য)',
+    saveContinue:'সংরক্ষণ করে এগিয়ে যান',
+    chooseSpreadsheetTitle:'ডেটাবেজ স্প্রেডশিট বেছে নিন',
+    createNewSS:'নতুন স্প্রেডশিট তৈরি করুন', pickExistingSS:'বিদ্যমান স্প্রেডশিট বেছে নিন',
+    connectedAs:'সংযুক্ত ইমেইল', lastSynced:'শেষ সিঙ্ক', syncNow:'এখনই সিঙ্ক করুন', pullNow:'পুনরায় লোড করুন',
+    disconnect:'বিচ্ছিন্ন করুন', changeSpreadsheet:'স্প্রেডশিট পরিবর্তন করুন',
+    openSheet:'গুগল শীটে খুলুন',
+    loadingData:'ডেটা লোড হচ্ছে...',
+    editCreds:'ক্রেডেনশিয়াল পরিবর্তন করুন',
+    statusOn:'সংযুক্ত', statusOff:'সংযোগ বিচ্ছিন্ন', statusBusy:'সিঙ্ক হচ্ছে...',
+    reconnect:'পুনরায় সংযোগ করুন', tokenExpired:'সংযোগের মেয়াদ শেষ, পুনরায় সংযোগ করুন',
+    gsiNotLoaded:'গুগল লাইব্রেরি লোড হয়নি, ইন্টারনেট যাচাই করুন',
+    needClientId:'প্রথমে ক্লায়েন্ট আইডি ও API কী লিখুন',
   },
   en:{
     appName:'OT_Record', appSub:'Employee Overtime Manager',
@@ -324,7 +364,7 @@ const T = {
     date:'Date', division:'Division', workDesc:'Work Description', remarks:'Remarks',
     timeSlots:'Time Slots', addSlot:'+ Add Slot', start:'Start', end:'End',
     selectEmployees:'Select Employees', actualTime:'Actual Time Adjustment',
-    uploadImage:'OT Sheet Image (optional)', tapUpload:'Tap to upload image',
+    uploadImage:'OT Sheet Image (optional)', tapUpload:'Tap to upload image', uploading:'Uploading...',
     save:'Save', cancel:'Cancel', update:'Update',
     recordsTitle:'OT Sheet Records', recordsSub:'Shown by sheet',
     noRecords:'No OT sheets found', createFirst:'Create your first sheet',
@@ -342,76 +382,67 @@ const T = {
     fillRequired:'Please fill all required fields', selectAtLeastOne:'Select at least one employee',
     savedOk:'Saved successfully', deletedOk:'Deleted', updatedOk:'Updated',
     hours:'hrs', slotDefault:'Default Session', removeSlot:'Remove', na:'—',
-    imageOf:'Image —', close:'Close', currentMonth:'This Month',
+    close:'Close',
     noData:'No data', searchEmp:'Search employee...', all:'All',
     account:'Account', loggedInAs:'Logged in as', changePw:'Change Password',
     newPw:'New Password', pwChanged:'Password changed',
-    exportSheets:'Export Sheet List (CSV)', downloadImg:'Download Image',
+    downloadImg:'Download Image',
     empDeleted:'Employee deleted', divDeleted:'Division deleted',
-    calendar:'Daily Calendar', sheetsFor:'Sheets for',
+    calendar:'Daily Calendar',
     otSheetsCount:'sheets', noEmployees:'No employees added yet', addSome:'Add employees from Settings',
-    permAdminOnly:'Only Admin can perform this action',
-    weekTbl:'Weekly View',
+    permNoExport:'Only Admin can export CSV',
+    permNoAddEmp:'Only Admin can add new employees',
+    selectAll:'Select All Employees', deselectAll:'Deselect All',
+    cloudTab:'Google Sync', syncTab:'Google Sheets Sync',
+    connectGoogle:'Connect Google Account', connecting:'Connecting...',
+    setupClientTitle:'Google API Setup',
+    clientIdLabel:'OAuth Client ID', apiKeyLabel:'API Key (for Picker)',
+    saveContinue:'Save & Continue',
+    chooseSpreadsheetTitle:'Choose Database Spreadsheet',
+    createNewSS:'Create New Spreadsheet', pickExistingSS:'Pick Existing Spreadsheet',
+    connectedAs:'Connected as', lastSynced:'Last synced', syncNow:'Sync Now', pullNow:'Reload',
+    disconnect:'Disconnect', changeSpreadsheet:'Change Spreadsheet',
+    openSheet:'Open in Google Sheets',
+    loadingData:'Loading data...',
+    editCreds:'Edit Credentials',
+    statusOn:'Connected', statusOff:'Disconnected', statusBusy:'Syncing...',
+    reconnect:'Reconnect', tokenExpired:'Connection expired — please reconnect',
+    gsiNotLoaded:'Google library failed to load — check your internet connection',
+    needClientId:'Enter your Client ID and API Key first',
   }
 };
 function t(key){ return (T[STATE.lang] && T[STATE.lang][key]) || key; }
 
-/* ---------- storage helpers ---------- */
+/* ---------- storage helpers (small config only; data lives in Google Sheets) ---------- */
 const LS = {
   get(k, fallback){ try{ const v = localStorage.getItem(k); return v? JSON.parse(v): fallback; }catch(e){ return fallback; } },
   set(k, v){ localStorage.setItem(k, JSON.stringify(v)); }
 };
-
 function uid(prefix){ return (prefix||'id') + '_' + Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
 
-/* ---------- seed data ---------- */
-function seedIfEmpty(){
-  if(!localStorage.getItem('otr_users')){
-    LS.set('otr_users', [
-      {username:'admin', password:'123', role:'admin'},
-      {username:'user', password:'123', role:'employee'}
-    ]);
-  }
-  if(!localStorage.getItem('otr_employees')){
-    LS.set('otr_employees', [
-      {id:uid('emp'), name:'জনাব মোঃ রেজাউল করিম', designation:'সিনিঃ ফোরম্যান', active:true},
-      {id:uid('emp'), name:'জনাব মোঃ ওমর ফারুক', designation:'সিনিঃ ফোরম্যান', active:true},
-      {id:uid('emp'), name:'জনাব মোঃ আলাল উদ্দিন', designation:'সিনিঃ টেকনিশিয়ান', active:true},
-      {id:uid('emp'), name:'জনাব মাসুদ রানা খান', designation:'জুনিঃ টেকনিশিয়ান', active:true},
-      {id:uid('emp'), name:'জনাব মমিন খন্দকার', designation:'জুনিঃ টেকনিশিয়ান', active:true},
-      {id:uid('emp'), name:'সুমন হোসেন', designation:'জুনিঃ টেকনিশিয়ান', active:true}
-    ]);
-  }
-  if(!localStorage.getItem('otr_divisions')){
-    LS.set('otr_divisions', [
-      {id:uid('div'), name_bn:'যান্ত্রিক, জিটি, নর্থ', name_en:'Mechanical, GT, North', is_default:true, active:true},
-      {id:uid('div'), name_bn:'যান্ত্রিক, এসটি, নর্থ', name_en:'Mechanical, ST, North', is_default:true, active:true}
-    ]);
-  }
-  if(!localStorage.getItem('otr_sheets')){ LS.set('otr_sheets', []); }
-  if(!localStorage.getItem('otr_lang')){ LS.set('otr_lang','bn'); }
-}
-seedIfEmpty();
+/* ---------- tab schema ---------- */
+const TABS = {
+  users:      { name:'Users',      headers:['username','password','role'] },
+  employees:  { name:'Employees',  headers:['id','name','designation','active'] },
+  divisions:  { name:'Divisions',  headers:['id','name_bn','name_en','is_default','active'] },
+  otsheets:   { name:'OTSheets',   headers:['id','date','division_id','work_description','remarks','image_url','slots_json','employees_json','created_by','created_at','updated_by','updated_at'] }
+};
+const SCOPES = 'https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/drive';
 
 /* ---------- global state ---------- */
 const STATE = {
   lang: LS.get('otr_lang','bn'),
   session: LS.get('otr_session', null), // {username, role}
-  screen: 'login', // login | new | records | summary | settings
+  screen: 'boot', // boot | setup | login | new | records | summary | settings
   editingSheetId: null,
-  toastTimer: null
+  toastTimer: null,
+  users: [], employees: [], divisions: [], sheets: [],
+  loaded: false
 };
 
-function users(){ return LS.get('otr_users', []); }
-function employees(){ return LS.get('otr_employees', []); }
-function divisions(){ return LS.get('otr_divisions', []); }
-function sheets(){ return LS.get('otr_sheets', []); }
-function saveUsers(v){ LS.set('otr_users', v); }
-function saveEmployees(v){ LS.set('otr_employees', v); }
-function saveDivisions(v){ LS.set('otr_divisions', v); }
-function saveSheets(v){ LS.set('otr_sheets', v); }
-
 function isAdmin(){ return STATE.session && STATE.session.role === 'admin'; }
+function canExport(){ return isAdmin(); }
+function canAddEmployee(){ return isAdmin(); }
 
 /* ---------- toast ---------- */
 function toast(msg, isErr){
@@ -425,13 +456,13 @@ function toast(msg, isErr){
 /* ---------- time utils ---------- */
 function toMin(hhmm){
   if(!hhmm) return null;
-  const [h,m] = hhmm.split(':').map(Number);
+  const [h,m] = String(hhmm).split(':').map(Number);
   return h*60+m;
 }
 function durationHours(start, end){
   let s = toMin(start), e = toMin(end);
   if(s===null||e===null) return 0;
-  if(e <= s) e += 24*60; // overnight
+  if(e <= s) e += 24*60;
   return +( (e-s)/60 ).toFixed(2);
 }
 function fmtHM(hhmm){ return hhmm || '—'; }
@@ -441,11 +472,9 @@ function intervalsOverlap(aS,aE,bS,bE){
   if(be<=bs) be+=24*60;
   return as < be && bs < ae;
 }
-
-/* find conflicting intervals for an employee on a date, across all sheets except excludeSheetId */
 function findConflicts(employeeId, date, newIntervals, excludeSheetId){
   const conflicts = [];
-  sheets().forEach(sh=>{
+  STATE.sheets.forEach(sh=>{
     if(sh.id === excludeSheetId) return;
     if(sh.date !== date) return;
     const empEntry = sh.employees.find(e=>e.employee_id===employeeId);
@@ -461,10 +490,276 @@ function findConflicts(employeeId, date, newIntervals, excludeSheetId){
   return conflicts;
 }
 
+/* =========================================================
+   GOOGLE SHEETS DATA LAYER
+   ========================================================= */
+const DB = {
+  clientId: localStorage.getItem('otr_clientid') || '',
+  apiKey: localStorage.getItem('otr_apikey') || '',
+  spreadsheetId: localStorage.getItem('otr_ssid') || '',
+  accessToken: '',
+  tokenClient: null,
+  connected: false,
+  status: 'off', // off | connecting | on | busy | error
+  lastSync: localStorage.getItem('otr_lastsync') || '',
+  pickerLoaded: false,
+
+  setStatus(s){ this.status = s; const el=document.getElementById('syncStatusDot'); if(el){ el.className='sync-dot '+(s==='on'?'on':(s==='busy'||s==='connecting'?'busy':'off')); } },
+
+  ensureTokenClient(cb){
+    if(!window.google || !google.accounts || !google.accounts.oauth2){
+      toast(t('gsiNotLoaded'), true); return;
+    }
+    this.tokenClient = google.accounts.oauth2.initTokenClient({
+      client_id: this.clientId,
+      scope: SCOPES,
+      callback: (resp)=>{
+        if(resp.error){ this.setStatus('error'); toast(t('cloudConnectFailed')||'Connect failed', true); return; }
+        this.accessToken = resp.access_token;
+        cb && cb();
+      }
+    });
+    this.tokenClient.requestAccessToken({prompt:''});
+  },
+
+  async apiFetch(url, opts={}){
+    opts.headers = Object.assign({}, opts.headers, {Authorization:'Bearer '+this.accessToken});
+    const res = await fetch(url, opts);
+    if(res.status===401){ this.setStatus('error'); throw new Error('auth_expired'); }
+    if(!res.ok){ const txt = await res.text(); throw new Error('http_'+res.status+': '+txt.slice(0,200)); }
+    return res;
+  },
+
+  connectAccount(){
+    if(!this.clientId || !this.apiKey){ toast(t('needClientId'), true); return; }
+    this.setStatus('connecting');
+    this.ensureTokenClient(async ()=>{
+      this.connected = true;
+      this.setStatus('on');
+      if(this.spreadsheetId){
+        await this.ensureTabsAndSeed();
+        await this.pullAll();
+        finishBootAfterConnect();
+      } else {
+        STATE.screen = 'chooser';
+        render();
+      }
+    });
+  },
+
+  async createSpreadsheet(){
+    DB.setStatus('busy');
+    try{
+      const res = await DB.apiFetch('https://sheets.googleapis.com/v4/spreadsheets', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({properties:{title:'OT_Record Database'}})
+      });
+      const data = await res.json();
+      DB.spreadsheetId = data.spreadsheetId;
+      localStorage.setItem('otr_ssid', DB.spreadsheetId);
+      await DB.ensureTabsAndSeed();
+      await DB.pullAll();
+      DB.setStatus('on');
+      finishBootAfterConnect();
+    }catch(e){ DB.setStatus('error'); toast(String(e.message||e), true); }
+  },
+
+  openPicker(){
+    if(!DB.apiKey){ toast(t('needClientId'), true); return; }
+    if(!DB.pickerLoaded){
+      gapi.load('picker', ()=>{ DB.pickerLoaded=true; DB.showPicker(); });
+    } else DB.showPicker();
+  },
+  showPicker(){
+    const view = new google.picker.DocsView(google.picker.ViewId.SPREADSHEETS).setMode(google.picker.DocsViewMode.LIST);
+    const picker = new google.picker.PickerBuilder()
+      .addView(view)
+      .setOAuthToken(DB.accessToken)
+      .setDeveloperKey(DB.apiKey)
+      .setCallback(DB.pickerCallback)
+      .build();
+    picker.setVisible(true);
+  },
+  async pickerCallback(data){
+    if(data.action === google.picker.Action.PICKED){
+      const doc = data.docs[0];
+      DB.spreadsheetId = doc.id;
+      localStorage.setItem('otr_ssid', DB.spreadsheetId);
+      DB.setStatus('busy');
+      try{
+        await DB.ensureTabsAndSeed();
+        await DB.pullAll();
+        DB.setStatus('on');
+        finishBootAfterConnect();
+      }catch(e){ DB.setStatus('error'); toast(String(e.message||e), true); }
+    }
+  },
+
+  async ensureTabsAndSeed(){
+    const metaRes = await DB.apiFetch(`https://sheets.googleapis.com/v4/spreadsheets/${DB.spreadsheetId}?fields=sheets.properties.title`);
+    const meta = await metaRes.json();
+    const existing = (meta.sheets||[]).map(s=>s.properties.title);
+    const requests = [];
+    Object.values(TABS).forEach(tab=>{
+      if(!existing.includes(tab.name)) requests.push({addSheet:{properties:{title:tab.name}}});
+    });
+    if(requests.length){
+      await DB.apiFetch(`https://sheets.googleapis.com/v4/spreadsheets/${DB.spreadsheetId}:batchUpdate`, {
+        method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({requests})
+      });
+    }
+    for(const key of Object.keys(TABS)){
+      if(!existing.includes(TABS[key].name)){
+        await DB.writeFullTab(TABS[key].name, seedRowsFor(key));
+      }
+    }
+  },
+
+  async writeFullTab(tabName, rows2D){
+    const range = `${tabName}!A1`;
+    await DB.apiFetch(`https://sheets.googleapis.com/v4/spreadsheets/${DB.spreadsheetId}/values/${encodeURIComponent(range)}?valueInputOption=RAW`, {
+      method:'PUT', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({range, majorDimension:'ROWS', values: rows2D})
+    });
+  },
+  async clearTabBody(tabName){
+    const range = `${tabName}!A2:Z20000`;
+    await DB.apiFetch(`https://sheets.googleapis.com/v4/spreadsheets/${DB.spreadsheetId}/values/${encodeURIComponent(range)}:clear`, {method:'POST'});
+  },
+  async readTab(key){
+    const tab = TABS[key];
+    const range = `${tab.name}!A1:Z20000`;
+    const res = await DB.apiFetch(`https://sheets.googleapis.com/v4/spreadsheets/${DB.spreadsheetId}/values/${encodeURIComponent(range)}?valueRenderOption=UNFORMATTED_VALUE`);
+    const data = await res.json();
+    return data.values || [tab.headers];
+  },
+  async pushTab(key, rows2D){
+    DB.setStatus('busy');
+    try{
+      await DB.clearTabBody(TABS[key].name);
+      await DB.writeFullTab(TABS[key].name, [TABS[key].headers, ...rows2D]);
+      DB.lastSync = new Date().toISOString();
+      localStorage.setItem('otr_lastsync', DB.lastSync);
+      DB.setStatus('on');
+    }catch(e){ DB.setStatus('error'); toast(t('tokenExpired'), true); throw e; }
+  },
+
+  async pushUsers(){ await DB.pushTab('users', STATE.users.map(u=>[u.username,u.password,u.role])); },
+  async pushEmployees(){ await DB.pushTab('employees', STATE.employees.map(e=>[e.id,e.name,e.designation,!!e.active])); },
+  async pushDivisions(){ await DB.pushTab('divisions', STATE.divisions.map(d=>[d.id,d.name_bn,d.name_en,!!d.is_default,!!d.active])); },
+  async pushSheets(){
+    await DB.pushTab('otsheets', STATE.sheets.map(s=>[
+      s.id, "'"+s.date, s.division_id, s.work_description||'', s.remarks||'',
+      s.image||'', JSON.stringify(s.slots||[]), JSON.stringify(s.employees||[]),
+      s.created_by||'', s.created_at||'', s.updated_by||'', s.updated_at||''
+    ]));
+  },
+
+  async pullAll(){
+    DB.setStatus('busy');
+    try{
+      const [u,e,d,s] = await Promise.all([
+        DB.readTab('users'), DB.readTab('employees'), DB.readTab('divisions'), DB.readTab('otsheets')
+      ]);
+      STATE.users = u.slice(1).filter(r=>r && r.length && r[0]!=='').map(r=>({username:r[0],password:String(r[1]),role:r[2]}));
+      STATE.employees = e.slice(1).filter(r=>r && r.length && r[0]!=='').map(r=>({id:r[0],name:r[1],designation:r[2]||'',active: r[3]===true}));
+      STATE.divisions = d.slice(1).filter(r=>r && r.length && r[0]!=='').map(r=>({id:r[0],name_bn:r[1],name_en:r[2],is_default: r[3]===true, active:r[4]===true}));
+      STATE.sheets = s.slice(1).filter(r=>r && r.length && r[0]!=='').map(r=>({
+        id:r[0], date:String(r[1]).replace(/^'/,''), division_id:r[2], work_description:r[3]||'', remarks:r[4]||'',
+        image:r[5]||'', slots: safeParseJson(r[6],[]), employees: safeParseJson(r[7],[]),
+        created_by:r[8]||'', created_at:r[9]||'', updated_by:r[10]||'', updated_at:r[11]||''
+      }));
+      STATE.loaded = true;
+      DB.setStatus('on');
+    }catch(e){ DB.setStatus('error'); throw e; }
+  },
+
+  async uploadImage(base64Data, filename, mimeType){
+    const folderId = await DB.getOrCreateFolder('OT_Record_Images');
+    const boundary = 'otrsync_' + Math.random().toString(36).slice(2);
+    const metadata = {name: filename, mimeType: mimeType, parents:[folderId]};
+    const pureBase64 = base64Data.indexOf(',')>=0 ? base64Data.split(',').pop() : base64Data;
+    const multipart =
+      `--${boundary}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n${JSON.stringify(metadata)}\r\n`+
+      `--${boundary}\r\nContent-Type: ${mimeType}\r\nContent-Transfer-Encoding: base64\r\n\r\n${pureBase64}\r\n`+
+      `--${boundary}--`;
+    const res = await DB.apiFetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id', {
+      method:'POST', headers:{'Content-Type':`multipart/related; boundary=${boundary}`}, body: multipart
+    });
+    const data = await res.json();
+    await DB.apiFetch(`https://www.googleapis.com/drive/v3/files/${data.id}/permissions`, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({role:'reader', type:'anyone'})
+    });
+    return 'https://drive.google.com/uc?export=view&id='+data.id;
+  },
+  async getOrCreateFolder(name){
+    if(DB._folderId) return DB._folderId;
+    const q = encodeURIComponent(`name='${name}' and mimeType='application/vnd.google-apps.folder' and trashed=false`);
+    const listRes = await DB.apiFetch(`https://www.googleapis.com/drive/v3/files?q=${q}&fields=files(id)`);
+    const list = await listRes.json();
+    if(list.files && list.files.length>0){ DB._folderId = list.files[0].id; return DB._folderId; }
+    const createRes = await DB.apiFetch('https://www.googleapis.com/drive/v3/files', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({name, mimeType:'application/vnd.google-apps.folder'})
+    });
+    const created = await createRes.json();
+    DB._folderId = created.id;
+    return DB._folderId;
+  },
+
+  disconnect(){
+    this.connected=false; this.accessToken=''; this.setStatus('off');
+  },
+  changeSpreadsheet(){
+    localStorage.removeItem('otr_ssid');
+    DB.spreadsheetId = '';
+    STATE.screen = 'chooser';
+    render();
+  }
+};
+
+function safeParseJson(s, fallback){ try{ return s? JSON.parse(s): fallback; }catch(e){ return fallback; } }
+
+function seedRowsFor(key){
+  if(key==='users') return [['admin','123','admin'],['user','123','employee']];
+  if(key==='employees') return [
+    ['emp1','জনাব মোঃ রেজাউল করিম','সিনিঃ ফোরম্যান',true],
+    ['emp2','জনাব মোঃ ওমর ফারুক','সিনিঃ ফোরম্যান',true],
+    ['emp3','জনাব মোঃ আলাল উদ্দিন','সিনিঃ টেকনিশিয়ান',true],
+    ['emp4','জনাব মাসুদ রানা খান','জুনিঃ টেকনিশিয়ান',true],
+    ['emp5','জনাব মমিন খন্দকার','জুনিঃ টেকনিশিয়ান',true],
+    ['emp6','সুমন হোসেন','জুনিঃ টেকনিশিয়ান',true]
+  ];
+  if(key==='divisions') return [
+    ['div1','যান্ত্রিক, জিটি, নর্থ','Mechanical, GT, North', true, true],
+    ['div2','যান্ত্রিক, এসটি, নর্থ','Mechanical, ST, North', true, true]
+  ];
+  return [];
+}
+
+function finishBootAfterConnect(){
+  const savedSession = LS.get('otr_session', null);
+  if(savedSession && STATE.users.find(u=>u.username===savedSession.username && u.role===savedSession.role)){
+    STATE.session = savedSession;
+    STATE.screen = 'new';
+  } else {
+    STATE.session = null;
+    STATE.screen = 'login';
+  }
+  render();
+}
+
 /* ---------- render root ---------- */
 function render(){
   const root = document.getElementById('root');
   document.documentElement.lang = STATE.lang;
+
+  if(STATE.screen==='boot'){ root.innerHTML = renderBootScreen(); bindBootScreen(); return; }
+  if(STATE.screen==='setup'){ root.innerHTML = renderSetupScreen(); bindSetupScreen(); return; }
+  if(STATE.screen==='connect'){ root.innerHTML = renderConnectScreen(); bindConnectScreen(); return; }
+  if(STATE.screen==='chooser'){ root.innerHTML = renderChooserScreen(); bindChooserScreen(); return; }
+
   if(!STATE.session){
     root.innerHTML = renderLogin();
     bindLogin();
@@ -485,6 +780,102 @@ function render(){
   bindGlobal();
 }
 
+/* =========================================================
+   BOOT / SETUP / CHOOSER SCREENS
+   ========================================================= */
+function renderBootScreen(){
+  return `
+  <div class="login-wrap">
+    <div class="login-card" style="text-align:center;">
+      <div class="login-logo">OT</div>
+      <div class="spin"></div>
+      <div class="disp" style="font-size:16px;font-weight:700;">${t('loadingData')}</div>
+    </div>
+  </div>`;
+}
+function bindBootScreen(){}
+
+function renderSetupScreen(){
+  return `
+  <div class="login-wrap">
+    <div class="login-card">
+      <div class="login-logo">OT</div>
+      <div style="text-align:center;margin-bottom:18px;">
+        <div class="disp" style="font-size:18px;font-weight:700;">${t('setupClientTitle')}</div>
+        <div style="font-size:12px;color:var(--ink-soft);margin-top:4px;">${t('appSub')}</div>
+      </div>
+      <div class="field">
+        <label>${t('clientIdLabel')}</label>
+        <input type="text" id="setClientId" placeholder="xxxxx.apps.googleusercontent.com" value="${DB.clientId}">
+      </div>
+      <div class="field">
+        <label>${t('apiKeyLabel')}</label>
+        <input type="text" id="setApiKey" placeholder="AIza..." value="${DB.apiKey}">
+      </div>
+      <button class="btn btn-amber btn-block" id="btnSetupSave">${t('saveContinue')}</button>
+      <div style="text-align:center;margin-top:16px;">
+        <span class="lang-toggle">
+          <button data-l="bn" class="${STATE.lang==='bn'?'active':''}">বাংলা</button>
+          <button data-l="en" class="${STATE.lang==='en'?'active':''}">EN</button>
+        </span>
+      </div>
+    </div>
+  </div>`;
+}
+function bindSetupScreen(){
+  document.querySelectorAll('[data-l]').forEach(b=>{
+    b.onclick = ()=>{ STATE.lang = b.getAttribute('data-l'); LS.set('otr_lang',STATE.lang); render(); };
+  });
+  document.getElementById('btnSetupSave').onclick = ()=>{
+    const cid = document.getElementById('setClientId').value.trim();
+    const key = document.getElementById('setApiKey').value.trim();
+    if(!cid || !key){ toast(t('needClientId'), true); return; }
+    DB.clientId = cid; DB.apiKey = key;
+    localStorage.setItem('otr_clientid', cid);
+    localStorage.setItem('otr_apikey', key);
+    STATE.screen = 'connect';
+    render();
+  };
+}
+
+function renderChooserScreen(){
+  return `
+  <div class="login-wrap">
+    <div class="login-card">
+      <div class="login-logo">OT</div>
+      <div style="text-align:center;margin-bottom:18px;">
+        <div class="disp" style="font-size:17px;font-weight:700;">${t('chooseSpreadsheetTitle')}</div>
+      </div>
+      <button class="btn btn-primary btn-block" id="btnCreateSS">${t('createNewSS')}</button>
+      <button class="btn btn-outline btn-block" id="btnPickSS" style="margin-top:10px;">${t('pickExistingSS')}</button>
+      <button class="btn btn-ghost btn-block" id="btnBackSetup" style="margin-top:16px;">${t('editCreds')}</button>
+    </div>
+  </div>`;
+}
+function bindChooserScreen(){
+  document.getElementById('btnCreateSS').onclick = ()=> DB.createSpreadsheet();
+  document.getElementById('btnPickSS').onclick = ()=> DB.openPicker();
+  document.getElementById('btnBackSetup').onclick = ()=>{ STATE.screen='setup'; render(); };
+}
+
+/* connect screen (after setup, before spreadsheet chosen / on token refresh) */
+function renderConnectScreen(){
+  return `
+  <div class="login-wrap">
+    <div class="login-card" style="text-align:center;">
+      <div class="login-logo">OT</div>
+      <div class="disp" style="font-size:17px;font-weight:700;margin-bottom:6px;">${t('appName')}</div>
+      <div style="font-size:12.5px;color:var(--ink-soft);margin-bottom:20px;">${t('connectGoogle')}</div>
+      <button class="btn btn-amber btn-block" id="btnConnectAcct">${t('connectGoogle')}</button>
+      <button class="btn btn-ghost btn-block" id="btnBackSetup2" style="margin-top:12px;">${t('editCreds')}</button>
+    </div>
+  </div>`;
+}
+function bindConnectScreen(){
+  document.getElementById('btnConnectAcct').onclick = ()=> DB.connectAccount();
+  document.getElementById('btnBackSetup2').onclick = ()=>{ STATE.screen='setup'; render(); };
+}
+
 /* ---------- topbar ---------- */
 function renderTopbar(){
   return `
@@ -497,6 +888,7 @@ function renderTopbar(){
       </div>
     </div>
     <div class="topbar-actions">
+      <div class="topbar-sync" title="${t('syncTab')}"><span class="sync-dot ${DB.status==='on'?'on':(DB.status==='busy'||DB.status==='connecting'?'busy':'off')}" id="syncStatusDot"></span></div>
       <div class="icon-btn" id="btnLangTop" title="lang">${STATE.lang==='bn'?'EN':'বাং'}</div>
       <div class="icon-btn" id="btnLogout" title="logout">⏻</div>
     </div>
@@ -504,11 +896,11 @@ function renderTopbar(){
 }
 function renderBottomNav(){
   const items = [
-    {id:'new', ico:'✎', label:t('navNew'), show:isAdmin()},
-    {id:'records', ico:'▤', label:t('navRecords'), show:true},
-    {id:'summary', ico:'◱', label:t('navSummary'), show:true},
-    {id:'settings', ico:'⚙', label:t('navSettings'), show:isAdmin()}
-  ].filter(i=>i.show);
+    {id:'new', ico:'✎', label:t('navNew')},
+    {id:'records', ico:'▤', label:t('navRecords')},
+    {id:'summary', ico:'◱', label:t('navSummary')},
+    {id:'settings', ico:'⚙', label:t('navSettings')}
+  ];
   return `<div class="bottomnav">
     ${items.map(i=>`<div class="navitem ${STATE.screen===i.id?'active':''}" data-nav="${i.id}">
       <div class="ni-ico">${i.ico}</div><div>${i.label}</div>
@@ -561,12 +953,14 @@ function renderLogin(){
       </div>
       <div id="loginErrBox"></div>
       <button class="btn btn-primary btn-block" id="btnSignIn">${T[STATE.lang].signin}</button>
-      <div style="text-align:center;margin-top:16px;">
+      <div style="text-align:center;margin-top:16px;display:flex;justify-content:center;gap:14px;align-items:center;">
         <span class="lang-toggle">
           <button data-l="bn" class="${STATE.lang==='bn'?'active':''}">বাংলা</button>
           <button data-l="en" class="${STATE.lang==='en'?'active':''}">EN</button>
         </span>
+        <span class="sync-dot ${DB.status==='on'?'on':'off'}"></span>
       </div>
+      <button class="btn btn-ghost btn-block" id="btnGoSync" style="margin-top:14px;font-size:12px;">⚙ ${t('syncTab')}</button>
     </div>
   </div>`;
 }
@@ -579,57 +973,55 @@ function bindLogin(){
   });
   document.getElementById('btnSignIn').onclick = doLogin;
   document.getElementById('loginPass').addEventListener('keydown', e=>{ if(e.key==='Enter') doLogin(); });
+  document.getElementById('btnGoSync').onclick = ()=>{ STATE.screen='chooser'; render(); };
 }
 function doLogin(){
   const u = document.getElementById('loginUser').value.trim();
   const p = document.getElementById('loginPass').value;
-  const found = users().find(x=>x.username===u && x.password===p && x.role===loginRole);
+  const found = STATE.users.find(x=>x.username===u && x.password===p && x.role===loginRole);
   if(!found){
     document.getElementById('loginErrBox').innerHTML = `<div class="warn-box">${t('loginErr')}</div>`;
     return;
   }
   STATE.session = {username:found.username, role:found.role};
   LS.set('otr_session', STATE.session);
-  STATE.screen = found.role==='admin' ? 'new' : 'records';
+  STATE.screen = 'new';
   render();
 }
 
 /* =========================================================
    NEW / EDIT OT SHEET
    ========================================================= */
-let sheetDraft = null; // working draft object while building a sheet
+let sheetDraft = null;
 
 function freshDraft(){
   return {
     id: null,
     date: new Date().toISOString().slice(0,10),
-    division_id: (divisions().find(d=>d.active)||{}).id || '',
+    division_id: (STATE.divisions.find(d=>d.active)||{}).id || '',
     work_description: '',
     remarks: '',
     slots: [ {id:uid('slot'), start:'16:00', end:'18:00'} ],
-    employees: [], // {employee_id, adjustments:[{slot_id, actual_start, actual_end}]}
+    employees: [],
     image: null,
     created_by: STATE.session ? STATE.session.username : '',
     created_at: new Date().toISOString()
   };
 }
-
 function loadDraftForEdit(sheetId){
-  const s = sheets().find(x=>x.id===sheetId);
+  const s = STATE.sheets.find(x=>x.id===sheetId);
   sheetDraft = JSON.parse(JSON.stringify(s));
 }
 
 function renderNewSheet(){
-  if(!isAdmin() && !STATE.editingSheetId){
-    return `<div class="empty"><div class="ei">🔒</div><p>${t('permAdminOnly')}</p></div>`;
-  }
   if(!sheetDraft || (STATE.editingSheetId && sheetDraft.id!==STATE.editingSheetId)){
     if(STATE.editingSheetId) loadDraftForEdit(STATE.editingSheetId);
     else sheetDraft = freshDraft();
   }
-  const divs = divisions().filter(d=>d.active);
-  const emps = employees().filter(e=>e.active);
+  const divs = STATE.divisions.filter(d=>d.active);
+  const emps = STATE.employees.filter(e=>e.active);
   const isEdit = !!sheetDraft.id;
+  const allSelected = emps.length>0 && emps.every(e=> sheetDraft.employees.find(x=>x.employee_id===e.id));
 
   return `
   <div class="section-head">
@@ -682,6 +1074,10 @@ function renderNewSheet(){
   <div class="card">
     <div class="card-title"><span class="tag">03</span> ${t('selectEmployees')}</div>
     ${emps.length===0? `<div class="empty" style="padding:20px;"><p>${t('noEmployees')}</p></div>` : `
+    <div class="selectall-bar">
+      <span>${sheetDraft.employees.length} / ${emps.length} ${t('employees')}</span>
+      <button class="btn btn-sm ${allSelected?'btn-outline':'btn-amber'}" id="btnSelectAll">${allSelected? t('deselectAll') : t('selectAll')}</button>
+    </div>
     <div id="empChecklist">
       ${emps.map(e=>renderEmpRow(e)).join('')}
     </div>`}
@@ -691,6 +1087,7 @@ function renderNewSheet(){
     <div class="card-title"><span class="tag">04</span> ${t('uploadImage')}</div>
     <div class="upload-box" id="uploadBox">${sheetDraft.image? '' : '📷 '+t('tapUpload')}</div>
     <input type="file" id="fileImg" accept="image/*" style="display:none;">
+    <div id="uploadStatus"></div>
     ${sheetDraft.image? `<img src="${sheetDraft.image}" class="img-thumb" id="imgPreview">` : ''}
   </div>
 
@@ -745,7 +1142,6 @@ function bindScreenSpecific(){
 }
 
 function bindNewSheet(){
-  if(!isAdmin() && !STATE.editingSheetId) return;
   const byId = id=>document.getElementById(id);
   if(byId('fDate')) byId('fDate').onchange = e=>{ sheetDraft.date = e.target.value; };
   if(byId('fDivision')) byId('fDivision').onchange = e=>{ sheetDraft.division_id = e.target.value; };
@@ -753,18 +1149,10 @@ function bindNewSheet(){
   if(byId('fRemarks')) byId('fRemarks').oninput = e=>{ sheetDraft.remarks = e.target.value; };
 
   document.querySelectorAll('[data-slot-start]').forEach(el=>{
-    el.onchange = e=>{
-      const sid = el.getAttribute('data-slot-start');
-      const slot = sheetDraft.slots.find(s=>s.id===sid);
-      slot.start = e.target.value;
-    };
+    el.onchange = e=>{ sheetDraft.slots.find(s=>s.id===el.getAttribute('data-slot-start')).start = e.target.value; };
   });
   document.querySelectorAll('[data-slot-end]').forEach(el=>{
-    el.onchange = e=>{
-      const sid = el.getAttribute('data-slot-end');
-      const slot = sheetDraft.slots.find(s=>s.id===sid);
-      slot.end = e.target.value;
-    };
+    el.onchange = e=>{ sheetDraft.slots.find(s=>s.id===el.getAttribute('data-slot-end')).end = e.target.value; };
   });
   document.querySelectorAll('[data-slot-del]').forEach(el=>{
     el.onclick = ()=>{
@@ -778,9 +1166,26 @@ function bindNewSheet(){
   if(addSlotBtn) addSlotBtn.onclick = ()=>{
     const newSlot = {id:uid('slot'), start:'16:00', end:'18:00'};
     sheetDraft.slots.push(newSlot);
-    sheetDraft.employees.forEach(e=>{
-      e.adjustments.push({slot_id:newSlot.id, actual_start:newSlot.start, actual_end:newSlot.end});
-    });
+    sheetDraft.employees.forEach(e=>{ e.adjustments.push({slot_id:newSlot.id, actual_start:newSlot.start, actual_end:newSlot.end}); });
+    render();
+  };
+
+  const selectAllBtn = byId('btnSelectAll');
+  if(selectAllBtn) selectAllBtn.onclick = ()=>{
+    const emps = STATE.employees.filter(e=>e.active);
+    const allSelected = emps.every(e=> sheetDraft.employees.find(x=>x.employee_id===e.id));
+    if(allSelected){
+      sheetDraft.employees = [];
+    } else {
+      emps.forEach(e=>{
+        if(!sheetDraft.employees.find(x=>x.employee_id===e.id)){
+          sheetDraft.employees.push({
+            employee_id: e.id,
+            adjustments: sheetDraft.slots.map(s=>({slot_id:s.id, actual_start:s.start, actual_end:s.end}))
+          });
+        }
+      });
+    }
     render();
   };
 
@@ -788,9 +1193,8 @@ function bindNewSheet(){
     el.onclick = ()=>{
       const eid = el.getAttribute('data-emp-toggle');
       const idx = sheetDraft.employees.findIndex(x=>x.employee_id===eid);
-      if(idx>=0){
-        sheetDraft.employees.splice(idx,1);
-      } else {
+      if(idx>=0){ sheetDraft.employees.splice(idx,1); }
+      else {
         sheetDraft.employees.push({
           employee_id: eid,
           adjustments: sheetDraft.slots.map(s=>({slot_id:s.id, actual_start:s.start, actual_end:s.end}))
@@ -802,17 +1206,13 @@ function bindNewSheet(){
   document.querySelectorAll('[data-adj-start]').forEach(el=>{
     el.onchange = e=>{
       const [eid,sid] = el.getAttribute('data-adj-start').split('|');
-      const emp = sheetDraft.employees.find(x=>x.employee_id===eid);
-      const adj = emp.adjustments.find(a=>a.slot_id===sid);
-      adj.actual_start = e.target.value;
+      sheetDraft.employees.find(x=>x.employee_id===eid).adjustments.find(a=>a.slot_id===sid).actual_start = e.target.value;
     };
   });
   document.querySelectorAll('[data-adj-end]').forEach(el=>{
     el.onchange = e=>{
       const [eid,sid] = el.getAttribute('data-adj-end').split('|');
-      const emp = sheetDraft.employees.find(x=>x.employee_id===eid);
-      const adj = emp.adjustments.find(a=>a.slot_id===sid);
-      adj.actual_end = e.target.value;
+      sheetDraft.employees.find(x=>x.employee_id===eid).adjustments.find(a=>a.slot_id===sid).actual_end = e.target.value;
     };
   });
 
@@ -823,9 +1223,15 @@ function bindNewSheet(){
     const file = e.target.files[0];
     if(!file) return;
     const reader = new FileReader();
-    reader.onload = ev=>{
-      sheetDraft.image = ev.target.result;
-      render();
+    reader.onload = async ev=>{
+      byId('uploadStatus').innerHTML = `<div class="info-box">${t('uploading')}</div>`;
+      try{
+        const url = await DB.uploadImage(ev.target.result, `OT_${sheetDraft.date}_${Date.now()}.jpg`, file.type||'image/jpeg');
+        sheetDraft.image = url;
+        render();
+      }catch(err){
+        toast(t('tokenExpired'), true);
+      }
     };
     reader.readAsDataURL(file);
   };
@@ -833,12 +1239,10 @@ function bindNewSheet(){
   const saveBtn = byId('btnSaveSheet');
   if(saveBtn) saveBtn.onclick = doSaveSheet;
   const cancelBtn = byId('btnCancelEdit');
-  if(cancelBtn) cancelBtn.onclick = ()=>{
-    STATE.editingSheetId = null; sheetDraft = null; STATE.screen = 'records'; render();
-  };
+  if(cancelBtn) cancelBtn.onclick = ()=>{ STATE.editingSheetId = null; sheetDraft = null; STATE.screen = 'records'; render(); };
 }
 
-function doSaveSheet(){
+async function doSaveSheet(){
   document.getElementById('formErrBox').innerHTML = '';
   if(!sheetDraft.date || !sheetDraft.division_id){
     document.getElementById('formErrBox').innerHTML = `<div class="warn-box">${t('fillRequired')}</div>`;
@@ -848,40 +1252,42 @@ function doSaveSheet(){
     document.getElementById('formErrBox').innerHTML = `<div class="warn-box">${t('selectAtLeastOne')}</div>`;
     return;
   }
-  // overlap validation
   const excludeId = sheetDraft.id;
-  // check within this sheet across employees not needed (different employees ok), but check each employee's own intervals for self-overlap across slots not required since slots typically distinct; still check external
   for(const emp of sheetDraft.employees){
     const intervals = emp.adjustments.map(a=>({start:a.actual_start, end:a.actual_end}));
     const conflicts = findConflicts(emp.employee_id, sheetDraft.date, intervals, excludeId);
     if(conflicts.length>0){
-      const empObj = employees().find(x=>x.id===emp.employee_id);
-      document.getElementById('formErrBox').innerHTML =
-        `<div class="warn-box">⚠ ${empObj? empObj.name:''} — ${t('overlapErr')}</div>`;
+      const empObj = STATE.employees.find(x=>x.id===emp.employee_id);
+      document.getElementById('formErrBox').innerHTML = `<div class="warn-box">⚠ ${empObj? empObj.name:''} — ${t('overlapErr')}</div>`;
       return;
     }
   }
 
-  const all = sheets();
-  if(sheetDraft.id){
-    const idx = all.findIndex(s=>s.id===sheetDraft.id);
-    sheetDraft.updated_by = STATE.session.username;
-    sheetDraft.updated_at = new Date().toISOString();
-    all[idx] = sheetDraft;
-    saveSheets(all);
-    toast(t('updatedOk'));
-  } else {
-    sheetDraft.id = uid('sheet');
-    sheetDraft.created_by = STATE.session.username;
-    sheetDraft.created_at = new Date().toISOString();
-    all.push(sheetDraft);
-    saveSheets(all);
-    toast(t('savedOk'));
+  const saveBtn = document.getElementById('btnSaveSheet');
+  if(saveBtn){ saveBtn.disabled = true; }
+
+  try{
+    if(sheetDraft.id){
+      sheetDraft.updated_by = STATE.session.username;
+      sheetDraft.updated_at = new Date().toISOString();
+      const idx = STATE.sheets.findIndex(s=>s.id===sheetDraft.id);
+      STATE.sheets[idx] = sheetDraft;
+    } else {
+      sheetDraft.id = uid('sheet');
+      sheetDraft.created_by = STATE.session.username;
+      sheetDraft.created_at = new Date().toISOString();
+      STATE.sheets.push(sheetDraft);
+    }
+    await DB.pushSheets();
+    toast(sheetDraft.updated_at ? t('updatedOk') : t('savedOk'));
+    STATE.editingSheetId = null;
+    sheetDraft = null;
+    STATE.screen = 'records';
+    render();
+  }catch(e){
+    document.getElementById('formErrBox').innerHTML = `<div class="warn-box">${t('tokenExpired')}</div>`;
+    if(saveBtn) saveBtn.disabled = false;
   }
-  STATE.editingSheetId = null;
-  sheetDraft = null;
-  STATE.screen = 'records';
-  render();
 }
 
 /* =========================================================
@@ -889,9 +1295,9 @@ function doSaveSheet(){
    ========================================================= */
 let recordsFilter = '';
 function renderRecords(){
-  const all = sheets().slice().sort((a,b)=> b.date.localeCompare(a.date) || b.created_at.localeCompare(a.created_at));
+  const all = STATE.sheets.slice().sort((a,b)=> b.date.localeCompare(a.date) || String(b.created_at).localeCompare(String(a.created_at)));
   const filtered = recordsFilter ? all.filter(s=>{
-    const div = divisions().find(d=>d.id===s.division_id);
+    const div = STATE.divisions.find(d=>d.id===s.division_id);
     const divName = div ? (STATE.lang==='bn'?div.name_bn:div.name_en) : '';
     return (s.work_description||'').includes(recordsFilter) || (s.remarks||'').includes(recordsFilter) || divName.includes(recordsFilter) || s.date.includes(recordsFilter);
   }) : all;
@@ -907,7 +1313,7 @@ function renderRecords(){
     <div class="empty">
       <div class="ei">🗂️</div>
       <p>${t('noRecords')}</p>
-      ${isAdmin()? `<button class="btn btn-amber" id="btnGoNew" style="margin-top:10px;">${t('createFirst')}</button>`:''}
+      <button class="btn btn-amber" id="btnGoNew" style="margin-top:10px;">${t('createFirst')}</button>
     </div>` :
     filtered.map(s=>renderSheetCard(s)).join('')
   }
@@ -915,7 +1321,7 @@ function renderRecords(){
 }
 
 function renderSheetCard(s){
-  const div = divisions().find(d=>d.id===s.division_id);
+  const div = STATE.divisions.find(d=>d.id===s.division_id);
   const divName = div ? (STATE.lang==='bn'?div.name_bn:div.name_en) : t('na');
   const empCount = s.employees.length;
   let totalHrs = 0;
@@ -932,46 +1338,30 @@ function renderSheetCard(s){
     </div>
     <div class="sheet-actions">
       <button class="btn btn-outline btn-sm" data-view="${s.id}">${t('view')}</button>
-      ${isAdmin()? `<button class="btn btn-ghost btn-sm" data-edit="${s.id}">${t('edit')}</button>
-      <button class="btn btn-danger btn-sm" data-del="${s.id}">${t('del')}</button>` :
-      `<button class="btn btn-ghost btn-sm" data-imgonly="${s.id}">${t('replaceImg')}</button>`}
+      <button class="btn btn-ghost btn-sm" data-edit="${s.id}">${t('edit')}</button>
+      <button class="btn btn-danger btn-sm" data-del="${s.id}">${t('del')}</button>
     </div>
   </div>`;
 }
 
 function bindRecords(){
   const search = document.getElementById('recSearch');
-  if(search){
-    search.oninput = e=>{ recordsFilter = e.target.value; render(); };
-  }
+  if(search) search.oninput = e=>{ recordsFilter = e.target.value; render(); };
   const goNew = document.getElementById('btnGoNew');
   if(goNew) goNew.onclick = ()=>{ STATE.screen='new'; sheetDraft=null; render(); };
-
-  document.querySelectorAll('[data-view]').forEach(el=>{
-    el.onclick = ()=> openViewModal(el.getAttribute('data-view'));
-  });
+  document.querySelectorAll('[data-view]').forEach(el=>{ el.onclick = ()=> openViewModal(el.getAttribute('data-view')); });
   document.querySelectorAll('[data-edit]').forEach(el=>{
-    el.onclick = ()=>{
-      STATE.editingSheetId = el.getAttribute('data-edit');
-      sheetDraft = null;
-      STATE.screen = 'new';
-      render();
-    };
+    el.onclick = ()=>{ STATE.editingSheetId = el.getAttribute('data-edit'); sheetDraft = null; STATE.screen = 'new'; render(); };
   });
-  document.querySelectorAll('[data-del]').forEach(el=>{
-    el.onclick = ()=> openDeleteConfirm(el.getAttribute('data-del'));
-  });
-  document.querySelectorAll('[data-imgonly]').forEach(el=>{
-    el.onclick = ()=> openImageOnlyModal(el.getAttribute('data-imgonly'));
-  });
+  document.querySelectorAll('[data-del]').forEach(el=>{ el.onclick = ()=> openDeleteConfirm(el.getAttribute('data-del')); });
 }
 
 function openViewModal(sheetId){
-  const s = sheets().find(x=>x.id===sheetId);
-  const div = divisions().find(d=>d.id===s.division_id);
+  const s = STATE.sheets.find(x=>x.id===sheetId);
+  const div = STATE.divisions.find(d=>d.id===s.division_id);
   const divName = div ? (STATE.lang==='bn'?div.name_bn:div.name_en) : t('na');
   const empRows = s.employees.map(e=>{
-    const emp = employees().find(x=>x.id===e.employee_id) || {name:'?',designation:''};
+    const emp = STATE.employees.find(x=>x.id===e.employee_id) || {name:'?',designation:''};
     const hrs = e.adjustments.reduce((sum,a)=>sum+durationHours(a.actual_start,a.actual_end),0);
     const times = e.adjustments.map(a=>`${fmtHM(a.actual_start)}–${fmtHM(a.actual_end)}`).join(', ');
     return `<div class="emp-row"><div style="flex:1;">
@@ -991,18 +1381,12 @@ function openViewModal(sheetId){
       <div class="divider"></div>
       ${empRows}
       ${s.image? `<img src="${s.image}" class="img-thumb">
-        <button class="btn btn-outline btn-block btn-sm" id="btnDownloadImg" style="margin-top:8px;">${t('downloadImg')}</button>` : ''}
+        <a href="${s.image}" target="_blank" class="btn btn-outline btn-block btn-sm" style="margin-top:8px;text-decoration:none;">${t('downloadImg')}</a>` : ''}
       <button class="btn btn-primary btn-block" id="btnCloseModal" style="margin-top:14px;">${t('close')}</button>
     </div>`;
   document.body.appendChild(modal);
   modal.onclick = e=>{ if(e.target===modal) modal.remove(); };
   modal.querySelector('#btnCloseModal').onclick = ()=> modal.remove();
-  const dl = modal.querySelector('#btnDownloadImg');
-  if(dl) dl.onclick = ()=>{
-    const a = document.createElement('a');
-    a.href = s.image; a.download = `OT_${s.date}.jpg`;
-    a.click();
-  };
 }
 
 function openDeleteConfirm(sheetId){
@@ -1019,45 +1403,9 @@ function openDeleteConfirm(sheetId){
     </div>`;
   document.body.appendChild(modal);
   modal.querySelector('#btnNo').onclick = ()=> modal.remove();
-  modal.querySelector('#btnYes').onclick = ()=>{
-    saveSheets(sheets().filter(s=>s.id!==sheetId));
-    modal.remove();
-    toast(t('deletedOk'));
-    render();
-  };
-}
-
-function openImageOnlyModal(sheetId){
-  const s = sheets().find(x=>x.id===sheetId);
-  const modal = document.createElement('div');
-  modal.className = 'modal-bg';
-  modal.innerHTML = `
-    <div class="modal-box">
-      <div class="modal-handle"></div>
-      <div class="modal-title">${t('replaceImg')}</div>
-      <div class="modal-sub">${s.date}</div>
-      ${s.image? `<img src="${s.image}" class="img-thumb">`:''}
-      <input type="file" accept="image/*" id="imgOnlyInput" style="margin-top:12px;">
-      <button class="btn btn-primary btn-block" id="btnSaveImgOnly" style="margin-top:14px;">${t('save')}</button>
-    </div>`;
-  document.body.appendChild(modal);
-  modal.onclick = e=>{ if(e.target===modal) modal.remove(); };
-  let newImg = null;
-  modal.querySelector('#imgOnlyInput').onchange = e=>{
-    const file = e.target.files[0];
-    if(!file) return;
-    const reader = new FileReader();
-    reader.onload = ev=>{ newImg = ev.target.result; };
-    reader.readAsDataURL(file);
-  };
-  modal.querySelector('#btnSaveImgOnly').onclick = ()=>{
-    if(newImg){
-      const all = sheets();
-      const idx = all.findIndex(x=>x.id===sheetId);
-      all[idx].image = newImg;
-      saveSheets(all);
-      toast(t('updatedOk'));
-    }
+  modal.querySelector('#btnYes').onclick = async ()=>{
+    STATE.sheets = STATE.sheets.filter(s=>s.id!==sheetId);
+    try{ await DB.pushSheets(); toast(t('deletedOk')); }catch(e){ toast(t('tokenExpired'), true); }
     modal.remove();
     render();
   };
@@ -1068,17 +1416,12 @@ function openImageOnlyModal(sheetId){
    ========================================================= */
 function currentMonthStr(){ const d=new Date(); return d.toISOString().slice(0,7); }
 let summaryMonth = currentMonthStr();
-
-function daysInMonth(ym){
-  const [y,m] = ym.split('-').map(Number);
-  return new Date(y, m, 0).getDate();
-}
+function daysInMonth(ym){ const [y,m] = ym.split('-').map(Number); return new Date(y, m, 0).getDate(); }
 
 function computeMonthlyData(ym){
   const dim = daysInMonth(ym);
-  const emps = employees();
-  const data = emps.map(e=>({emp:e, sheetsCount:0, totalHours:0, days:new Array(dim+1).fill(0)}));
-  sheets().forEach(s=>{
+  const data = STATE.employees.map(e=>({emp:e, sheetsCount:0, totalHours:0, days:new Array(dim+1).fill(0)}));
+  STATE.sheets.forEach(s=>{
     if(!s.date.startsWith(ym)) return;
     const day = Number(s.date.split('-')[2]);
     s.employees.forEach(se=>{
@@ -1086,9 +1429,7 @@ function computeMonthlyData(ym){
       if(!rec) return;
       let hrs = 0;
       se.adjustments.forEach(a=> hrs += durationHours(a.actual_start,a.actual_end));
-      rec.sheetsCount += 1;
-      rec.totalHours += hrs;
-      rec.days[day] += hrs;
+      rec.sheetsCount += 1; rec.totalHours += hrs; rec.days[day] += hrs;
     });
   });
   return {dim, data};
@@ -1097,7 +1438,7 @@ function computeMonthlyData(ym){
 function renderSummary(){
   const {dim, data} = computeMonthlyData(summaryMonth);
   const grandTotal = data.reduce((s,d)=>s+d.totalHours,0);
-  const totalSheets = sheets().filter(s=>s.date.startsWith(summaryMonth)).length;
+  const totalSheets = STATE.sheets.filter(s=>s.date.startsWith(summaryMonth)).length;
 
   return `
   <div class="section-head">
@@ -1109,8 +1450,10 @@ function renderSummary(){
         <label>${t('month')}</label>
         <input type="month" id="monthPicker" value="${summaryMonth}">
       </div>
-      <button class="btn btn-amber" id="btnExportCsv">${t('exportCsv')}</button>
+      ${canExport()? `<button class="btn btn-amber" id="btnExportCsv">${t('exportCsv')}</button>` :
+        `<button class="btn btn-outline" disabled title="${t('permNoExport')}" style="opacity:.5;">${t('exportCsv')}</button>`}
     </div>
+    ${!canExport()? `<div class="info-box" style="margin-top:10px;margin-bottom:0;">${t('permNoExport')}</div>`:''}
   </div>
 
   <div class="stat-row">
@@ -1126,9 +1469,7 @@ function renderSummary(){
         <tbody>
         ${data.length===0? `<tr><td colspan="4">${t('noData')}</td></tr>` :
           data.map(d=>`<tr>
-            <td>${d.emp.name}</td>
-            <td>${d.emp.designation}</td>
-            <td>${d.sheetsCount}</td>
+            <td>${d.emp.name}</td><td>${d.emp.designation}</td><td>${d.sheetsCount}</td>
             <td class="mono">${d.totalHours.toFixed(2)}</td>
           </tr>`).join('')
         }
@@ -1150,7 +1491,7 @@ function renderSummary(){
         ${data.length===0? `<tr><td colspan="${dim+2}">${t('noData')}</td></tr>` :
           data.map(d=>`<tr>
             <td>${d.emp.name}</td>
-            ${d.days.slice(1).map(h=> h>0? `<td class="cell-h">${h.toFixed(0)===''+h.toFixed(0)?trimNum(h):h}</td>` : `<td class="cell-x">X</td>`).join('')}
+            ${d.days.slice(1).map(h=> h>0? `<td class="cell-h">${trimNum(h)}</td>` : `<td class="cell-x">X</td>`).join('')}
             <td class="mono" style="font-weight:700;">${d.totalHours.toFixed(1)}</td>
           </tr>`).join('')
         }
@@ -1166,7 +1507,10 @@ function bindSummary(){
   const mp = document.getElementById('monthPicker');
   if(mp) mp.onchange = e=>{ summaryMonth = e.target.value; render(); };
   const exp = document.getElementById('btnExportCsv');
-  if(exp) exp.onclick = exportMonthlyCsv;
+  if(exp) exp.onclick = ()=>{
+    if(!canExport()){ toast(t('permNoExport'), true); return; }
+    exportMonthlyCsv();
+  };
 }
 
 function exportMonthlyCsv(){
@@ -1179,7 +1523,6 @@ function exportMonthlyCsv(){
   ]);
   downloadCsv(`OT_Summary_${summaryMonth}.csv`, [headers, ...rows]);
 }
-
 function downloadCsv(filename, rows){
   const csv = rows.map(r=> r.map(cell=>{
     const s = String(cell ?? '');
@@ -1198,7 +1541,6 @@ function downloadCsv(filename, rows){
    ========================================================= */
 let settingsTab = 'employees';
 function renderSettings(){
-  if(!isAdmin()) return `<div class="empty"><div class="ei">🔒</div><p>${t('permAdminOnly')}</p></div>`;
   return `
   <div class="section-head"><div><h2>${t('settingsTitle')}</h2></div></div>
 
@@ -1206,16 +1548,18 @@ function renderSettings(){
     <div class="pill ${settingsTab==='employees'?'active':''}" data-stab="employees">${t('empMgmt')}</div>
     <div class="pill ${settingsTab==='divisions'?'active':''}" data-stab="divisions">${t('divMgmt')}</div>
     <div class="pill ${settingsTab==='account'?'active':''}" data-stab="account">${t('account')}</div>
+    <div class="pill ${settingsTab==='cloud'?'active':''}" data-stab="cloud">☁️ ${t('cloudTab')}</div>
   </div>
 
   ${settingsTab==='employees'? renderEmpSettings() : ''}
   ${settingsTab==='divisions'? renderDivSettings() : ''}
   ${settingsTab==='account'? renderAccountSettings() : ''}
+  ${settingsTab==='cloud'? renderCloudSettings() : ''}
   `;
 }
 
 function renderEmpSettings(){
-  const emps = employees();
+  const emps = STATE.employees;
   return `
   <div class="card">
     <div class="card-title">${t('empMgmt')}</div>
@@ -1231,12 +1575,13 @@ function renderEmpSettings(){
         </div>
       </div>
     `).join('')}
-    <button class="btn btn-amber btn-block" id="btnAddEmp" style="margin-top:10px;">${t('addEmployee')}</button>
+    ${canAddEmployee()? `<button class="btn btn-amber btn-block" id="btnAddEmp" style="margin-top:10px;">${t('addEmployee')}</button>` :
+      `<div class="info-box" style="margin-top:10px;">${t('permNoAddEmp')}</div>`}
   </div>`;
 }
 
 function renderDivSettings(){
-  const divs = divisions();
+  const divs = STATE.divisions;
   return `
   <div class="card">
     <div class="card-title">${t('divMgmt')}</div>
@@ -1277,72 +1622,98 @@ function renderAccountSettings(){
   </div>`;
 }
 
+function renderCloudSettings(){
+  const statusLabel = DB.status==='on'?t('statusOn'):(DB.status==='busy'||DB.status==='connecting'?t('statusBusy'):t('statusOff'));
+  return `
+  <div class="card">
+    <div class="card-title"><span class="sync-dot ${DB.status==='on'?'on':(DB.status==='busy'||DB.status==='connecting'?'busy':'off')}"></span> ${t('syncTab')} — <span style="color:var(--ink-soft);font-weight:500;">${statusLabel}</span></div>
+    <div class="stat-row">
+      <div class="stat-box"><div class="sn" style="font-size:12.5px;">${DB.lastSync? new Date(DB.lastSync).toLocaleString(STATE.lang==='bn'?'bn-BD':'en-US'): '—'}</div><div class="sl">${t('lastSynced')}</div></div>
+      <div class="stat-box"><div class="sn" style="font-size:11px;word-break:break-all;">${DB.spreadsheetId||'—'}</div><div class="sl">Spreadsheet ID</div></div>
+    </div>
+    <a href="https://docs.google.com/spreadsheets/d/${DB.spreadsheetId}" target="_blank" class="btn btn-outline btn-block btn-sm" style="text-decoration:none;margin-bottom:8px;">${t('openSheet')}</a>
+    <button class="btn btn-primary btn-block" id="btnSyncNowS">${t('syncNow')}</button>
+    <button class="btn btn-outline btn-block" id="btnPullNowS" style="margin-top:8px;">${t('pullNow')}</button>
+    <button class="btn btn-outline btn-block" id="btnChangeSS" style="margin-top:8px;">${t('changeSpreadsheet')}</button>
+    <button class="btn btn-danger btn-block" id="btnReconnectS" style="margin-top:8px;">${t('reconnect')}</button>
+  </div>`;
+}
+
 function bindSettings(){
   document.querySelectorAll('[data-stab]').forEach(el=>{
     el.onclick = ()=>{ settingsTab = el.getAttribute('data-stab'); render(); };
   });
 
-  // employees
   const addEmpBtn = document.getElementById('btnAddEmp');
   if(addEmpBtn) addEmpBtn.onclick = ()=> openEmpModal(null);
-  document.querySelectorAll('[data-emp-edit]').forEach(el=>{
-    el.onclick = ()=> openEmpModal(el.getAttribute('data-emp-edit'));
-  });
+  document.querySelectorAll('[data-emp-edit]').forEach(el=>{ el.onclick = ()=> openEmpModal(el.getAttribute('data-emp-edit')); });
   document.querySelectorAll('[data-emp-del]').forEach(el=>{
-    el.onclick = ()=>{
+    el.onclick = async ()=>{
       const id = el.getAttribute('data-emp-del');
-      const all = employees();
-      saveEmployees(all.filter(e=>e.id!==id));
-      toast(t('empDeleted'));
+      STATE.employees = STATE.employees.filter(e=>e.id!==id);
+      try{ await DB.pushEmployees(); toast(t('empDeleted')); }catch(e){ toast(t('tokenExpired'), true); }
       render();
     };
   });
 
-  // divisions
   const addDivBtn = document.getElementById('btnAddDiv');
   if(addDivBtn) addDivBtn.onclick = ()=> openDivModal();
   document.querySelectorAll('[data-div-del]').forEach(el=>{
-    el.onclick = ()=>{
+    el.onclick = async ()=>{
       const id = el.getAttribute('data-div-del');
-      const div = divisions().find(d=>d.id===id);
+      const div = STATE.divisions.find(d=>d.id===id);
       if(div.is_default){ toast(t('cannotDeleteDefault'), true); return; }
-      saveDivisions(divisions().filter(d=>d.id!==id));
-      toast(t('divDeleted'));
+      STATE.divisions = STATE.divisions.filter(d=>d.id!==id);
+      try{ await DB.pushDivisions(); toast(t('divDeleted')); }catch(e){ toast(t('tokenExpired'), true); }
       render();
     };
   });
 
-  // account
   document.querySelectorAll('[data-l2]').forEach(el=>{
     el.onclick = ()=>{ STATE.lang = el.getAttribute('data-l2'); LS.set('otr_lang',STATE.lang); render(); };
   });
   const savePwBtn = document.getElementById('btnSavePw');
-  if(savePwBtn) savePwBtn.onclick = ()=>{
+  if(savePwBtn) savePwBtn.onclick = async ()=>{
     const pa = document.getElementById('pwAdmin').value.trim();
     const pe = document.getElementById('pwEmp').value.trim();
-    const all = users();
     let changed = false;
-    if(pa){ const u=all.find(x=>x.role==='admin'); if(u){u.password=pa; changed=true;} }
-    if(pe){ const u=all.find(x=>x.role==='employee'); if(u){u.password=pe; changed=true;} }
-    if(changed){ saveUsers(all); toast(t('pwChanged')); render(); }
+    if(pa){ const u=STATE.users.find(x=>x.role==='admin'); if(u){u.password=pa; changed=true;} }
+    if(pe){ const u=STATE.users.find(x=>x.role==='employee'); if(u){u.password=pe; changed=true;} }
+    if(changed){
+      try{ await DB.pushUsers(); toast(t('pwChanged')); render(); }catch(e){ toast(t('tokenExpired'), true); }
+    }
+  };
+
+  const syncNowBtn = document.getElementById('btnSyncNowS');
+  if(syncNowBtn) syncNowBtn.onclick = async ()=>{
+    try{ await DB.pullAll(); toast(t('savedOk')); render(); }catch(e){ toast(t('tokenExpired'), true); }
+  };
+  const pullNowBtn = document.getElementById('btnPullNowS');
+  if(pullNowBtn) pullNowBtn.onclick = async ()=>{
+    try{ await DB.pullAll(); toast(t('savedOk')); render(); }catch(e){ toast(t('tokenExpired'), true); }
+  };
+  const changeSSBtn = document.getElementById('btnChangeSS');
+  if(changeSSBtn) changeSSBtn.onclick = ()=> DB.changeSpreadsheet();
+  const reconnectBtn = document.getElementById('btnReconnectS');
+  if(reconnectBtn) reconnectBtn.onclick = ()=>{
+    DB.setStatus('connecting');
+    DB.ensureTokenClient(async ()=>{
+      DB.connected = true; DB.setStatus('on');
+      try{ await DB.pullAll(); toast(t('cloudConnected')||t('savedOk')); render(); }catch(e){ DB.setStatus('error'); }
+    });
   };
 }
 
 function openEmpModal(empId){
-  const emp = empId ? employees().find(e=>e.id===empId) : {name:'', designation:'', active:true};
+  if(!empId && !canAddEmployee()){ toast(t('permNoAddEmp'), true); return; }
+  const emp = empId ? STATE.employees.find(e=>e.id===empId) : {name:'', designation:'', active:true};
   const modal = document.createElement('div');
   modal.className = 'modal-bg center';
   modal.innerHTML = `
     <div class="modal-box">
       <div class="modal-title">${empId? t('edit') : t('addEmployee')}</div>
-      <div class="field">
-        <label>${t('empName')}</label>
-        <input type="text" id="mEmpName" value="${emp.name}">
-      </div>
-      <div class="field">
-        <label>${t('empDesig')}</label>
-        <input type="text" id="mEmpDesig" value="${emp.designation}">
-      </div>
+      <div class="field"><label>${t('empName')}</label><input type="text" id="mEmpName" value="${emp.name}"></div>
+      <div class="field"><label>${t('empDesig')}</label><input type="text" id="mEmpDesig" value="${emp.designation}"></div>
       <div style="display:flex;gap:8px;">
         <button class="btn btn-outline btn-block" id="mCancel">${t('cancel')}</button>
         <button class="btn btn-primary btn-block" id="mSave">${t('saveBtn')}</button>
@@ -1350,20 +1721,18 @@ function openEmpModal(empId){
     </div>`;
   document.body.appendChild(modal);
   modal.querySelector('#mCancel').onclick = ()=> modal.remove();
-  modal.querySelector('#mSave').onclick = ()=>{
+  modal.querySelector('#mSave').onclick = async ()=>{
     const name = document.getElementById('mEmpName').value.trim();
     const desig = document.getElementById('mEmpDesig').value.trim();
     if(!name){ toast(t('fillRequired'), true); return; }
-    const all = employees();
     if(empId){
-      const rec = all.find(e=>e.id===empId);
+      const rec = STATE.employees.find(e=>e.id===empId);
       rec.name = name; rec.designation = desig;
     } else {
-      all.push({id:uid('emp'), name, designation:desig, active:true});
+      STATE.employees.push({id:uid('emp'), name, designation:desig, active:true});
     }
-    saveEmployees(all);
+    try{ await DB.pushEmployees(); toast(t('savedOk')); }catch(e){ toast(t('tokenExpired'), true); }
     modal.remove();
-    toast(t('savedOk'));
     render();
   };
 }
@@ -1374,14 +1743,8 @@ function openDivModal(){
   modal.innerHTML = `
     <div class="modal-box">
       <div class="modal-title">${t('addDivision')}</div>
-      <div class="field">
-        <label>${t('nameBn')}</label>
-        <input type="text" id="mDivBn">
-      </div>
-      <div class="field">
-        <label>${t('nameEn')}</label>
-        <input type="text" id="mDivEn">
-      </div>
+      <div class="field"><label>${t('nameBn')}</label><input type="text" id="mDivBn"></div>
+      <div class="field"><label>${t('nameEn')}</label><input type="text" id="mDivEn"></div>
       <div style="display:flex;gap:8px;">
         <button class="btn btn-outline btn-block" id="mCancel">${t('cancel')}</button>
         <button class="btn btn-primary btn-block" id="mSave">${t('saveBtn')}</button>
@@ -1389,24 +1752,31 @@ function openDivModal(){
     </div>`;
   document.body.appendChild(modal);
   modal.querySelector('#mCancel').onclick = ()=> modal.remove();
-  modal.querySelector('#mSave').onclick = ()=>{
+  modal.querySelector('#mSave').onclick = async ()=>{
     const bn = document.getElementById('mDivBn').value.trim();
     const en = document.getElementById('mDivEn').value.trim();
     if(!bn && !en){ toast(t('fillRequired'), true); return; }
-    const all = divisions();
-    all.push({id:uid('div'), name_bn:bn||en, name_en:en||bn, is_default:false, active:true});
-    saveDivisions(all);
+    STATE.divisions.push({id:uid('div'), name_bn:bn||en, name_en:en||bn, is_default:false, active:true});
+    try{ await DB.pushDivisions(); toast(t('savedOk')); }catch(e){ toast(t('tokenExpired'), true); }
     modal.remove();
-    toast(t('savedOk'));
     render();
   };
 }
 
-/* ---------- boot ---------- */
-if(STATE.session){
-  STATE.screen = STATE.session.role==='admin' ? 'new' : 'records';
-}
-render();
+/* ---------- boot sequence ---------- */
+(function boot(){
+  STATE.screen = 'boot';
+  render();
+  if(!DB.clientId || !DB.apiKey){
+    STATE.screen = 'setup';
+    render();
+    return;
+  }
+  // have credentials saved: show the connect button (token requests need a user gesture)
+  STATE.screen = 'connect';
+  render();
+})();
+
 </script>
 </body>
 </html>
