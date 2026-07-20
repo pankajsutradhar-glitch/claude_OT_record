@@ -1,0 +1,1412 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#0F2E2C">
+<title>OT_Record — অতিরিক্ত কর্মঘন্টা ব্যবস্থাপনা</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#0F2E2C;
+  --ink-2:#163F3B;
+  --paper:#F6F4EE;
+  --paper-2:#EDEAE1;
+  --line:#D9D4C6;
+  --amber:#C77C2C;
+  --amber-2:#E0954A;
+  --rust:#B0483B;
+  --moss:#4B7A5A;
+  --white:#FFFFFF;
+  --ink-soft:#5B6A66;
+  --shadow: 0 1px 2px rgba(15,46,44,.06), 0 4px 14px rgba(15,46,44,.07);
+  --radius: 14px;
+}
+*{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+html,body{margin:0;padding:0;height:100%;}
+body{
+  font-family:'Hind Siliguri','Space Grotesk',system-ui,sans-serif;
+  background:
+    radial-gradient(1200px 500px at 100% -10%, rgba(199,124,44,.08), transparent 60%),
+    var(--paper);
+  color:var(--ink);
+  min-height:100vh;
+  overflow-x:hidden;
+}
+.mono{font-family:'JetBrains Mono',monospace;}
+.disp{font-family:'Space Grotesk',sans-serif;}
+#root{max-width:560px;margin:0 auto;min-height:100vh;position:relative;padding-bottom:82px;}
+
+/* Top bar */
+.topbar{
+  position:sticky;top:0;z-index:30;
+  background:var(--ink);
+  color:var(--paper);
+  padding:14px 18px;
+  display:flex;align-items:center;justify-content:space-between;
+  box-shadow:var(--shadow);
+}
+.topbar .brand{display:flex;align-items:center;gap:10px;}
+.brand-mark{
+  width:34px;height:34px;border-radius:9px;
+  background:linear-gradient(135deg,var(--amber),var(--rust));
+  display:flex;align-items:center;justify-content:center;
+  font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:14px;color:#fff;
+  flex-shrink:0;
+}
+.brand-title{font-size:15px;font-weight:600;line-height:1.15;}
+.brand-sub{font-size:10.5px;color:#9FC2B8;letter-spacing:.04em;}
+.topbar-actions{display:flex;gap:8px;align-items:center;}
+.icon-btn{
+  background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.14);
+  color:var(--paper);width:34px;height:34px;border-radius:9px;
+  display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:15px;
+}
+.icon-btn:active{background:rgba(255,255,255,.18);}
+
+main{padding:16px 16px 24px;}
+
+/* Cards */
+.card{
+  background:var(--white);
+  border:1px solid var(--line);
+  border-radius:var(--radius);
+  padding:16px;
+  margin-bottom:14px;
+  box-shadow:var(--shadow);
+}
+.card-title{font-size:13px;font-weight:600;color:var(--ink);margin:0 0 12px;display:flex;align-items:center;gap:8px;}
+.card-title .tag{
+  font-family:'JetBrains Mono',monospace;font-size:9.5px;color:var(--amber);
+  background:rgba(199,124,44,.1);border:1px solid rgba(199,124,44,.25);
+  padding:2px 6px;border-radius:5px;letter-spacing:.05em;
+}
+
+/* Form */
+label{display:block;font-size:12px;font-weight:600;color:var(--ink-soft);margin:0 0 6px;letter-spacing:.01em;}
+input[type=text],input[type=password],input[type=date],input[type=time],input[type=number],textarea,select{
+  width:100%;padding:11px 12px;border:1.5px solid var(--line);border-radius:10px;
+  font-family:inherit;font-size:14.5px;background:var(--paper);color:var(--ink);
+  outline:none;transition:border-color .15s;
+}
+input:focus,textarea:focus,select:focus{border-color:var(--amber);background:#fff;}
+textarea{resize:vertical;min-height:64px;}
+.field{margin-bottom:14px;}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+
+/* Buttons */
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:7px;
+  padding:11px 18px;border-radius:10px;border:none;font-weight:600;font-size:14px;
+  cursor:pointer;font-family:inherit;transition:transform .06s, opacity .15s;
+}
+.btn:active{transform:scale(.97);}
+.btn-primary{background:var(--ink);color:var(--paper);}
+.btn-primary:disabled{opacity:.35;cursor:not-allowed;}
+.btn-amber{background:var(--amber);color:#fff;}
+.btn-outline{background:transparent;color:var(--ink);border:1.5px solid var(--line);}
+.btn-danger{background:transparent;color:var(--rust);border:1.5px solid rgba(176,72,59,.3);}
+.btn-ghost{background:rgba(15,46,44,.05);color:var(--ink);}
+.btn-block{width:100%;}
+.btn-sm{padding:7px 12px;font-size:12.5px;border-radius:8px;}
+
+/* Bottom nav */
+.bottomnav{
+  position:fixed;bottom:0;left:50%;transform:translateX(-50%);
+  width:100%;max-width:560px;
+  background:var(--ink);
+  display:flex;justify-content:space-around;align-items:center;
+  padding:8px 4px calc(8px + env(safe-area-inset-bottom));
+  z-index:40;box-shadow:0 -4px 16px rgba(0,0,0,.15);
+}
+.navitem{
+  flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;
+  padding:6px 2px;border-radius:10px;color:#7FA79C;cursor:pointer;
+  font-size:10px;font-weight:600;letter-spacing:.01em;
+}
+.navitem .ni-ico{font-size:18px;line-height:1;}
+.navitem.active{color:var(--amber-2);}
+
+/* chips / badges */
+.badge{display:inline-block;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:600;}
+.badge-amber{background:rgba(199,124,44,.12);color:var(--amber);}
+.badge-moss{background:rgba(75,122,90,.12);color:var(--moss);}
+.badge-rust{background:rgba(176,72,59,.12);color:var(--rust);}
+.badge-gray{background:var(--paper-2);color:var(--ink-soft);}
+
+/* list rows */
+.sheet-card{
+  background:#fff;border:1px solid var(--line);border-radius:var(--radius);
+  padding:14px;margin-bottom:10px;box-shadow:var(--shadow);
+}
+.sheet-card .date-block{
+  font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--amber);font-weight:600;
+}
+.sheet-card h4{margin:2px 0 6px;font-size:14.5px;font-weight:600;}
+.sheet-card p{margin:0;font-size:12.5px;color:var(--ink-soft);line-height:1.5;}
+.sheet-meta{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;}
+.sheet-actions{display:flex;gap:8px;margin-top:10px;}
+
+/* employee checklist */
+.emp-row{
+  display:flex;align-items:center;gap:10px;padding:10px 4px;border-bottom:1px solid var(--paper-2);
+}
+.emp-row:last-child{border-bottom:none;}
+.emp-check{
+  width:22px;height:22px;border-radius:6px;border:2px solid var(--line);flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;cursor:pointer;background:#fff;
+}
+.emp-check.checked{background:var(--ink);border-color:var(--ink);color:var(--paper);font-size:13px;}
+.emp-name{font-size:14px;font-weight:600;flex:1;}
+.emp-desig{font-size:11px;color:var(--ink-soft);}
+
+.slot-adjust{
+  margin-top:8px;padding:10px;background:var(--paper);border-radius:10px;border:1px dashed var(--line);
+}
+.slot-adjust-title{font-size:11px;font-weight:600;color:var(--ink-soft);margin-bottom:6px;}
+
+/* time slot editor */
+.slot-item{
+  display:flex;align-items:center;gap:8px;margin-bottom:8px;padding:8px 10px;
+  background:var(--paper);border-radius:10px;
+}
+.slot-item span{font-size:12px;color:var(--ink-soft);}
+
+/* login */
+.login-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;}
+.login-card{width:100%;max-width:380px;background:#fff;border-radius:20px;padding:32px 26px;box-shadow:0 10px 40px rgba(15,46,44,.15);border:1px solid var(--line);}
+.login-logo{width:56px;height:56px;border-radius:14px;background:linear-gradient(135deg,var(--amber),var(--rust));display:flex;align-items:center;justify-content:center;color:#fff;font-family:'Space Grotesk';font-weight:700;font-size:22px;margin:0 auto 16px;}
+.role-toggle{display:flex;background:var(--paper-2);border-radius:10px;padding:3px;margin-bottom:18px;}
+.role-toggle button{flex:1;padding:9px;border:none;background:transparent;border-radius:8px;font-weight:600;font-size:13px;color:var(--ink-soft);cursor:pointer;font-family:inherit;}
+.role-toggle button.active{background:var(--ink);color:var(--paper);}
+
+/* summary table */
+.tbl-wrap{overflow-x:auto;border-radius:10px;border:1px solid var(--line);}
+table{border-collapse:collapse;width:100%;font-size:12px;}
+th,td{padding:8px 9px;text-align:center;white-space:nowrap;border-bottom:1px solid var(--paper-2);}
+th{background:var(--paper-2);font-weight:600;color:var(--ink-soft);font-size:10.5px;position:sticky;top:0;}
+td:first-child,th:first-child{position:sticky;left:0;background:#fff;text-align:right;font-weight:600;z-index:1;}
+th:first-child{background:var(--paper-2);z-index:2;}
+tr:nth-child(even) td{background:#FBFAF7;}
+tr:nth-child(even) td:first-child{background:#FBFAF7;}
+.cell-x{color:#C7C2B4;}
+.cell-h{color:var(--moss);font-weight:600;}
+
+/* empty state */
+.empty{text-align:center;padding:48px 20px;color:var(--ink-soft);}
+.empty .ei{font-size:38px;margin-bottom:10px;opacity:.5;}
+.empty p{font-size:13.5px;margin:4px 0;}
+
+/* toast */
+#toast{
+  position:fixed;bottom:96px;left:50%;transform:translateX(-50%) translateY(20px);
+  background:var(--ink);color:var(--paper);padding:11px 20px;border-radius:30px;
+  font-size:13px;font-weight:600;box-shadow:0 6px 20px rgba(0,0,0,.25);z-index:100;
+  opacity:0;pointer-events:none;transition:all .25s ease;max-width:88%;text-align:center;
+}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+#toast.err{background:var(--rust);}
+
+/* modal */
+.modal-bg{position:fixed;inset:0;background:rgba(15,46,44,.45);z-index:200;display:flex;align-items:flex-end;justify-content:center;}
+.modal-bg.center{align-items:center;padding:20px;}
+.modal-box{
+  background:#fff;width:100%;max-width:560px;border-radius:20px 20px 0 0;
+  padding:20px 18px calc(20px + env(safe-area-inset-bottom));
+  max-height:88vh;overflow-y:auto;box-shadow:0 -8px 30px rgba(0,0,0,.2);
+  animation:slideup .22s ease;
+}
+.modal-bg.center .modal-box{border-radius:18px;max-width:400px;animation:popin .18s ease;}
+@keyframes slideup{from{transform:translateY(30px);opacity:0;}to{transform:translateY(0);opacity:1;}}
+@keyframes popin{from{transform:scale(.94);opacity:0;}to{transform:scale(1);opacity:1;}}
+.modal-handle{width:36px;height:4px;background:var(--line);border-radius:3px;margin:0 auto 14px;}
+.modal-title{font-size:16px;font-weight:700;margin:0 0 4px;}
+.modal-sub{font-size:12px;color:var(--ink-soft);margin:0 0 16px;}
+
+/* segmented lang */
+.lang-toggle{display:flex;gap:6px;}
+.lang-toggle button{padding:6px 12px;border-radius:8px;border:1.5px solid var(--line);background:#fff;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;}
+.lang-toggle button.active{background:var(--ink);color:#fff;border-color:var(--ink);}
+
+.section-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
+.section-head h2{font-size:18px;font-weight:700;margin:0;font-family:'Space Grotesk',sans-serif;}
+.section-head .sub{font-size:11.5px;color:var(--ink-soft);margin-top:2px;}
+
+.divider{height:1px;background:var(--line);margin:14px 0;}
+
+.stat-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;}
+.stat-box{background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px 14px;}
+.stat-box .sn{font-family:'Space Grotesk';font-size:22px;font-weight:700;color:var(--ink);}
+.stat-box .sl{font-size:10.5px;color:var(--ink-soft);font-weight:600;margin-top:2px;}
+
+.img-thumb{width:100%;border-radius:10px;margin-top:10px;border:1px solid var(--line);display:block;}
+.upload-box{
+  border:1.5px dashed var(--line);border-radius:12px;padding:18px;text-align:center;
+  cursor:pointer;background:var(--paper);font-size:12.5px;color:var(--ink-soft);
+}
+
+.search-box{position:relative;margin-bottom:14px;}
+.search-box input{padding-left:36px;}
+.search-box::before{content:'⌕';position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--ink-soft);font-size:16px;}
+
+.pill-scroll{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;margin-bottom:14px;}
+.pill{flex-shrink:0;padding:7px 14px;border-radius:20px;background:#fff;border:1.5px solid var(--line);font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;}
+.pill.active{background:var(--ink);color:#fff;border-color:var(--ink);}
+
+.swipe-actions{display:flex;gap:6px;}
+::-webkit-scrollbar{height:5px;width:5px;}
+::-webkit-scrollbar-thumb{background:var(--line);border-radius:10px;}
+
+.warn-box{background:rgba(176,72,59,.08);border:1px solid rgba(176,72,59,.25);color:var(--rust);border-radius:10px;padding:10px 12px;font-size:12.5px;margin-bottom:12px;font-weight:500;}
+.info-box{background:rgba(75,122,90,.08);border:1px solid rgba(75,122,90,.25);color:var(--moss);border-radius:10px;padding:10px 12px;font-size:12.5px;margin-bottom:12px;}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<div id="toast"></div>
+
+<script>
+/* =========================================================
+   OT_Record — single-file mobile web app
+   Local-first storage via localStorage. No backend required.
+   ========================================================= */
+
+/* ---------- i18n ---------- */
+const T = {
+  bn:{
+    appName:'OT_Record', appSub:'অতিরিক্ত কর্মঘন্টা ব্যবস্থাপনা',
+    login:'লগইন', username:'ইউজারনেম', password:'পাসওয়ার্ড', signin:'প্রবেশ করুন',
+    roleAdmin:'অ্যাডমিন', roleEmployee:'কর্মচারী', loginErr:'ইউজারনেম বা পাসওয়ার্ড সঠিক নয়',
+    navNew:'নতুন শিট', navRecords:'রেকর্ডস', navSummary:'সারাংশ', navSettings:'সেটিংস', navLogout:'লগআউট',
+    newSheetTitle:'নতুন ওটি শিট তৈরী', editSheetTitle:'ওটি শিট সম্পাদনা',
+    date:'তারিখ', division:'বিভাগ', workDesc:'অতিরিক্ত কাজের বিবরণী', remarks:'মন্তব্য',
+    timeSlots:'সময়সূচী', addSlot:'+ সময় যোগ করুন', start:'শুরু', end:'শেষ',
+    selectEmployees:'কর্মচারী নির্বাচন করুন', actualTime:'প্রকৃত সময় সমন্বয়',
+    uploadImage:'ওটি শিটের ছবি (ঐচ্ছিক)', tapUpload:'ছবি আপলোড করতে ট্যাপ করুন',
+    save:'সংরক্ষণ করুন', cancel:'বাতিল', update:'আপডেট করুন',
+    recordsTitle:'ওটি শিট রেকর্ডস', recordsSub:'শিট অনুযায়ী প্রদর্শিত',
+    noRecords:'কোনো ওটি শিট পাওয়া যায়নি', createFirst:'নতুন শিট তৈরি করুন',
+    employees:'জন কর্মচারী', edit:'সম্পাদনা', del:'মুছুন', view:'দেখুন', replaceImg:'ছবি পরিবর্তন',
+    confirmDelete:'আপনি কি নিশ্চিতভাবে এই ওটি শিটটি মুছে ফেলতে চান?', yesDelete:'হ্যাঁ, মুছুন',
+    summaryTitle:'মাসিক সারাংশ', totalOtHours:'মোট ওভারটাইম ঘন্টা',
+    month:'মাস', exportCsv:'CSV এক্সপোর্ট', name:'নাম', designation:'পদবী',
+    noOfSheets:'শিট সংখ্যা', totalHours:'মোট ঘন্টা', total:'মোট',
+    settingsTitle:'সেটিংস', empMgmt:'কর্মচারী তালিকা', divMgmt:'বিভাগ তালিকা', langSet:'ভাষা',
+    addEmployee:'+ কর্মচারী যোগ করুন', addDivision:'+ বিভাগ যোগ করুন',
+    active:'সক্রিয়', inactive:'নিষ্ক্রিয়', deleteConfirmDiv:'এই বিভাগটি মুছে ফেলবেন?',
+    cannotDeleteDefault:'ডিফল্ট বিভাগ মুছে ফেলা যাবে না', nameBn:'নাম (বাংলা)', nameEn:'নাম (ইংরেজি)',
+    saveBtn:'সংরক্ষণ', empName:'কর্মচারীর নাম', empDesig:'পদবী', required:'আবশ্যক',
+    overlapErr:'সময় দ্বন্দ্ব: এই কর্মচারীর অন্য একটি শিটে একই সময়ে ওভারটাইম রয়েছে',
+    fillRequired:'অনুগ্রহ করে সব আবশ্যক তথ্য পূরণ করুন', selectAtLeastOne:'অন্তত একজন কর্মচারী নির্বাচন করুন',
+    savedOk:'সফলভাবে সংরক্ষিত হয়েছে', deletedOk:'মুছে ফেলা হয়েছে', updatedOk:'আপডেট হয়েছে',
+    hours:'ঘন্টা', slotDefault:'ডিফল্ট সেশন', removeSlot:'অপসারণ', na:'নেই',
+    imageOf:'ছবি —', close:'বন্ধ করুন', currentMonth:'চলতি মাস',
+    noData:'কোনো তথ্য নেই', searchEmp:'কর্মচারী খুঁজুন...', all:'সকল',
+    account:'অ্যাকাউন্ট', loggedInAs:'লগইন করা হয়েছে', changePw:'পাসওয়ার্ড পরিবর্তন',
+    newPw:'নতুন পাসওয়ার্ড', pwChanged:'পাসওয়ার্ড পরিবর্তিত হয়েছে',
+    exportSheets:'শিট তালিকা এক্সপোর্ট (CSV)', downloadImg:'ছবি ডাউনলোড',
+    empDeleted:'কর্মচারী মুছে ফেলা হয়েছে', divDeleted:'বিভাগ মুছে ফেলা হয়েছে',
+    calendar:'দৈনিক ক্যালেন্ডার', sheetsFor:'-এর জন্য শিট',
+    otSheetsCount:'টি শিট', noEmployees:'কোনো কর্মচারী যোগ করা হয়নি', addSome:'সেটিংসে গিয়ে কর্মচারী যোগ করুন',
+    permAdminOnly:'শুধুমাত্র অ্যাডমিন এই কাজটি করতে পারবেন',
+    weekTbl:'সাপ্তাহিক দৃশ্য',
+  },
+  en:{
+    appName:'OT_Record', appSub:'Employee Overtime Manager',
+    login:'Login', username:'Username', password:'Password', signin:'Sign In',
+    roleAdmin:'Admin', roleEmployee:'Employee', loginErr:'Incorrect username or password',
+    navNew:'New Sheet', navRecords:'Records', navSummary:'Summary', navSettings:'Settings', navLogout:'Logout',
+    newSheetTitle:'Create OT Sheet', editSheetTitle:'Edit OT Sheet',
+    date:'Date', division:'Division', workDesc:'Work Description', remarks:'Remarks',
+    timeSlots:'Time Slots', addSlot:'+ Add Slot', start:'Start', end:'End',
+    selectEmployees:'Select Employees', actualTime:'Actual Time Adjustment',
+    uploadImage:'OT Sheet Image (optional)', tapUpload:'Tap to upload image',
+    save:'Save', cancel:'Cancel', update:'Update',
+    recordsTitle:'OT Sheet Records', recordsSub:'Shown by sheet',
+    noRecords:'No OT sheets found', createFirst:'Create your first sheet',
+    employees:'employees', edit:'Edit', del:'Delete', view:'View', replaceImg:'Replace Image',
+    confirmDelete:'Are you sure you want to delete this OT sheet?', yesDelete:'Yes, Delete',
+    summaryTitle:'Monthly Summary', totalOtHours:'Total Overtime Hours',
+    month:'Month', exportCsv:'Export CSV', name:'Name', designation:'Designation',
+    noOfSheets:'No. of Sheets', totalHours:'Total Hours', total:'Total',
+    settingsTitle:'Settings', empMgmt:'Employees', divMgmt:'Divisions', langSet:'Language',
+    addEmployee:'+ Add Employee', addDivision:'+ Add Division',
+    active:'Active', inactive:'Inactive', deleteConfirmDiv:'Delete this division?',
+    cannotDeleteDefault:'Default divisions cannot be deleted', nameBn:'Name (Bengali)', nameEn:'Name (English)',
+    saveBtn:'Save', empName:'Employee Name', empDesig:'Designation', required:'required',
+    overlapErr:'Time conflict: this employee already has overtime at this time on another sheet',
+    fillRequired:'Please fill all required fields', selectAtLeastOne:'Select at least one employee',
+    savedOk:'Saved successfully', deletedOk:'Deleted', updatedOk:'Updated',
+    hours:'hrs', slotDefault:'Default Session', removeSlot:'Remove', na:'—',
+    imageOf:'Image —', close:'Close', currentMonth:'This Month',
+    noData:'No data', searchEmp:'Search employee...', all:'All',
+    account:'Account', loggedInAs:'Logged in as', changePw:'Change Password',
+    newPw:'New Password', pwChanged:'Password changed',
+    exportSheets:'Export Sheet List (CSV)', downloadImg:'Download Image',
+    empDeleted:'Employee deleted', divDeleted:'Division deleted',
+    calendar:'Daily Calendar', sheetsFor:'Sheets for',
+    otSheetsCount:'sheets', noEmployees:'No employees added yet', addSome:'Add employees from Settings',
+    permAdminOnly:'Only Admin can perform this action',
+    weekTbl:'Weekly View',
+  }
+};
+function t(key){ return (T[STATE.lang] && T[STATE.lang][key]) || key; }
+
+/* ---------- storage helpers ---------- */
+const LS = {
+  get(k, fallback){ try{ const v = localStorage.getItem(k); return v? JSON.parse(v): fallback; }catch(e){ return fallback; } },
+  set(k, v){ localStorage.setItem(k, JSON.stringify(v)); }
+};
+
+function uid(prefix){ return (prefix||'id') + '_' + Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
+
+/* ---------- seed data ---------- */
+function seedIfEmpty(){
+  if(!localStorage.getItem('otr_users')){
+    LS.set('otr_users', [
+      {username:'admin', password:'123', role:'admin'},
+      {username:'user', password:'123', role:'employee'}
+    ]);
+  }
+  if(!localStorage.getItem('otr_employees')){
+    LS.set('otr_employees', [
+      {id:uid('emp'), name:'জনাব মোঃ রেজাউল করিম', designation:'সিনিঃ ফোরম্যান', active:true},
+      {id:uid('emp'), name:'জনাব মোঃ ওমর ফারুক', designation:'সিনিঃ ফোরম্যান', active:true},
+      {id:uid('emp'), name:'জনাব মোঃ আলাল উদ্দিন', designation:'সিনিঃ টেকনিশিয়ান', active:true},
+      {id:uid('emp'), name:'জনাব মাসুদ রানা খান', designation:'জুনিঃ টেকনিশিয়ান', active:true},
+      {id:uid('emp'), name:'জনাব মমিন খন্দকার', designation:'জুনিঃ টেকনিশিয়ান', active:true},
+      {id:uid('emp'), name:'সুমন হোসেন', designation:'জুনিঃ টেকনিশিয়ান', active:true}
+    ]);
+  }
+  if(!localStorage.getItem('otr_divisions')){
+    LS.set('otr_divisions', [
+      {id:uid('div'), name_bn:'যান্ত্রিক, জিটি, নর্থ', name_en:'Mechanical, GT, North', is_default:true, active:true},
+      {id:uid('div'), name_bn:'যান্ত্রিক, এসটি, নর্থ', name_en:'Mechanical, ST, North', is_default:true, active:true}
+    ]);
+  }
+  if(!localStorage.getItem('otr_sheets')){ LS.set('otr_sheets', []); }
+  if(!localStorage.getItem('otr_lang')){ LS.set('otr_lang','bn'); }
+}
+seedIfEmpty();
+
+/* ---------- global state ---------- */
+const STATE = {
+  lang: LS.get('otr_lang','bn'),
+  session: LS.get('otr_session', null), // {username, role}
+  screen: 'login', // login | new | records | summary | settings
+  editingSheetId: null,
+  toastTimer: null
+};
+
+function users(){ return LS.get('otr_users', []); }
+function employees(){ return LS.get('otr_employees', []); }
+function divisions(){ return LS.get('otr_divisions', []); }
+function sheets(){ return LS.get('otr_sheets', []); }
+function saveUsers(v){ LS.set('otr_users', v); }
+function saveEmployees(v){ LS.set('otr_employees', v); }
+function saveDivisions(v){ LS.set('otr_divisions', v); }
+function saveSheets(v){ LS.set('otr_sheets', v); }
+
+function isAdmin(){ return STATE.session && STATE.session.role === 'admin'; }
+
+/* ---------- toast ---------- */
+function toast(msg, isErr){
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = isErr? 'show err':'show';
+  clearTimeout(STATE.toastTimer);
+  STATE.toastTimer = setTimeout(()=>{ el.className=''; }, 2600);
+}
+
+/* ---------- time utils ---------- */
+function toMin(hhmm){
+  if(!hhmm) return null;
+  const [h,m] = hhmm.split(':').map(Number);
+  return h*60+m;
+}
+function durationHours(start, end){
+  let s = toMin(start), e = toMin(end);
+  if(s===null||e===null) return 0;
+  if(e <= s) e += 24*60; // overnight
+  return +( (e-s)/60 ).toFixed(2);
+}
+function fmtHM(hhmm){ return hhmm || '—'; }
+function intervalsOverlap(aS,aE,bS,bE){
+  let as=toMin(aS), ae=toMin(aE), bs=toMin(bS), be=toMin(bE);
+  if(ae<=as) ae+=24*60;
+  if(be<=bs) be+=24*60;
+  return as < be && bs < ae;
+}
+
+/* find conflicting intervals for an employee on a date, across all sheets except excludeSheetId */
+function findConflicts(employeeId, date, newIntervals, excludeSheetId){
+  const conflicts = [];
+  sheets().forEach(sh=>{
+    if(sh.id === excludeSheetId) return;
+    if(sh.date !== date) return;
+    const empEntry = sh.employees.find(e=>e.employee_id===employeeId);
+    if(!empEntry) return;
+    empEntry.adjustments.forEach(adj=>{
+      newIntervals.forEach(ni=>{
+        if(intervalsOverlap(ni.start, ni.end, adj.actual_start, adj.actual_end)){
+          conflicts.push({sheet:sh, existing:adj});
+        }
+      });
+    });
+  });
+  return conflicts;
+}
+
+/* ---------- render root ---------- */
+function render(){
+  const root = document.getElementById('root');
+  document.documentElement.lang = STATE.lang;
+  if(!STATE.session){
+    root.innerHTML = renderLogin();
+    bindLogin();
+    return;
+  }
+  let body = '';
+  if(STATE.screen==='new') body = renderNewSheet();
+  else if(STATE.screen==='records') body = renderRecords();
+  else if(STATE.screen==='summary') body = renderSummary();
+  else if(STATE.screen==='settings') body = renderSettings();
+  else body = renderNewSheet();
+
+  root.innerHTML = `
+    ${renderTopbar()}
+    <main>${body}</main>
+    ${renderBottomNav()}
+  `;
+  bindGlobal();
+}
+
+/* ---------- topbar ---------- */
+function renderTopbar(){
+  return `
+  <div class="topbar">
+    <div class="brand">
+      <div class="brand-mark">OT</div>
+      <div>
+        <div class="brand-title">${t('appName')}</div>
+        <div class="brand-sub">${t('appSub')}</div>
+      </div>
+    </div>
+    <div class="topbar-actions">
+      <div class="icon-btn" id="btnLangTop" title="lang">${STATE.lang==='bn'?'EN':'বাং'}</div>
+      <div class="icon-btn" id="btnLogout" title="logout">⏻</div>
+    </div>
+  </div>`;
+}
+function renderBottomNav(){
+  const items = [
+    {id:'new', ico:'✎', label:t('navNew'), show:isAdmin()},
+    {id:'records', ico:'▤', label:t('navRecords'), show:true},
+    {id:'summary', ico:'◱', label:t('navSummary'), show:true},
+    {id:'settings', ico:'⚙', label:t('navSettings'), show:isAdmin()}
+  ].filter(i=>i.show);
+  return `<div class="bottomnav">
+    ${items.map(i=>`<div class="navitem ${STATE.screen===i.id?'active':''}" data-nav="${i.id}">
+      <div class="ni-ico">${i.ico}</div><div>${i.label}</div>
+    </div>`).join('')}
+  </div>`;
+}
+
+function bindGlobal(){
+  document.getElementById('btnLangTop').onclick = ()=>{
+    STATE.lang = STATE.lang==='bn'?'en':'bn';
+    LS.set('otr_lang', STATE.lang);
+    render();
+  };
+  document.getElementById('btnLogout').onclick = ()=>{
+    STATE.session = null;
+    LS.set('otr_session', null);
+    STATE.screen='login';
+    render();
+  };
+  document.querySelectorAll('[data-nav]').forEach(el=>{
+    el.onclick = ()=>{ STATE.screen = el.getAttribute('data-nav'); STATE.editingSheetId=null; render(); };
+  });
+  bindScreenSpecific();
+}
+
+/* =========================================================
+   LOGIN
+   ========================================================= */
+let loginRole = 'admin';
+function renderLogin(){
+  return `
+  <div class="login-wrap">
+    <div class="login-card">
+      <div class="login-logo">OT</div>
+      <div style="text-align:center;margin-bottom:20px;">
+        <div class="disp" style="font-size:19px;font-weight:700;">${T[STATE.lang].appName}</div>
+        <div style="font-size:12px;color:var(--ink-soft);margin-top:2px;">${T[STATE.lang].appSub}</div>
+      </div>
+      <div class="role-toggle">
+        <button data-role="admin" class="${loginRole==='admin'?'active':''}">${T[STATE.lang].roleAdmin}</button>
+        <button data-role="employee" class="${loginRole==='employee'?'active':''}">${T[STATE.lang].roleEmployee}</button>
+      </div>
+      <div class="field">
+        <label>${T[STATE.lang].username}</label>
+        <input type="text" id="loginUser" placeholder="${loginRole==='admin'?'admin':'user'}">
+      </div>
+      <div class="field">
+        <label>${T[STATE.lang].password}</label>
+        <input type="password" id="loginPass" placeholder="••••">
+      </div>
+      <div id="loginErrBox"></div>
+      <button class="btn btn-primary btn-block" id="btnSignIn">${T[STATE.lang].signin}</button>
+      <div style="text-align:center;margin-top:16px;">
+        <span class="lang-toggle">
+          <button data-l="bn" class="${STATE.lang==='bn'?'active':''}">বাংলা</button>
+          <button data-l="en" class="${STATE.lang==='en'?'active':''}">EN</button>
+        </span>
+      </div>
+    </div>
+  </div>`;
+}
+function bindLogin(){
+  document.querySelectorAll('[data-role]').forEach(b=>{
+    b.onclick = ()=>{ loginRole = b.getAttribute('data-role'); render(); };
+  });
+  document.querySelectorAll('[data-l]').forEach(b=>{
+    b.onclick = ()=>{ STATE.lang = b.getAttribute('data-l'); LS.set('otr_lang',STATE.lang); render(); };
+  });
+  document.getElementById('btnSignIn').onclick = doLogin;
+  document.getElementById('loginPass').addEventListener('keydown', e=>{ if(e.key==='Enter') doLogin(); });
+}
+function doLogin(){
+  const u = document.getElementById('loginUser').value.trim();
+  const p = document.getElementById('loginPass').value;
+  const found = users().find(x=>x.username===u && x.password===p && x.role===loginRole);
+  if(!found){
+    document.getElementById('loginErrBox').innerHTML = `<div class="warn-box">${t('loginErr')}</div>`;
+    return;
+  }
+  STATE.session = {username:found.username, role:found.role};
+  LS.set('otr_session', STATE.session);
+  STATE.screen = found.role==='admin' ? 'new' : 'records';
+  render();
+}
+
+/* =========================================================
+   NEW / EDIT OT SHEET
+   ========================================================= */
+let sheetDraft = null; // working draft object while building a sheet
+
+function freshDraft(){
+  return {
+    id: null,
+    date: new Date().toISOString().slice(0,10),
+    division_id: (divisions().find(d=>d.active)||{}).id || '',
+    work_description: '',
+    remarks: '',
+    slots: [ {id:uid('slot'), start:'16:00', end:'18:00'} ],
+    employees: [], // {employee_id, adjustments:[{slot_id, actual_start, actual_end}]}
+    image: null,
+    created_by: STATE.session ? STATE.session.username : '',
+    created_at: new Date().toISOString()
+  };
+}
+
+function loadDraftForEdit(sheetId){
+  const s = sheets().find(x=>x.id===sheetId);
+  sheetDraft = JSON.parse(JSON.stringify(s));
+}
+
+function renderNewSheet(){
+  if(!isAdmin() && !STATE.editingSheetId){
+    return `<div class="empty"><div class="ei">🔒</div><p>${t('permAdminOnly')}</p></div>`;
+  }
+  if(!sheetDraft || (STATE.editingSheetId && sheetDraft.id!==STATE.editingSheetId)){
+    if(STATE.editingSheetId) loadDraftForEdit(STATE.editingSheetId);
+    else sheetDraft = freshDraft();
+  }
+  const divs = divisions().filter(d=>d.active);
+  const emps = employees().filter(e=>e.active);
+  const isEdit = !!sheetDraft.id;
+
+  return `
+  <div class="section-head">
+    <div>
+      <h2>${isEdit? t('editSheetTitle') : t('newSheetTitle')}</h2>
+      <div class="sub">${sheetDraft.date}</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title"><span class="tag">01</span> ${t('date')} / ${t('division')}</div>
+    <div class="row2">
+      <div class="field">
+        <label>${t('date')}</label>
+        <input type="date" id="fDate" value="${sheetDraft.date}">
+      </div>
+      <div class="field">
+        <label>${t('division')}</label>
+        <select id="fDivision">
+          ${divs.map(d=>`<option value="${d.id}" ${d.id===sheetDraft.division_id?'selected':''}>${STATE.lang==='bn'?d.name_bn:d.name_en}</option>`).join('')}
+        </select>
+      </div>
+    </div>
+    <div class="field">
+      <label>${t('workDesc')}</label>
+      <textarea id="fWorkDesc" placeholder="${t('workDesc')}">${sheetDraft.work_description||''}</textarea>
+    </div>
+    <div class="field" style="margin-bottom:0;">
+      <label>${t('remarks')}</label>
+      <textarea id="fRemarks" placeholder="${t('remarks')}">${sheetDraft.remarks||''}</textarea>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title"><span class="tag">02</span> ${t('timeSlots')}</div>
+    <div id="slotsList">
+      ${sheetDraft.slots.map((s,i)=>`
+        <div class="slot-item">
+          <span class="mono">${i+1}</span>
+          <input type="time" value="${s.start}" data-slot-start="${s.id}" style="flex:1;">
+          <span>→</span>
+          <input type="time" value="${s.end}" data-slot-end="${s.id}" style="flex:1;">
+          ${sheetDraft.slots.length>1?`<button class="btn btn-sm btn-danger" data-slot-del="${s.id}">✕</button>`:''}
+        </div>
+      `).join('')}
+    </div>
+    <button class="btn btn-outline btn-sm" id="btnAddSlot" style="margin-top:4px;">${t('addSlot')}</button>
+  </div>
+
+  <div class="card">
+    <div class="card-title"><span class="tag">03</span> ${t('selectEmployees')}</div>
+    ${emps.length===0? `<div class="empty" style="padding:20px;"><p>${t('noEmployees')}</p></div>` : `
+    <div id="empChecklist">
+      ${emps.map(e=>renderEmpRow(e)).join('')}
+    </div>`}
+  </div>
+
+  <div class="card">
+    <div class="card-title"><span class="tag">04</span> ${t('uploadImage')}</div>
+    <div class="upload-box" id="uploadBox">${sheetDraft.image? '' : '📷 '+t('tapUpload')}</div>
+    <input type="file" id="fileImg" accept="image/*" style="display:none;">
+    ${sheetDraft.image? `<img src="${sheetDraft.image}" class="img-thumb" id="imgPreview">` : ''}
+  </div>
+
+  <div id="formErrBox"></div>
+
+  ${sheetDraft.employees.length>0 ? `
+  <button class="btn btn-primary btn-block" id="btnSaveSheet" style="margin-top:6px;">
+    ${isEdit? t('update') : t('save')}
+  </button>` : ''}
+  ${isEdit? `<button class="btn btn-outline btn-block" id="btnCancelEdit" style="margin-top:8px;">${t('cancel')}</button>`:''}
+  `;
+}
+
+function renderEmpRow(e){
+  const inSheet = sheetDraft.employees.find(x=>x.employee_id===e.id);
+  const checked = !!inSheet;
+  return `
+  <div>
+    <div class="emp-row">
+      <div class="emp-check ${checked?'checked':''}" data-emp-toggle="${e.id}">${checked?'✓':''}</div>
+      <div style="flex:1;">
+        <div class="emp-name">${e.name}</div>
+        <div class="emp-desig">${e.designation}</div>
+      </div>
+    </div>
+    ${checked? `
+    <div class="slot-adjust">
+      <div class="slot-adjust-title">${t('actualTime')}</div>
+      ${sheetDraft.slots.map((s,i)=>{
+        const adj = inSheet.adjustments.find(a=>a.slot_id===s.id) || {actual_start:s.start, actual_end:s.end};
+        return `
+        <div class="row2" style="margin-bottom:6px;">
+          <div>
+            <label style="margin-bottom:3px;">${t('start')} (${i+1})</label>
+            <input type="time" value="${adj.actual_start}" data-adj-start="${e.id}|${s.id}">
+          </div>
+          <div>
+            <label style="margin-bottom:3px;">${t('end')} (${i+1})</label>
+            <input type="time" value="${adj.actual_end}" data-adj-end="${e.id}|${s.id}">
+          </div>
+        </div>`;
+      }).join('')}
+    </div>` : ''}
+  </div>`;
+}
+
+function bindScreenSpecific(){
+  if(STATE.screen==='new') bindNewSheet();
+  else if(STATE.screen==='records') bindRecords();
+  else if(STATE.screen==='summary') bindSummary();
+  else if(STATE.screen==='settings') bindSettings();
+}
+
+function bindNewSheet(){
+  if(!isAdmin() && !STATE.editingSheetId) return;
+  const byId = id=>document.getElementById(id);
+  if(byId('fDate')) byId('fDate').onchange = e=>{ sheetDraft.date = e.target.value; };
+  if(byId('fDivision')) byId('fDivision').onchange = e=>{ sheetDraft.division_id = e.target.value; };
+  if(byId('fWorkDesc')) byId('fWorkDesc').oninput = e=>{ sheetDraft.work_description = e.target.value; };
+  if(byId('fRemarks')) byId('fRemarks').oninput = e=>{ sheetDraft.remarks = e.target.value; };
+
+  document.querySelectorAll('[data-slot-start]').forEach(el=>{
+    el.onchange = e=>{
+      const sid = el.getAttribute('data-slot-start');
+      const slot = sheetDraft.slots.find(s=>s.id===sid);
+      slot.start = e.target.value;
+    };
+  });
+  document.querySelectorAll('[data-slot-end]').forEach(el=>{
+    el.onchange = e=>{
+      const sid = el.getAttribute('data-slot-end');
+      const slot = sheetDraft.slots.find(s=>s.id===sid);
+      slot.end = e.target.value;
+    };
+  });
+  document.querySelectorAll('[data-slot-del]').forEach(el=>{
+    el.onclick = ()=>{
+      const sid = el.getAttribute('data-slot-del');
+      sheetDraft.slots = sheetDraft.slots.filter(s=>s.id!==sid);
+      sheetDraft.employees.forEach(e=>{ e.adjustments = e.adjustments.filter(a=>a.slot_id!==sid); });
+      render();
+    };
+  });
+  const addSlotBtn = byId('btnAddSlot');
+  if(addSlotBtn) addSlotBtn.onclick = ()=>{
+    const newSlot = {id:uid('slot'), start:'16:00', end:'18:00'};
+    sheetDraft.slots.push(newSlot);
+    sheetDraft.employees.forEach(e=>{
+      e.adjustments.push({slot_id:newSlot.id, actual_start:newSlot.start, actual_end:newSlot.end});
+    });
+    render();
+  };
+
+  document.querySelectorAll('[data-emp-toggle]').forEach(el=>{
+    el.onclick = ()=>{
+      const eid = el.getAttribute('data-emp-toggle');
+      const idx = sheetDraft.employees.findIndex(x=>x.employee_id===eid);
+      if(idx>=0){
+        sheetDraft.employees.splice(idx,1);
+      } else {
+        sheetDraft.employees.push({
+          employee_id: eid,
+          adjustments: sheetDraft.slots.map(s=>({slot_id:s.id, actual_start:s.start, actual_end:s.end}))
+        });
+      }
+      render();
+    };
+  });
+  document.querySelectorAll('[data-adj-start]').forEach(el=>{
+    el.onchange = e=>{
+      const [eid,sid] = el.getAttribute('data-adj-start').split('|');
+      const emp = sheetDraft.employees.find(x=>x.employee_id===eid);
+      const adj = emp.adjustments.find(a=>a.slot_id===sid);
+      adj.actual_start = e.target.value;
+    };
+  });
+  document.querySelectorAll('[data-adj-end]').forEach(el=>{
+    el.onchange = e=>{
+      const [eid,sid] = el.getAttribute('data-adj-end').split('|');
+      const emp = sheetDraft.employees.find(x=>x.employee_id===eid);
+      const adj = emp.adjustments.find(a=>a.slot_id===sid);
+      adj.actual_end = e.target.value;
+    };
+  });
+
+  const uploadBox = byId('uploadBox');
+  const fileInput = byId('fileImg');
+  if(uploadBox) uploadBox.onclick = ()=> fileInput.click();
+  if(fileInput) fileInput.onchange = e=>{
+    const file = e.target.files[0];
+    if(!file) return;
+    const reader = new FileReader();
+    reader.onload = ev=>{
+      sheetDraft.image = ev.target.result;
+      render();
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const saveBtn = byId('btnSaveSheet');
+  if(saveBtn) saveBtn.onclick = doSaveSheet;
+  const cancelBtn = byId('btnCancelEdit');
+  if(cancelBtn) cancelBtn.onclick = ()=>{
+    STATE.editingSheetId = null; sheetDraft = null; STATE.screen = 'records'; render();
+  };
+}
+
+function doSaveSheet(){
+  document.getElementById('formErrBox').innerHTML = '';
+  if(!sheetDraft.date || !sheetDraft.division_id){
+    document.getElementById('formErrBox').innerHTML = `<div class="warn-box">${t('fillRequired')}</div>`;
+    return;
+  }
+  if(sheetDraft.employees.length===0){
+    document.getElementById('formErrBox').innerHTML = `<div class="warn-box">${t('selectAtLeastOne')}</div>`;
+    return;
+  }
+  // overlap validation
+  const excludeId = sheetDraft.id;
+  // check within this sheet across employees not needed (different employees ok), but check each employee's own intervals for self-overlap across slots not required since slots typically distinct; still check external
+  for(const emp of sheetDraft.employees){
+    const intervals = emp.adjustments.map(a=>({start:a.actual_start, end:a.actual_end}));
+    const conflicts = findConflicts(emp.employee_id, sheetDraft.date, intervals, excludeId);
+    if(conflicts.length>0){
+      const empObj = employees().find(x=>x.id===emp.employee_id);
+      document.getElementById('formErrBox').innerHTML =
+        `<div class="warn-box">⚠ ${empObj? empObj.name:''} — ${t('overlapErr')}</div>`;
+      return;
+    }
+  }
+
+  const all = sheets();
+  if(sheetDraft.id){
+    const idx = all.findIndex(s=>s.id===sheetDraft.id);
+    sheetDraft.updated_by = STATE.session.username;
+    sheetDraft.updated_at = new Date().toISOString();
+    all[idx] = sheetDraft;
+    saveSheets(all);
+    toast(t('updatedOk'));
+  } else {
+    sheetDraft.id = uid('sheet');
+    sheetDraft.created_by = STATE.session.username;
+    sheetDraft.created_at = new Date().toISOString();
+    all.push(sheetDraft);
+    saveSheets(all);
+    toast(t('savedOk'));
+  }
+  STATE.editingSheetId = null;
+  sheetDraft = null;
+  STATE.screen = 'records';
+  render();
+}
+
+/* =========================================================
+   RECORDS
+   ========================================================= */
+let recordsFilter = '';
+function renderRecords(){
+  const all = sheets().slice().sort((a,b)=> b.date.localeCompare(a.date) || b.created_at.localeCompare(a.created_at));
+  const filtered = recordsFilter ? all.filter(s=>{
+    const div = divisions().find(d=>d.id===s.division_id);
+    const divName = div ? (STATE.lang==='bn'?div.name_bn:div.name_en) : '';
+    return (s.work_description||'').includes(recordsFilter) || (s.remarks||'').includes(recordsFilter) || divName.includes(recordsFilter) || s.date.includes(recordsFilter);
+  }) : all;
+
+  return `
+  <div class="section-head">
+    <div><h2>${t('recordsTitle')}</h2><div class="sub">${t('recordsSub')} · ${all.length} ${t('otSheetsCount')}</div></div>
+  </div>
+  <div class="search-box">
+    <input type="text" id="recSearch" placeholder="${t('searchEmp')}" value="${recordsFilter}">
+  </div>
+  ${filtered.length===0? `
+    <div class="empty">
+      <div class="ei">🗂️</div>
+      <p>${t('noRecords')}</p>
+      ${isAdmin()? `<button class="btn btn-amber" id="btnGoNew" style="margin-top:10px;">${t('createFirst')}</button>`:''}
+    </div>` :
+    filtered.map(s=>renderSheetCard(s)).join('')
+  }
+  `;
+}
+
+function renderSheetCard(s){
+  const div = divisions().find(d=>d.id===s.division_id);
+  const divName = div ? (STATE.lang==='bn'?div.name_bn:div.name_en) : t('na');
+  const empCount = s.employees.length;
+  let totalHrs = 0;
+  s.employees.forEach(e=> e.adjustments.forEach(a=> totalHrs += durationHours(a.actual_start,a.actual_end)));
+  return `
+  <div class="sheet-card">
+    <div class="date-block">${s.date}</div>
+    <h4>${divName}</h4>
+    <p>${(s.work_description||'').slice(0,120) || t('na')}</p>
+    <div class="sheet-meta">
+      <span class="badge badge-amber">${empCount} ${t('employees')}</span>
+      <span class="badge badge-moss">${totalHrs.toFixed(2)} ${t('hours')}</span>
+      ${s.image? `<span class="badge badge-gray">📷</span>`:''}
+    </div>
+    <div class="sheet-actions">
+      <button class="btn btn-outline btn-sm" data-view="${s.id}">${t('view')}</button>
+      ${isAdmin()? `<button class="btn btn-ghost btn-sm" data-edit="${s.id}">${t('edit')}</button>
+      <button class="btn btn-danger btn-sm" data-del="${s.id}">${t('del')}</button>` :
+      `<button class="btn btn-ghost btn-sm" data-imgonly="${s.id}">${t('replaceImg')}</button>`}
+    </div>
+  </div>`;
+}
+
+function bindRecords(){
+  const search = document.getElementById('recSearch');
+  if(search){
+    search.oninput = e=>{ recordsFilter = e.target.value; render(); };
+  }
+  const goNew = document.getElementById('btnGoNew');
+  if(goNew) goNew.onclick = ()=>{ STATE.screen='new'; sheetDraft=null; render(); };
+
+  document.querySelectorAll('[data-view]').forEach(el=>{
+    el.onclick = ()=> openViewModal(el.getAttribute('data-view'));
+  });
+  document.querySelectorAll('[data-edit]').forEach(el=>{
+    el.onclick = ()=>{
+      STATE.editingSheetId = el.getAttribute('data-edit');
+      sheetDraft = null;
+      STATE.screen = 'new';
+      render();
+    };
+  });
+  document.querySelectorAll('[data-del]').forEach(el=>{
+    el.onclick = ()=> openDeleteConfirm(el.getAttribute('data-del'));
+  });
+  document.querySelectorAll('[data-imgonly]').forEach(el=>{
+    el.onclick = ()=> openImageOnlyModal(el.getAttribute('data-imgonly'));
+  });
+}
+
+function openViewModal(sheetId){
+  const s = sheets().find(x=>x.id===sheetId);
+  const div = divisions().find(d=>d.id===s.division_id);
+  const divName = div ? (STATE.lang==='bn'?div.name_bn:div.name_en) : t('na');
+  const empRows = s.employees.map(e=>{
+    const emp = employees().find(x=>x.id===e.employee_id) || {name:'?',designation:''};
+    const hrs = e.adjustments.reduce((sum,a)=>sum+durationHours(a.actual_start,a.actual_end),0);
+    const times = e.adjustments.map(a=>`${fmtHM(a.actual_start)}–${fmtHM(a.actual_end)}`).join(', ');
+    return `<div class="emp-row"><div style="flex:1;">
+      <div class="emp-name">${emp.name}</div>
+      <div class="emp-desig">${emp.designation} · ${times}</div>
+    </div><span class="badge badge-moss">${hrs.toFixed(2)}${t('hours')}</span></div>`;
+  }).join('');
+
+  const modal = document.createElement('div');
+  modal.className = 'modal-bg';
+  modal.innerHTML = `
+    <div class="modal-box">
+      <div class="modal-handle"></div>
+      <div class="modal-title">${s.date} — ${divName}</div>
+      <div class="modal-sub">${s.work_description || t('na')}</div>
+      ${s.remarks? `<div class="info-box">${s.remarks}</div>`:''}
+      <div class="divider"></div>
+      ${empRows}
+      ${s.image? `<img src="${s.image}" class="img-thumb">
+        <button class="btn btn-outline btn-block btn-sm" id="btnDownloadImg" style="margin-top:8px;">${t('downloadImg')}</button>` : ''}
+      <button class="btn btn-primary btn-block" id="btnCloseModal" style="margin-top:14px;">${t('close')}</button>
+    </div>`;
+  document.body.appendChild(modal);
+  modal.onclick = e=>{ if(e.target===modal) modal.remove(); };
+  modal.querySelector('#btnCloseModal').onclick = ()=> modal.remove();
+  const dl = modal.querySelector('#btnDownloadImg');
+  if(dl) dl.onclick = ()=>{
+    const a = document.createElement('a');
+    a.href = s.image; a.download = `OT_${s.date}.jpg`;
+    a.click();
+  };
+}
+
+function openDeleteConfirm(sheetId){
+  const modal = document.createElement('div');
+  modal.className = 'modal-bg center';
+  modal.innerHTML = `
+    <div class="modal-box" style="border-radius:18px;">
+      <div class="modal-title">${t('del')}?</div>
+      <div class="modal-sub">${t('confirmDelete')}</div>
+      <div style="display:flex;gap:8px;margin-top:16px;">
+        <button class="btn btn-outline btn-block" id="btnNo">${t('cancel')}</button>
+        <button class="btn btn-danger btn-block" style="background:var(--rust);color:#fff;" id="btnYes">${t('yesDelete')}</button>
+      </div>
+    </div>`;
+  document.body.appendChild(modal);
+  modal.querySelector('#btnNo').onclick = ()=> modal.remove();
+  modal.querySelector('#btnYes').onclick = ()=>{
+    saveSheets(sheets().filter(s=>s.id!==sheetId));
+    modal.remove();
+    toast(t('deletedOk'));
+    render();
+  };
+}
+
+function openImageOnlyModal(sheetId){
+  const s = sheets().find(x=>x.id===sheetId);
+  const modal = document.createElement('div');
+  modal.className = 'modal-bg';
+  modal.innerHTML = `
+    <div class="modal-box">
+      <div class="modal-handle"></div>
+      <div class="modal-title">${t('replaceImg')}</div>
+      <div class="modal-sub">${s.date}</div>
+      ${s.image? `<img src="${s.image}" class="img-thumb">`:''}
+      <input type="file" accept="image/*" id="imgOnlyInput" style="margin-top:12px;">
+      <button class="btn btn-primary btn-block" id="btnSaveImgOnly" style="margin-top:14px;">${t('save')}</button>
+    </div>`;
+  document.body.appendChild(modal);
+  modal.onclick = e=>{ if(e.target===modal) modal.remove(); };
+  let newImg = null;
+  modal.querySelector('#imgOnlyInput').onchange = e=>{
+    const file = e.target.files[0];
+    if(!file) return;
+    const reader = new FileReader();
+    reader.onload = ev=>{ newImg = ev.target.result; };
+    reader.readAsDataURL(file);
+  };
+  modal.querySelector('#btnSaveImgOnly').onclick = ()=>{
+    if(newImg){
+      const all = sheets();
+      const idx = all.findIndex(x=>x.id===sheetId);
+      all[idx].image = newImg;
+      saveSheets(all);
+      toast(t('updatedOk'));
+    }
+    modal.remove();
+    render();
+  };
+}
+
+/* =========================================================
+   SUMMARY
+   ========================================================= */
+function currentMonthStr(){ const d=new Date(); return d.toISOString().slice(0,7); }
+let summaryMonth = currentMonthStr();
+
+function daysInMonth(ym){
+  const [y,m] = ym.split('-').map(Number);
+  return new Date(y, m, 0).getDate();
+}
+
+function computeMonthlyData(ym){
+  const dim = daysInMonth(ym);
+  const emps = employees();
+  const data = emps.map(e=>({emp:e, sheetsCount:0, totalHours:0, days:new Array(dim+1).fill(0)}));
+  sheets().forEach(s=>{
+    if(!s.date.startsWith(ym)) return;
+    const day = Number(s.date.split('-')[2]);
+    s.employees.forEach(se=>{
+      const rec = data.find(d=>d.emp.id===se.employee_id);
+      if(!rec) return;
+      let hrs = 0;
+      se.adjustments.forEach(a=> hrs += durationHours(a.actual_start,a.actual_end));
+      rec.sheetsCount += 1;
+      rec.totalHours += hrs;
+      rec.days[day] += hrs;
+    });
+  });
+  return {dim, data};
+}
+
+function renderSummary(){
+  const {dim, data} = computeMonthlyData(summaryMonth);
+  const grandTotal = data.reduce((s,d)=>s+d.totalHours,0);
+  const totalSheets = sheets().filter(s=>s.date.startsWith(summaryMonth)).length;
+
+  return `
+  <div class="section-head">
+    <div><h2>${t('totalOtHours')}</h2><div class="sub">${t('summaryTitle')}</div></div>
+  </div>
+  <div class="card">
+    <div class="row2" style="align-items:end;">
+      <div class="field" style="margin-bottom:0;">
+        <label>${t('month')}</label>
+        <input type="month" id="monthPicker" value="${summaryMonth}">
+      </div>
+      <button class="btn btn-amber" id="btnExportCsv">${t('exportCsv')}</button>
+    </div>
+  </div>
+
+  <div class="stat-row">
+    <div class="stat-box"><div class="sn mono">${grandTotal.toFixed(1)}</div><div class="sl">${t('totalHours')}</div></div>
+    <div class="stat-box"><div class="sn mono">${totalSheets}</div><div class="sl">${t('otSheetsCount')}</div></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title"><span class="tag">Σ</span> ${t('name')} / ${t('totalHours')}</div>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>${t('name')}</th><th>${t('designation')}</th><th>${t('noOfSheets')}</th><th>${t('totalHours')}</th></tr></thead>
+        <tbody>
+        ${data.length===0? `<tr><td colspan="4">${t('noData')}</td></tr>` :
+          data.map(d=>`<tr>
+            <td>${d.emp.name}</td>
+            <td>${d.emp.designation}</td>
+            <td>${d.sheetsCount}</td>
+            <td class="mono">${d.totalHours.toFixed(2)}</td>
+          </tr>`).join('')
+        }
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title"><span class="tag">☷</span> ${t('calendar')}</div>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr>
+          <th>${t('name')}</th>
+          ${Array.from({length:dim},(_,i)=>`<th>${i+1}</th>`).join('')}
+          <th>${t('total')}</th>
+        </tr></thead>
+        <tbody>
+        ${data.length===0? `<tr><td colspan="${dim+2}">${t('noData')}</td></tr>` :
+          data.map(d=>`<tr>
+            <td>${d.emp.name}</td>
+            ${d.days.slice(1).map(h=> h>0? `<td class="cell-h">${h.toFixed(0)===''+h.toFixed(0)?trimNum(h):h}</td>` : `<td class="cell-x">X</td>`).join('')}
+            <td class="mono" style="font-weight:700;">${d.totalHours.toFixed(1)}</td>
+          </tr>`).join('')
+        }
+        </tbody>
+      </table>
+    </div>
+  </div>
+  `;
+}
+function trimNum(n){ return (Math.round(n*100)/100).toString(); }
+
+function bindSummary(){
+  const mp = document.getElementById('monthPicker');
+  if(mp) mp.onchange = e=>{ summaryMonth = e.target.value; render(); };
+  const exp = document.getElementById('btnExportCsv');
+  if(exp) exp.onclick = exportMonthlyCsv;
+}
+
+function exportMonthlyCsv(){
+  const {dim, data} = computeMonthlyData(summaryMonth);
+  const headers = [t('name'), t('designation'), ...Array.from({length:dim},(_,i)=>String(i+1)), t('total')];
+  const rows = data.map(d=>[
+    d.emp.name, d.emp.designation,
+    ...d.days.slice(1).map(h=> h>0 ? trimNum(h) : 'X'),
+    d.totalHours.toFixed(2)
+  ]);
+  downloadCsv(`OT_Summary_${summaryMonth}.csv`, [headers, ...rows]);
+}
+
+function downloadCsv(filename, rows){
+  const csv = rows.map(r=> r.map(cell=>{
+    const s = String(cell ?? '');
+    return /[",\n]/.test(s) ? '"'+s.replace(/"/g,'""')+'"' : s;
+  }).join(',')).join('\r\n');
+  const blob = new Blob(['\uFEFF'+csv], {type:'text/csv;charset=utf-8;'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+/* =========================================================
+   SETTINGS
+   ========================================================= */
+let settingsTab = 'employees';
+function renderSettings(){
+  if(!isAdmin()) return `<div class="empty"><div class="ei">🔒</div><p>${t('permAdminOnly')}</p></div>`;
+  return `
+  <div class="section-head"><div><h2>${t('settingsTitle')}</h2></div></div>
+
+  <div class="pill-scroll">
+    <div class="pill ${settingsTab==='employees'?'active':''}" data-stab="employees">${t('empMgmt')}</div>
+    <div class="pill ${settingsTab==='divisions'?'active':''}" data-stab="divisions">${t('divMgmt')}</div>
+    <div class="pill ${settingsTab==='account'?'active':''}" data-stab="account">${t('account')}</div>
+  </div>
+
+  ${settingsTab==='employees'? renderEmpSettings() : ''}
+  ${settingsTab==='divisions'? renderDivSettings() : ''}
+  ${settingsTab==='account'? renderAccountSettings() : ''}
+  `;
+}
+
+function renderEmpSettings(){
+  const emps = employees();
+  return `
+  <div class="card">
+    <div class="card-title">${t('empMgmt')}</div>
+    ${emps.map(e=>`
+      <div class="emp-row">
+        <div style="flex:1;">
+          <div class="emp-name">${e.name} ${!e.active?`<span class="badge badge-gray">${t('inactive')}</span>`:''}</div>
+          <div class="emp-desig">${e.designation}</div>
+        </div>
+        <div style="display:flex;gap:6px;">
+          <button class="btn btn-ghost btn-sm" data-emp-edit="${e.id}">${t('edit')}</button>
+          <button class="btn btn-danger btn-sm" data-emp-del="${e.id}">${t('del')}</button>
+        </div>
+      </div>
+    `).join('')}
+    <button class="btn btn-amber btn-block" id="btnAddEmp" style="margin-top:10px;">${t('addEmployee')}</button>
+  </div>`;
+}
+
+function renderDivSettings(){
+  const divs = divisions();
+  return `
+  <div class="card">
+    <div class="card-title">${t('divMgmt')}</div>
+    ${divs.map(d=>`
+      <div class="emp-row">
+        <div style="flex:1;">
+          <div class="emp-name">${STATE.lang==='bn'?d.name_bn:d.name_en} ${d.is_default?`<span class="badge badge-gray">default</span>`:''}</div>
+          <div class="emp-desig">${STATE.lang==='bn'?d.name_en:d.name_bn}</div>
+        </div>
+        ${!d.is_default? `<button class="btn btn-danger btn-sm" data-div-del="${d.id}">${t('del')}</button>` : ''}
+      </div>
+    `).join('')}
+    <button class="btn btn-amber btn-block" id="btnAddDiv" style="margin-top:10px;">${t('addDivision')}</button>
+  </div>`;
+}
+
+function renderAccountSettings(){
+  return `
+  <div class="card">
+    <div class="card-title">${t('account')}</div>
+    <p style="font-size:13px;color:var(--ink-soft);margin:0 0 12px;">${t('loggedInAs')}: <b>${STATE.session.username}</b> (${STATE.session.role==='admin'?t('roleAdmin'):t('roleEmployee')})</p>
+    <div class="field">
+      <label>${t('changePw')} — Admin</label>
+      <input type="password" id="pwAdmin" placeholder="${t('newPw')}">
+    </div>
+    <div class="field">
+      <label>${t('changePw')} — ${t('roleEmployee')}</label>
+      <input type="password" id="pwEmp" placeholder="${t('newPw')}">
+    </div>
+    <button class="btn btn-primary btn-block" id="btnSavePw">${t('saveBtn')}</button>
+  </div>
+  <div class="card">
+    <div class="card-title">${t('langSet')}</div>
+    <div class="lang-toggle">
+      <button data-l2="bn" class="${STATE.lang==='bn'?'active':''}">বাংলা</button>
+      <button data-l2="en" class="${STATE.lang==='en'?'active':''}">English</button>
+    </div>
+  </div>`;
+}
+
+function bindSettings(){
+  document.querySelectorAll('[data-stab]').forEach(el=>{
+    el.onclick = ()=>{ settingsTab = el.getAttribute('data-stab'); render(); };
+  });
+
+  // employees
+  const addEmpBtn = document.getElementById('btnAddEmp');
+  if(addEmpBtn) addEmpBtn.onclick = ()=> openEmpModal(null);
+  document.querySelectorAll('[data-emp-edit]').forEach(el=>{
+    el.onclick = ()=> openEmpModal(el.getAttribute('data-emp-edit'));
+  });
+  document.querySelectorAll('[data-emp-del]').forEach(el=>{
+    el.onclick = ()=>{
+      const id = el.getAttribute('data-emp-del');
+      const all = employees();
+      saveEmployees(all.filter(e=>e.id!==id));
+      toast(t('empDeleted'));
+      render();
+    };
+  });
+
+  // divisions
+  const addDivBtn = document.getElementById('btnAddDiv');
+  if(addDivBtn) addDivBtn.onclick = ()=> openDivModal();
+  document.querySelectorAll('[data-div-del]').forEach(el=>{
+    el.onclick = ()=>{
+      const id = el.getAttribute('data-div-del');
+      const div = divisions().find(d=>d.id===id);
+      if(div.is_default){ toast(t('cannotDeleteDefault'), true); return; }
+      saveDivisions(divisions().filter(d=>d.id!==id));
+      toast(t('divDeleted'));
+      render();
+    };
+  });
+
+  // account
+  document.querySelectorAll('[data-l2]').forEach(el=>{
+    el.onclick = ()=>{ STATE.lang = el.getAttribute('data-l2'); LS.set('otr_lang',STATE.lang); render(); };
+  });
+  const savePwBtn = document.getElementById('btnSavePw');
+  if(savePwBtn) savePwBtn.onclick = ()=>{
+    const pa = document.getElementById('pwAdmin').value.trim();
+    const pe = document.getElementById('pwEmp').value.trim();
+    const all = users();
+    let changed = false;
+    if(pa){ const u=all.find(x=>x.role==='admin'); if(u){u.password=pa; changed=true;} }
+    if(pe){ const u=all.find(x=>x.role==='employee'); if(u){u.password=pe; changed=true;} }
+    if(changed){ saveUsers(all); toast(t('pwChanged')); render(); }
+  };
+}
+
+function openEmpModal(empId){
+  const emp = empId ? employees().find(e=>e.id===empId) : {name:'', designation:'', active:true};
+  const modal = document.createElement('div');
+  modal.className = 'modal-bg center';
+  modal.innerHTML = `
+    <div class="modal-box">
+      <div class="modal-title">${empId? t('edit') : t('addEmployee')}</div>
+      <div class="field">
+        <label>${t('empName')}</label>
+        <input type="text" id="mEmpName" value="${emp.name}">
+      </div>
+      <div class="field">
+        <label>${t('empDesig')}</label>
+        <input type="text" id="mEmpDesig" value="${emp.designation}">
+      </div>
+      <div style="display:flex;gap:8px;">
+        <button class="btn btn-outline btn-block" id="mCancel">${t('cancel')}</button>
+        <button class="btn btn-primary btn-block" id="mSave">${t('saveBtn')}</button>
+      </div>
+    </div>`;
+  document.body.appendChild(modal);
+  modal.querySelector('#mCancel').onclick = ()=> modal.remove();
+  modal.querySelector('#mSave').onclick = ()=>{
+    const name = document.getElementById('mEmpName').value.trim();
+    const desig = document.getElementById('mEmpDesig').value.trim();
+    if(!name){ toast(t('fillRequired'), true); return; }
+    const all = employees();
+    if(empId){
+      const rec = all.find(e=>e.id===empId);
+      rec.name = name; rec.designation = desig;
+    } else {
+      all.push({id:uid('emp'), name, designation:desig, active:true});
+    }
+    saveEmployees(all);
+    modal.remove();
+    toast(t('savedOk'));
+    render();
+  };
+}
+
+function openDivModal(){
+  const modal = document.createElement('div');
+  modal.className = 'modal-bg center';
+  modal.innerHTML = `
+    <div class="modal-box">
+      <div class="modal-title">${t('addDivision')}</div>
+      <div class="field">
+        <label>${t('nameBn')}</label>
+        <input type="text" id="mDivBn">
+      </div>
+      <div class="field">
+        <label>${t('nameEn')}</label>
+        <input type="text" id="mDivEn">
+      </div>
+      <div style="display:flex;gap:8px;">
+        <button class="btn btn-outline btn-block" id="mCancel">${t('cancel')}</button>
+        <button class="btn btn-primary btn-block" id="mSave">${t('saveBtn')}</button>
+      </div>
+    </div>`;
+  document.body.appendChild(modal);
+  modal.querySelector('#mCancel').onclick = ()=> modal.remove();
+  modal.querySelector('#mSave').onclick = ()=>{
+    const bn = document.getElementById('mDivBn').value.trim();
+    const en = document.getElementById('mDivEn').value.trim();
+    if(!bn && !en){ toast(t('fillRequired'), true); return; }
+    const all = divisions();
+    all.push({id:uid('div'), name_bn:bn||en, name_en:en||bn, is_default:false, active:true});
+    saveDivisions(all);
+    modal.remove();
+    toast(t('savedOk'));
+    render();
+  };
+}
+
+/* ---------- boot ---------- */
+if(STATE.session){
+  STATE.screen = STATE.session.role==='admin' ? 'new' : 'records';
+}
+render();
+</script>
+</body>
+</html>
