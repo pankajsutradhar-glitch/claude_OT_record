@@ -10,8 +10,6 @@
 <title>OT_Record — অতিরিক্ত কর্মঘন্টা ব্যবস্থাপনা</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-<script src="https://accounts.google.com/gsi/client" async defer></script>
-<script src="https://apis.google.com/js/api.js"></script>
 <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
 <style>
 :root{
@@ -44,7 +42,6 @@ body{
 .disp{font-family:'Space Grotesk',sans-serif;}
 #root{max-width:560px;margin:0 auto;min-height:100vh;position:relative;padding-bottom:82px;}
 
-/* Top bar */
 .topbar{
   position:sticky;top:0;z-index:30;
   background:var(--ink);
@@ -73,7 +70,6 @@ body{
 
 main{padding:16px 16px 24px;}
 
-/* Cards */
 .card{
   background:var(--white);
   border:1px solid var(--line);
@@ -89,7 +85,6 @@ main{padding:16px 16px 24px;}
   padding:2px 6px;border-radius:5px;letter-spacing:.05em;
 }
 
-/* Form */
 label{display:block;font-size:12px;font-weight:600;color:var(--ink-soft);margin:0 0 6px;letter-spacing:.01em;}
 input[type=text],input[type=password],input[type=date],input[type=time],input[type=number],textarea,select{
   width:100%;padding:11px 12px;border:1.5px solid var(--line);border-radius:10px;
@@ -101,7 +96,6 @@ textarea{resize:vertical;min-height:64px;}
 .field{margin-bottom:14px;}
 .row2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
 
-/* Buttons */
 .btn{
   display:inline-flex;align-items:center;justify-content:center;gap:7px;
   padding:11px 18px;border-radius:10px;border:none;font-weight:600;font-size:14px;
@@ -117,7 +111,6 @@ textarea{resize:vertical;min-height:64px;}
 .btn-block{width:100%;}
 .btn-sm{padding:7px 12px;font-size:12.5px;border-radius:8px;}
 
-/* Bottom nav */
 .bottomnav{
   position:fixed;bottom:0;left:50%;transform:translateX(-50%);
   width:100%;max-width:560px;
@@ -134,14 +127,12 @@ textarea{resize:vertical;min-height:64px;}
 .navitem .ni-ico{font-size:18px;line-height:1;}
 .navitem.active{color:var(--amber-2);}
 
-/* chips / badges */
 .badge{display:inline-block;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:600;}
 .badge-amber{background:rgba(199,124,44,.12);color:var(--amber);}
 .badge-moss{background:rgba(75,122,90,.12);color:var(--moss);}
 .badge-rust{background:rgba(176,72,59,.12);color:var(--rust);}
 .badge-gray{background:var(--paper-2);color:var(--ink-soft);}
 
-/* list rows */
 .sheet-card{
   background:#fff;border:1px solid var(--line);border-radius:var(--radius);
   padding:14px;margin-bottom:10px;box-shadow:var(--shadow);
@@ -154,7 +145,6 @@ textarea{resize:vertical;min-height:64px;}
 .sheet-meta{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;}
 .sheet-actions{display:flex;gap:8px;margin-top:10px;}
 
-/* employee checklist */
 .emp-row{
   display:flex;align-items:center;gap:10px;padding:10px 4px;border-bottom:1px solid var(--paper-2);
 }
@@ -172,14 +162,12 @@ textarea{resize:vertical;min-height:64px;}
 }
 .slot-adjust-title{font-size:11px;font-weight:600;color:var(--ink-soft);margin-bottom:6px;}
 
-/* time slot editor */
 .slot-item{
   display:flex;align-items:center;gap:8px;margin-bottom:8px;padding:8px 10px;
   background:var(--paper);border-radius:10px;
 }
 .slot-item span{font-size:12px;color:var(--ink-soft);}
 
-/* select-all bar */
 .selectall-bar{
   display:flex;align-items:center;justify-content:space-between;
   padding:9px 10px;background:var(--paper);border-radius:10px;margin-bottom:8px;
@@ -187,7 +175,6 @@ textarea{resize:vertical;min-height:64px;}
 }
 .selectall-bar span{font-size:12.5px;font-weight:600;color:var(--ink-soft);}
 
-/* login / connect */
 .login-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;}
 .login-card{width:100%;max-width:380px;background:#fff;border-radius:20px;padding:32px 26px;box-shadow:0 10px 40px rgba(15,46,44,.15);border:1px solid var(--line);}
 .login-logo{width:56px;height:56px;border-radius:14px;background:linear-gradient(135deg,var(--amber),var(--rust));display:flex;align-items:center;justify-content:center;color:#fff;font-family:'Space Grotesk';font-weight:700;font-size:22px;margin:0 auto 16px;}
@@ -197,7 +184,6 @@ textarea{resize:vertical;min-height:64px;}
 .spin{width:34px;height:34px;border:3px solid var(--paper-2);border-top-color:var(--amber);border-radius:50%;margin:0 auto 16px;animation:spin 0.8s linear infinite;}
 @keyframes spin{to{transform:rotate(360deg);}}
 
-/* summary table */
 .tbl-wrap{overflow-x:auto;border-radius:10px;border:1px solid var(--line);}
 table{border-collapse:collapse;width:100%;font-size:12px;}
 th,td{padding:8px 9px;text-align:center;white-space:nowrap;border-bottom:1px solid var(--paper-2);}
@@ -209,12 +195,10 @@ tr:nth-child(even) td:first-child{background:#FBFAF7;}
 .cell-x{color:#C7C2B4;}
 .cell-h{color:var(--moss);font-weight:600;}
 
-/* empty state */
 .empty{text-align:center;padding:48px 20px;color:var(--ink-soft);}
 .empty .ei{font-size:38px;margin-bottom:10px;opacity:.5;}
 .empty p{font-size:13.5px;margin:4px 0;}
 
-/* toast */
 #toast{
   position:fixed;bottom:96px;left:50%;transform:translateX(-50%) translateY(20px);
   background:var(--ink);color:var(--paper);padding:11px 20px;border-radius:30px;
@@ -224,7 +208,6 @@ tr:nth-child(even) td:first-child{background:#FBFAF7;}
 #toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
 #toast.err{background:var(--rust);}
 
-/* modal */
 .modal-bg{position:fixed;inset:0;background:rgba(15,46,44,.45);z-index:200;display:flex;align-items:flex-end;justify-content:center;}
 .modal-bg.center{align-items:center;padding:20px;}
 .modal-box{
@@ -240,7 +223,6 @@ tr:nth-child(even) td:first-child{background:#FBFAF7;}
 .modal-title{font-size:16px;font-weight:700;margin:0 0 4px;}
 .modal-sub{font-size:12px;color:var(--ink-soft);margin:0 0 16px;}
 
-/* segmented lang */
 .lang-toggle{display:flex;gap:6px;}
 .lang-toggle button{padding:6px 12px;border-radius:8px;border:1.5px solid var(--line);background:#fff;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;}
 .lang-toggle button.active{background:var(--ink);color:#fff;border-color:var(--ink);}
@@ -276,7 +258,6 @@ tr:nth-child(even) td:first-child{background:#FBFAF7;}
 .warn-box{background:rgba(176,72,59,.08);border:1px solid rgba(176,72,59,.25);color:var(--rust);border-radius:10px;padding:10px 12px;font-size:12.5px;margin-bottom:12px;font-weight:500;}
 .info-box{background:rgba(75,122,90,.08);border:1px solid rgba(75,122,90,.25);color:var(--moss);border-radius:10px;padding:10px 12px;font-size:12.5px;margin-bottom:12px;}
 
-/* cloud sync */
 .sync-dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px;}
 .sync-dot.on{background:var(--moss);box-shadow:0 0 0 3px rgba(75,122,90,.15);}
 .sync-dot.off{background:#C7C2B4;}
@@ -294,9 +275,12 @@ tr:nth-child(even) td:first-child{background:#FBFAF7;}
 
 <script>
 /* =========================================================
-   OT_Record — GitHub-Pages web app backed by Google Sheets
-   Data lives in a Google Spreadsheet the user owns; images
-   live in a Drive folder. Auth via Google OAuth (GIS).
+   OT_Record — GitHub Pages frontend
+   Talks ONLY to a Google Apps Script Web App (JSON API) over
+   HTTPS. No Google OAuth, Client ID, API key, or Spreadsheet ID
+   ever appears in this file or the browser. Login is plain
+   username + password; the Apps Script backend hashes and
+   verifies passwords and issues session tokens server-side.
    ========================================================= */
 
 /* ---------- i18n ---------- */
@@ -305,6 +289,7 @@ const T = {
     appName:'OT_Record', appSub:'অতিরিক্ত কর্মঘন্টা ব্যবস্থাপনা',
     login:'লগইন', username:'ইউজারনেম', password:'পাসওয়ার্ড', signin:'প্রবেশ করুন',
     roleAdmin:'অ্যাডমিন', roleEmployee:'কর্মচারী', loginErr:'ইউজারনেম বা পাসওয়ার্ড সঠিক নয়',
+    lockedOut:'অনেকবার ভুল চেষ্টার কারণে সাময়িকভাবে বন্ধ, ১৫ মিনিট পর আবার চেষ্টা করুন',
     navNew:'নতুন শিট', navRecords:'রেকর্ডস', navSummary:'সারাংশ', navSettings:'সেটিংস', navLogout:'লগআউট',
     newSheetTitle:'নতুন ওটি শিট তৈরী', editSheetTitle:'ওটি শিট সম্পাদনা',
     date:'তারিখ', division:'বিভাগ', workDesc:'অতিরিক্ত কাজের বিবরণী', remarks:'মন্তব্য',
@@ -314,55 +299,45 @@ const T = {
     save:'সংরক্ষণ করুন', cancel:'বাতিল', update:'আপডেট করুন',
     recordsTitle:'ওটি শিট রেকর্ডস', recordsSub:'শিট অনুযায়ী প্রদর্শিত',
     noRecords:'কোনো ওটি শিট পাওয়া যায়নি', createFirst:'নতুন শিট তৈরি করুন',
-    employees:'জন কর্মচারী', edit:'সম্পাদনা', del:'মুছুন', view:'দেখুন', replaceImg:'ছবি পরিবর্তন',
+    employees:'জন কর্মচারী', edit:'সম্পাদনা', del:'মুছুন', view:'দেখুন',
     confirmDelete:'আপনি কি নিশ্চিতভাবে এই ওটি শিটটি মুছে ফেলতে চান?', yesDelete:'হ্যাঁ, মুছুন',
     summaryTitle:'মাসিক সারাংশ', totalOtHours:'মোট ওভারটাইম ঘন্টা',
     month:'মাস', exportCsv:'রিপোর্ট এক্সপোর্ট (Excel)', name:'নাম', designation:'পদবী',
     noOfSheets:'শিট সংখ্যা', totalHours:'মোট ঘন্টা', total:'মোট',
     settingsTitle:'সেটিংস', empMgmt:'কর্মচারী তালিকা', divMgmt:'বিভাগ তালিকা', langSet:'ভাষা',
     addEmployee:'+ কর্মচারী যোগ করুন', addDivision:'+ বিভাগ যোগ করুন',
-    active:'সক্রিয়', inactive:'নিষ্ক্রিয়', deleteConfirmDiv:'এই বিভাগটি মুছে ফেলবেন?',
+    active:'সক্রিয়', inactive:'নিষ্ক্রিয়',
     cannotDeleteDefault:'ডিফল্ট বিভাগ মুছে ফেলা যাবে না', nameBn:'নাম (বাংলা)', nameEn:'নাম (ইংরেজি)',
     saveBtn:'সংরক্ষণ', empName:'কর্মচারীর নাম', empDesig:'পদবী', required:'আবশ্যক',
     empCode:'কর্মচারী আইডি (ঐচ্ছিক)', empSalary:'মূল বেতন (ঐচ্ছিক)',
     restoreDefaults:'ডিফল্ট কর্মচারী পুনরুদ্ধার করুন', noneMissing:'সবগুলো ডিফল্ট কর্মচারী ইতিমধ্যে আছে',
-    xlsxNotLoaded:'রিপোর্ট লাইব্রেরি লোড হয়নি, ইন্টারনেট সংযোগ যাচাই করুন',
     overlapErr:'সময় দ্বন্দ্ব: এই কর্মচারীর অন্য একটি শিটে একই সময়ে ওভারটাইম রয়েছে',
     fillRequired:'অনুগ্রহ করে সব আবশ্যক তথ্য পূরণ করুন', selectAtLeastOne:'অন্তত একজন কর্মচারী নির্বাচন করুন',
     savedOk:'সফলভাবে সংরক্ষিত হয়েছে', deletedOk:'মুছে ফেলা হয়েছে', updatedOk:'আপডেট হয়েছে',
-    hours:'ঘন্টা', slotDefault:'ডিফল্ট সেশন', removeSlot:'অপসারণ', na:'নেই',
-    close:'বন্ধ করুন',
-    noData:'কোনো তথ্য নেই', searchEmp:'কর্মচারী খুঁজুন...', all:'সকল',
+    hours:'ঘন্টা', na:'নেই', close:'বন্ধ করুন',
+    noData:'কোনো তথ্য নেই', searchEmp:'কর্মচারী খুঁজুন...',
     account:'অ্যাকাউন্ট', loggedInAs:'লগইন করা হয়েছে', changePw:'পাসওয়ার্ড পরিবর্তন',
     newPw:'নতুন পাসওয়ার্ড', pwChanged:'পাসওয়ার্ড পরিবর্তিত হয়েছে',
-    downloadImg:'ছবি ডাউনলোড',
     empDeleted:'কর্মচারী মুছে ফেলা হয়েছে', divDeleted:'বিভাগ মুছে ফেলা হয়েছে',
     calendar:'দৈনিক ক্যালেন্ডার',
-    otSheetsCount:'টি শিট', noEmployees:'কোনো কর্মচারী যোগ করা হয়নি', addSome:'সেটিংসে গিয়ে কর্মচারী যোগ করুন',
-    permNoExport:'শুধুমাত্র অ্যাডমিন CSV এক্সপোর্ট করতে পারবেন',
+    otSheetsCount:'টি শিট', noEmployees:'কোনো কর্মচারী যোগ করা হয়নি',
     permNoAddEmp:'শুধুমাত্র অ্যাডমিন নতুন কর্মচারী যোগ করতে পারবেন',
     selectAll:'সকল কর্মচারী নির্বাচন করুন', deselectAll:'সকল বাদ দিন',
-    cloudTab:'গুগল সিঙ্ক', syncTab:'গুগল শীট সিঙ্ক',
-    connectGoogle:'গুগল একাউন্ট কানেক্ট করুন', connecting:'সংযোগ হচ্ছে...',
-    setupClientTitle:'গুগল API সেটআপ',
-    clientIdLabel:'OAuth ক্লায়েন্ট আইডি', apiKeyLabel:'API কী (Picker-এর জন্য)',
-    saveContinue:'সংরক্ষণ করে এগিয়ে যান',
-    chooseSpreadsheetTitle:'ডেটাবেজ স্প্রেডশিট বেছে নিন',
-    createNewSS:'নতুন স্প্রেডশিট তৈরি করুন', pickExistingSS:'বিদ্যমান স্প্রেডশিট বেছে নিন',
-    connectedAs:'সংযুক্ত ইমেইল', lastSynced:'শেষ সিঙ্ক', syncNow:'এখনই সিঙ্ক করুন', pullNow:'পুনরায় লোড করুন',
-    disconnect:'বিচ্ছিন্ন করুন', changeSpreadsheet:'স্প্রেডশিট পরিবর্তন করুন',
-    openSheet:'গুগল শীটে খুলুন',
-    loadingData:'ডেটা লোড হচ্ছে...',
-    editCreds:'ক্রেডেনশিয়াল পরিবর্তন করুন',
-    statusOn:'সংযুক্ত', statusOff:'সংযোগ বিচ্ছিন্ন', statusBusy:'সিঙ্ক হচ্ছে...',
-    reconnect:'পুনরায় সংযোগ করুন', tokenExpired:'সংযোগের মেয়াদ শেষ, পুনরায় সংযোগ করুন',
-    gsiNotLoaded:'গুগল লাইব্রেরি লোড হয়নি, ইন্টারনেট যাচাই করুন',
-    needClientId:'প্রথমে ক্লায়েন্ট আইডি ও API কী লিখুন',
+    setupApiTitle:'সার্ভার সংযোগ সেটআপ', apiUrlLabel:'Apps Script Web App URL',
+    apiUrlHelp:'আপনার প্রকাশিত (deployed) Google Apps Script Web App-এর URL এখানে বসান। এই URL গোপন তথ্য নয় — শুধু আপনার সার্ভারের ঠিকানা।',
+    saveContinue:'সংরক্ষণ করে এগিয়ে যান', connecting:'সংযোগ হচ্ছে...',
+    xlsxNotLoaded:'রিপোর্ট লাইব্রেরি লোড হয়নি, ইন্টারনেট সংযোগ যাচাই করুন',
+    networkErr:'সার্ভারের সাথে সংযোগ করা যায়নি, ইন্টারনেট ও URL যাচাই করুন',
+    editApiUrl:'সার্ভার ঠিকানা পরিবর্তন করুন', sessionExpired:'সেশনের মেয়াদ শেষ, আবার লগইন করুন',
+    orgTab:'প্রতিষ্ঠান', orgHeaderText:'রিপোর্ট শিরোনাম', orgWeekLine1:'সাপ্তাহিক হেডার লাইন ১',
+    orgWeekLine2:'সাপ্তাহিক হেডার লাইন ২', orgWeekLine3:'সাপ্তাহিক হেডার লাইন ৩',
+    orgSig1:'স্বাক্ষর ১', orgSig2:'স্বাক্ষর ২', orgSig3:'স্বাক্ষর ৩', orgSig4:'স্বাক্ষর ৪', orgSig5:'স্বাক্ষর ৫',
   },
   en:{
     appName:'OT_Record', appSub:'Employee Overtime Manager',
     login:'Login', username:'Username', password:'Password', signin:'Sign In',
     roleAdmin:'Admin', roleEmployee:'Employee', loginErr:'Incorrect username or password',
+    lockedOut:'Too many failed attempts — try again in 15 minutes',
     navNew:'New Sheet', navRecords:'Records', navSummary:'Summary', navSettings:'Settings', navLogout:'Logout',
     newSheetTitle:'Create OT Sheet', editSheetTitle:'Edit OT Sheet',
     date:'Date', division:'Division', workDesc:'Work Description', remarks:'Remarks',
@@ -372,79 +347,61 @@ const T = {
     save:'Save', cancel:'Cancel', update:'Update',
     recordsTitle:'OT Sheet Records', recordsSub:'Shown by sheet',
     noRecords:'No OT sheets found', createFirst:'Create your first sheet',
-    employees:'employees', edit:'Edit', del:'Delete', view:'View', replaceImg:'Replace Image',
+    employees:'employees', edit:'Edit', del:'Delete', view:'View',
     confirmDelete:'Are you sure you want to delete this OT sheet?', yesDelete:'Yes, Delete',
     summaryTitle:'Monthly Summary', totalOtHours:'Total Overtime Hours',
     month:'Month', exportCsv:'Export Report (Excel)', name:'Name', designation:'Designation',
     noOfSheets:'No. of Sheets', totalHours:'Total Hours', total:'Total',
     settingsTitle:'Settings', empMgmt:'Employees', divMgmt:'Divisions', langSet:'Language',
     addEmployee:'+ Add Employee', addDivision:'+ Add Division',
-    active:'Active', inactive:'Inactive', deleteConfirmDiv:'Delete this division?',
+    active:'Active', inactive:'Inactive',
     cannotDeleteDefault:'Default divisions cannot be deleted', nameBn:'Name (Bengali)', nameEn:'Name (English)',
     saveBtn:'Save', empName:'Employee Name', empDesig:'Designation', required:'required',
     empCode:'Employee ID (optional)', empSalary:'Basic Salary (optional)',
     restoreDefaults:'Restore Default Employees', noneMissing:'All default employees are already present',
-    xlsxNotLoaded:'Report library failed to load — check your internet connection',
     overlapErr:'Time conflict: this employee already has overtime at this time on another sheet',
     fillRequired:'Please fill all required fields', selectAtLeastOne:'Select at least one employee',
     savedOk:'Saved successfully', deletedOk:'Deleted', updatedOk:'Updated',
-    hours:'hrs', slotDefault:'Default Session', removeSlot:'Remove', na:'—',
-    close:'Close',
-    noData:'No data', searchEmp:'Search employee...', all:'All',
+    hours:'hrs', na:'—', close:'Close',
+    noData:'No data', searchEmp:'Search employee...',
     account:'Account', loggedInAs:'Logged in as', changePw:'Change Password',
     newPw:'New Password', pwChanged:'Password changed',
-    downloadImg:'Download Image',
     empDeleted:'Employee deleted', divDeleted:'Division deleted',
     calendar:'Daily Calendar',
-    otSheetsCount:'sheets', noEmployees:'No employees added yet', addSome:'Add employees from Settings',
-    permNoExport:'Only Admin can export CSV',
+    otSheetsCount:'sheets', noEmployees:'No employees added yet',
     permNoAddEmp:'Only Admin can add new employees',
     selectAll:'Select All Employees', deselectAll:'Deselect All',
-    cloudTab:'Google Sync', syncTab:'Google Sheets Sync',
-    connectGoogle:'Connect Google Account', connecting:'Connecting...',
-    setupClientTitle:'Google API Setup',
-    clientIdLabel:'OAuth Client ID', apiKeyLabel:'API Key (for Picker)',
-    saveContinue:'Save & Continue',
-    chooseSpreadsheetTitle:'Choose Database Spreadsheet',
-    createNewSS:'Create New Spreadsheet', pickExistingSS:'Pick Existing Spreadsheet',
-    connectedAs:'Connected as', lastSynced:'Last synced', syncNow:'Sync Now', pullNow:'Reload',
-    disconnect:'Disconnect', changeSpreadsheet:'Change Spreadsheet',
-    openSheet:'Open in Google Sheets',
-    loadingData:'Loading data...',
-    editCreds:'Edit Credentials',
-    statusOn:'Connected', statusOff:'Disconnected', statusBusy:'Syncing...',
-    reconnect:'Reconnect', tokenExpired:'Connection expired — please reconnect',
-    gsiNotLoaded:'Google library failed to load — check your internet connection',
-    needClientId:'Enter your Client ID and API Key first',
+    setupApiTitle:'Server Connection Setup', apiUrlLabel:'Apps Script Web App URL',
+    apiUrlHelp:"Paste your deployed Google Apps Script Web App URL here. This URL isn't secret — it's just your server's address.",
+    saveContinue:'Save & Continue', connecting:'Connecting...',
+    xlsxNotLoaded:'Report library failed to load — check your internet connection',
+    networkErr:'Could not reach the server — check your internet connection and URL',
+    editApiUrl:'Change Server Address', sessionExpired:'Session expired — please log in again',
+    orgTab:'Organization', orgHeaderText:'Report Title', orgWeekLine1:'Weekly Header Line 1',
+    orgWeekLine2:'Weekly Header Line 2', orgWeekLine3:'Weekly Header Line 3',
+    orgSig1:'Signature 1', orgSig2:'Signature 2', orgSig3:'Signature 3', orgSig4:'Signature 4', orgSig5:'Signature 5',
   }
 };
 function t(key){ return (T[STATE.lang] && T[STATE.lang][key]) || key; }
 
-/* ---------- storage helpers (small config only; data lives in Google Sheets) ---------- */
+/* ---------- local (non-secret) config + helpers ---------- */
 const LS = {
   get(k, fallback){ try{ const v = localStorage.getItem(k); return v? JSON.parse(v): fallback; }catch(e){ return fallback; } },
   set(k, v){ localStorage.setItem(k, JSON.stringify(v)); }
 };
 function uid(prefix){ return (prefix||'id') + '_' + Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
-
-/* ---------- tab schema ---------- */
-const TABS = {
-  users:      { name:'Users',      headers:['username','password','role'] },
-  employees:  { name:'Employees',  headers:['id','name','designation','active','employee_code','basic_salary'] },
-  divisions:  { name:'Divisions',  headers:['id','name_bn','name_en','is_default','active'] },
-  otsheets:   { name:'OTSheets',   headers:['id','date','division_id','work_description','remarks','image_url','slots_json','employees_json','created_by','created_at','updated_by','updated_at'] },
-  orgconfig:  { name:'OrgConfig',  headers:['key','value'] }
-};
-const SCOPES = 'https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/drive';
+function esc(s){
+  return String(s ?? '').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
 
 /* ---------- global state ---------- */
 const STATE = {
   lang: LS.get('otr_lang','bn'),
-  session: LS.get('otr_session', null), // {username, role}
+  session: null, // {username, role} — resolved server-side only, never trusted from storage alone
   screen: 'boot', // boot | setup | login | new | records | summary | settings
   editingSheetId: null,
   toastTimer: null,
-  users: [], employees: [], divisions: [], sheets: [],
+  employees: [], divisions: [], sheets: [],
   orgConfig: {},
   loaded: false
 };
@@ -452,6 +409,63 @@ const STATE = {
 function isAdmin(){ return STATE.session && STATE.session.role === 'admin'; }
 function canExport(){ return isAdmin(); }
 function canAddEmployee(){ return isAdmin(); }
+
+/* =========================================================
+   API CLIENT — the ONLY thing this app talks to.
+   Every call is a POST with a JSON string body. Content-Type
+   is intentionally left as the browser's default (text/plain)
+   so the request stays a CORS "simple request" and the Apps
+   Script backend's automatic Access-Control-Allow-Origin: *
+   applies without a failed preflight.
+   ========================================================= */
+const API = {
+  baseUrl: localStorage.getItem('otr_api_url') || '',
+  token: localStorage.getItem('otr_token') || '',
+  status: 'off', // off | busy | on | error
+
+  setStatus(s){ this.status = s; const el=document.getElementById('syncStatusDot'); if(el){ el.className='sync-dot '+(s==='on'?'on':(s==='busy'?'busy':'off')); } },
+
+  async call(action, payload={}){
+    this.setStatus('busy');
+    try{
+      const body = JSON.stringify(Object.assign({action, token:this.token}, payload));
+      const res = await fetch(this.baseUrl, { method:'POST', body });
+      if(!res.ok) throw new Error('http_'+res.status);
+      const data = await res.json();
+      this.setStatus('on');
+      return data;
+    }catch(err){
+      this.setStatus('error');
+      throw err;
+    }
+  },
+
+  async login(username, password){
+    const res = await this.call('login', {username, password});
+    if(res.ok){
+      this.token = res.token;
+      localStorage.setItem('otr_token', res.token);
+    }
+    return res;
+  },
+  async logout(){
+    try{ await this.call('logout'); }catch(e){}
+    this.token = '';
+    localStorage.removeItem('otr_token');
+  },
+  setBaseUrl(url){
+    this.baseUrl = url.trim();
+    localStorage.setItem('otr_api_url', this.baseUrl);
+  },
+  changeServer(){
+    localStorage.removeItem('otr_api_url');
+    localStorage.removeItem('otr_token');
+    this.baseUrl = ''; this.token = '';
+    STATE.session = null;
+    STATE.screen = 'setup';
+    render();
+  }
+};
 
 /* ---------- toast ---------- */
 function toast(msg, isErr){
@@ -484,6 +498,7 @@ function bnum(input){
   if(STATE.lang!=='bn') return s;
   return s.replace(/[0-9]/g, d=> BN_DIGITS[+d]);
 }
+
 function intervalsOverlap(aS,aE,bS,bE){
   let as=toMin(aS), ae=toMin(aE), bs=toMin(bS), be=toMin(bE);
   if(ae<=as) ae+=24*60;
@@ -508,300 +523,13 @@ function findConflicts(employeeId, date, newIntervals, excludeSheetId){
   return conflicts;
 }
 
-/* =========================================================
-   GOOGLE SHEETS DATA LAYER
-   ========================================================= */
-const DB = {
-  clientId: localStorage.getItem('otr_clientid') || '',
-  apiKey: localStorage.getItem('otr_apikey') || '',
-  spreadsheetId: localStorage.getItem('otr_ssid') || '',
-  accessToken: '',
-  tokenClient: null,
-  connected: false,
-  status: 'off', // off | connecting | on | busy | error
-  lastSync: localStorage.getItem('otr_lastsync') || '',
-  pickerLoaded: false,
-
-  setStatus(s){ this.status = s; const el=document.getElementById('syncStatusDot'); if(el){ el.className='sync-dot '+(s==='on'?'on':(s==='busy'||s==='connecting'?'busy':'off')); } },
-
-  ensureTokenClient(cb, opts={}){
-    if(!window.google || !google.accounts || !google.accounts.oauth2){
-      if(opts.onError) opts.onError('gsi_not_loaded'); else toast(t('gsiNotLoaded'), true);
-      return;
-    }
-    this.tokenClient = google.accounts.oauth2.initTokenClient({
-      client_id: this.clientId,
-      scope: SCOPES,
-      callback: (resp)=>{
-        if(resp.error){
-          this.setStatus('error');
-          if(opts.onError) opts.onError(resp.error); else toast(t('cloudConnectFailed')||'Connect failed', true);
-          return;
-        }
-        this.accessToken = resp.access_token;
-        cb && cb();
-      }
-    });
-    this.tokenClient.requestAccessToken({prompt: opts.prompt !== undefined ? opts.prompt : ''});
-  },
-
-  async apiFetch(url, opts={}){
-    opts.headers = Object.assign({}, opts.headers, {Authorization:'Bearer '+this.accessToken});
-    const res = await fetch(url, opts);
-    if(res.status===401){ this.setStatus('error'); throw new Error('auth_expired'); }
-    if(!res.ok){ const txt = await res.text(); throw new Error('http_'+res.status+': '+txt.slice(0,200)); }
-    return res;
-  },
-
-  connectAccount(){
-    if(!this.clientId || !this.apiKey){ toast(t('needClientId'), true); return; }
-    this.setStatus('connecting');
-    this.ensureTokenClient(async ()=>{
-      this.connected = true;
-      this.setStatus('on');
-      if(this.spreadsheetId){
-        await this.ensureTabsAndSeed();
-        await this.pullAll();
-        finishBootAfterConnect();
-      } else {
-        STATE.screen = 'chooser';
-        render();
-      }
-    });
-  },
-
-  async createSpreadsheet(){
-    DB.setStatus('busy');
-    try{
-      const res = await DB.apiFetch('https://sheets.googleapis.com/v4/spreadsheets', {
-        method:'POST', headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({properties:{title:'OT_Record Database'}})
-      });
-      const data = await res.json();
-      DB.spreadsheetId = data.spreadsheetId;
-      localStorage.setItem('otr_ssid', DB.spreadsheetId);
-      await DB.ensureTabsAndSeed();
-      await DB.pullAll();
-      DB.setStatus('on');
-      finishBootAfterConnect();
-    }catch(e){ DB.setStatus('error'); toast(String(e.message||e), true); }
-  },
-
-  openPicker(){
-    if(!DB.apiKey){ toast(t('needClientId'), true); return; }
-    if(!DB.pickerLoaded){
-      gapi.load('picker', ()=>{ DB.pickerLoaded=true; DB.showPicker(); });
-    } else DB.showPicker();
-  },
-  showPicker(){
-    const view = new google.picker.DocsView(google.picker.ViewId.SPREADSHEETS).setMode(google.picker.DocsViewMode.LIST);
-    const picker = new google.picker.PickerBuilder()
-      .addView(view)
-      .setOAuthToken(DB.accessToken)
-      .setDeveloperKey(DB.apiKey)
-      .setCallback(DB.pickerCallback)
-      .build();
-    picker.setVisible(true);
-  },
-  async pickerCallback(data){
-    if(data.action === google.picker.Action.PICKED){
-      const doc = data.docs[0];
-      DB.spreadsheetId = doc.id;
-      localStorage.setItem('otr_ssid', DB.spreadsheetId);
-      DB.setStatus('busy');
-      try{
-        await DB.ensureTabsAndSeed();
-        await DB.pullAll();
-        DB.setStatus('on');
-        finishBootAfterConnect();
-      }catch(e){ DB.setStatus('error'); toast(String(e.message||e), true); }
-    }
-  },
-
-  async ensureTabsAndSeed(){
-    const metaRes = await DB.apiFetch(`https://sheets.googleapis.com/v4/spreadsheets/${DB.spreadsheetId}?fields=sheets.properties.title`);
-    const meta = await metaRes.json();
-    const existing = (meta.sheets||[]).map(s=>s.properties.title);
-    const requests = [];
-    Object.values(TABS).forEach(tab=>{
-      if(!existing.includes(tab.name)) requests.push({addSheet:{properties:{title:tab.name}}});
-    });
-    if(requests.length){
-      await DB.apiFetch(`https://sheets.googleapis.com/v4/spreadsheets/${DB.spreadsheetId}:batchUpdate`, {
-        method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({requests})
-      });
-    }
-    for(const key of Object.keys(TABS)){
-      if(!existing.includes(TABS[key].name)){
-        await DB.writeFullTab(TABS[key].name, seedRowsFor(key));
-      }
-    }
-  },
-
-  async writeFullTab(tabName, rows2D){
-    const range = `${tabName}!A1`;
-    await DB.apiFetch(`https://sheets.googleapis.com/v4/spreadsheets/${DB.spreadsheetId}/values/${encodeURIComponent(range)}?valueInputOption=RAW`, {
-      method:'PUT', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({range, majorDimension:'ROWS', values: rows2D})
-    });
-  },
-  async clearTabBody(tabName){
-    const range = `${tabName}!A2:Z20000`;
-    await DB.apiFetch(`https://sheets.googleapis.com/v4/spreadsheets/${DB.spreadsheetId}/values/${encodeURIComponent(range)}:clear`, {method:'POST'});
-  },
-  async readTab(key){
-    const tab = TABS[key];
-    const range = `${tab.name}!A1:Z20000`;
-    const res = await DB.apiFetch(`https://sheets.googleapis.com/v4/spreadsheets/${DB.spreadsheetId}/values/${encodeURIComponent(range)}?valueRenderOption=UNFORMATTED_VALUE`);
-    const data = await res.json();
-    return data.values || [tab.headers];
-  },
-  async pushTab(key, rows2D){
-    DB.setStatus('busy');
-    try{
-      await DB.clearTabBody(TABS[key].name);
-      await DB.writeFullTab(TABS[key].name, [TABS[key].headers, ...rows2D]);
-      DB.lastSync = new Date().toISOString();
-      localStorage.setItem('otr_lastsync', DB.lastSync);
-      DB.setStatus('on');
-    }catch(e){ DB.setStatus('error'); toast(t('tokenExpired'), true); throw e; }
-  },
-
-  async pushUsers(){ await DB.pushTab('users', STATE.users.map(u=>["'"+String(u.username), "'"+String(u.password), u.role])); },
-  async pushEmployees(){ await DB.pushTab('employees', STATE.employees.map(e=>[e.id,e.name,e.designation,!!e.active,e.employee_code||'',e.basic_salary||''])); },
-  async pushDivisions(){ await DB.pushTab('divisions', STATE.divisions.map(d=>[d.id,d.name_bn,d.name_en,!!d.is_default,!!d.active])); },
-  async pushOrgConfig(){ await DB.pushTab('orgconfig', Object.keys(STATE.orgConfig).map(k=>[k, STATE.orgConfig[k]||''])); },
-  async pushSheets(){
-    await DB.pushTab('otsheets', STATE.sheets.map(s=>[
-      s.id, "'"+s.date, s.division_id, s.work_description||'', s.remarks||'',
-      s.image||'', JSON.stringify(s.slots||[]), JSON.stringify(s.employees||[]),
-      s.created_by||'', s.created_at||'', s.updated_by||'', s.updated_at||''
-    ]));
-  },
-
-  async pullAll(){
-    DB.setStatus('busy');
-    try{
-      const [u,e,d,s,oc] = await Promise.all([
-        DB.readTab('users'), DB.readTab('employees'), DB.readTab('divisions'), DB.readTab('otsheets'), DB.readTab('orgconfig')
-      ]);
-      STATE.users = u.slice(1).filter(r=>r && r.length && r[0]!=='').map(r=>({username:String(r[0]).trim(),password:String(r[1]).trim(),role:String(r[2]||'').trim()}));
-      STATE.employees = e.slice(1).filter(r=>r && r.length && r[0]!=='').map(r=>({id:r[0],name:r[1],designation:r[2]||'',active: isTruthyCell(r[3]),employee_code:r[4]||'',basic_salary:r[5]||''}));
-      STATE.divisions = d.slice(1).filter(r=>r && r.length && r[0]!=='').map(r=>({id:r[0],name_bn:r[1],name_en:r[2],is_default: isTruthyCell(r[3]), active:isTruthyCell(r[4])}));
-      STATE.sheets = s.slice(1).filter(r=>r && r.length && r[0]!=='').map(r=>({
-        id:r[0], date:String(r[1]).replace(/^'/,''), division_id:r[2], work_description:r[3]||'', remarks:r[4]||'',
-        image:r[5]||'', slots: safeParseJson(r[6],[]), employees: safeParseJson(r[7],[]),
-        created_by:r[8]||'', created_at:r[9]||'', updated_by:r[10]||'', updated_at:r[11]||''
-      }));
-      STATE.orgConfig = {};
-      oc.slice(1).forEach(r=>{ if(r && r[0]!=='') STATE.orgConfig[r[0]] = r[1]||''; });
-      STATE.loaded = true;
-      DB.setStatus('on');
-    }catch(e){ DB.setStatus('error'); throw e; }
-  },
-
-  async uploadImage(base64Data, filename, mimeType){
-    const folderId = await DB.getOrCreateFolder('OT_Record_Images');
-    const boundary = 'otrsync_' + Math.random().toString(36).slice(2);
-    const metadata = {name: filename, mimeType: mimeType, parents:[folderId]};
-    const pureBase64 = base64Data.indexOf(',')>=0 ? base64Data.split(',').pop() : base64Data;
-    const multipart =
-      `--${boundary}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n${JSON.stringify(metadata)}\r\n`+
-      `--${boundary}\r\nContent-Type: ${mimeType}\r\nContent-Transfer-Encoding: base64\r\n\r\n${pureBase64}\r\n`+
-      `--${boundary}--`;
-    const res = await DB.apiFetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id', {
-      method:'POST', headers:{'Content-Type':`multipart/related; boundary=${boundary}`}, body: multipart
-    });
-    const data = await res.json();
-    await DB.apiFetch(`https://www.googleapis.com/drive/v3/files/${data.id}/permissions`, {
-      method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({role:'reader', type:'anyone'})
-    });
-    return 'https://drive.google.com/uc?export=view&id='+data.id;
-  },
-  async getOrCreateFolder(name){
-    if(DB._folderId) return DB._folderId;
-    const q = encodeURIComponent(`name='${name}' and mimeType='application/vnd.google-apps.folder' and trashed=false`);
-    const listRes = await DB.apiFetch(`https://www.googleapis.com/drive/v3/files?q=${q}&fields=files(id)`);
-    const list = await listRes.json();
-    if(list.files && list.files.length>0){ DB._folderId = list.files[0].id; return DB._folderId; }
-    const createRes = await DB.apiFetch('https://www.googleapis.com/drive/v3/files', {
-      method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({name, mimeType:'application/vnd.google-apps.folder'})
-    });
-    const created = await createRes.json();
-    DB._folderId = created.id;
-    return DB._folderId;
-  },
-
-  disconnect(){
-    this.connected=false; this.accessToken=''; this.setStatus('off');
-  },
-  changeSpreadsheet(){
-    localStorage.removeItem('otr_ssid');
-    DB.spreadsheetId = '';
-    STATE.screen = 'chooser';
-    render();
-  }
-};
-
-function safeParseJson(s, fallback){ try{ return s? JSON.parse(s): fallback; }catch(e){ return fallback; } }
-function isTruthyCell(v){
-  if(v===true) return true;
-  if(typeof v==='string') return ['true','TRUE','১','1','yes','হ্যাঁ'].includes(v.trim());
-  if(typeof v==='number') return v===1;
-  return false;
-}
-
-function seedRowsFor(key){
-  if(key==='users') return [['admin','123','admin'],['user','123','employee']];
-  if(key==='employees') return [
-    ['emp1','জনাব মোঃ রেজাউল করিম','সিনিঃ ফোরম্যান',true,'',''],
-    ['emp2','জনাব মোঃ ওমর ফারুক','সিনিঃ ফোরম্যান',true,'',''],
-    ['emp3','জনাব মোঃ আলাল উদ্দিন','সিনিঃ টেকনিশিয়ান',true,'',''],
-    ['emp4','জনাব মাসুদ রানা খান','জুনিঃ টেকনিশিয়ান',true,'',''],
-    ['emp5','জনাব মমিন খন্দকার','জুনিঃ টেকনিশিয়ান',true,'',''],
-    ['emp6','সুমন হোসেন','জুনিঃ টেকনিশিয়ান',true,'','']
-  ];
-  if(key==='divisions') return [
-    ['div1','যান্ত্রিক, জিটি, নর্থ','Mechanical, GT, North', true, true],
-    ['div2','যান্ত্রিক, এসটি, নর্থ','Mechanical, ST, North', true, true]
-  ];
-  if(key==='orgconfig') return [
-    ['header_text', 'আশুগঞ্জ ৪৫০ মে.ও. সিসিপিপি (নর্থ) প্লান্টের তত্ত্বাবধায়ক প্রকৌশলী (যান্ত্রিক সংরক্ষণ) জোন-বি দপ্তরের অধীনে যান্ত্রিক (জিটি, এইচআরএসজি ও অক্সিলারি) সংরক্ষন, নর্থ জোন-বি বিভাগে কর্মরত কর্মচারীদের অধীকাল কর্মঘন্টার বিবরণী।'],
-    ['weekly_header_line1', 'আশুগঞ্জ পাওয়ার স্টেশন কোম্পানী লিঃ (এপিএসসিএল)'],
-    ['weekly_header_line2', 'আশুগঞ্জ, ব্রাহ্মণবাড়িয়া।'],
-    ['weekly_header_line3', 'যান্ত্রিক (জিটি, এইচআরএসজি ও অক্সিলারিজ), নর্থ, জোন-বি'],
-    ['sig1', 'সহকারী/উপ-বিভাগীয় প্রকৌশলী (যান্ত্রিক)\nআশুগঞ্জ ৪৫০মেঃওঃ সিসিপিপি (নর্থ)\nএপিএসসিএল'],
-    ['sig2', 'নির্বাহী প্রকৌশলী (যান্ত্রিক)\nআশুগঞ্জ ৪৫০মেঃওঃ সিসিপিপি (নর্থ)\nএপিএসসিএল'],
-    ['sig3', 'তত্ত্বাবধায়ক প্রকৌশলী (যান্ত্রিক)\nআশুগঞ্জ ৪৫০মেঃওঃ সিসিপিপি (নর্থ)\nএপিএসসিএল'],
-    ['sig4', 'প্রধান প্রকৌশলী\nআশুগঞ্জ ৪৫০মেঃওঃ সিসিপিপি (নর্থ)\nএপিএসসিএল'],
-    ['sig5', 'নির্বাহী পরিচালক (প্রকৌশল)\nএপিএসসিএল']
-  ];
-  return [];
-}
-
-function finishBootAfterConnect(){
-  const savedSession = LS.get('otr_session', null);
-  if(savedSession && STATE.users.find(u=>u.username===savedSession.username && u.role===savedSession.role)){
-    STATE.session = savedSession;
-    STATE.screen = 'new';
-  } else {
-    STATE.session = null;
-    STATE.screen = 'login';
-  }
-  render();
-}
-
 /* ---------- render root ---------- */
 function render(){
   const root = document.getElementById('root');
   document.documentElement.lang = STATE.lang;
 
-  if(STATE.screen==='boot'){ root.innerHTML = renderBootScreen(); bindBootScreen(); return; }
+  if(STATE.screen==='boot'){ root.innerHTML = renderBootScreen(); return; }
   if(STATE.screen==='setup'){ root.innerHTML = renderSetupScreen(); bindSetupScreen(); return; }
-  if(STATE.screen==='connect'){ root.innerHTML = renderConnectScreen(); bindConnectScreen(); return; }
-  if(STATE.screen==='chooser'){ root.innerHTML = renderChooserScreen(); bindChooserScreen(); return; }
 
   if(!STATE.session){
     root.innerHTML = renderLogin();
@@ -824,7 +552,7 @@ function render(){
 }
 
 /* =========================================================
-   BOOT / SETUP / CHOOSER SCREENS
+   BOOT / SETUP SCREENS
    ========================================================= */
 function renderBootScreen(){
   return `
@@ -832,11 +560,10 @@ function renderBootScreen(){
     <div class="login-card" style="text-align:center;">
       <div class="login-logo">OT</div>
       <div class="spin"></div>
-      <div class="disp" style="font-size:16px;font-weight:700;">${t('loadingData')}</div>
+      <div class="disp" style="font-size:16px;font-weight:700;">${t('connecting')}</div>
     </div>
   </div>`;
 }
-function bindBootScreen(){}
 
 function renderSetupScreen(){
   return `
@@ -844,17 +571,15 @@ function renderSetupScreen(){
     <div class="login-card">
       <div class="login-logo">OT</div>
       <div style="text-align:center;margin-bottom:18px;">
-        <div class="disp" style="font-size:18px;font-weight:700;">${t('setupClientTitle')}</div>
+        <div class="disp" style="font-size:18px;font-weight:700;">${t('setupApiTitle')}</div>
         <div style="font-size:12px;color:var(--ink-soft);margin-top:4px;">${t('appSub')}</div>
       </div>
       <div class="field">
-        <label>${t('clientIdLabel')}</label>
-        <input type="text" id="setClientId" placeholder="xxxxx.apps.googleusercontent.com" value="${DB.clientId}">
+        <label>${t('apiUrlLabel')}</label>
+        <input type="text" id="setApiUrl" placeholder="https://script.google.com/macros/s/.../exec" value="${esc(API.baseUrl)}">
       </div>
-      <div class="field">
-        <label>${t('apiKeyLabel')}</label>
-        <input type="text" id="setApiKey" placeholder="AIza..." value="${DB.apiKey}">
-      </div>
+      <div class="info-box">${t('apiUrlHelp')}</div>
+      <div id="setupErrBox"></div>
       <button class="btn btn-amber btn-block" id="btnSetupSave">${t('saveContinue')}</button>
       <div style="text-align:center;margin-top:16px;">
         <span class="lang-toggle">
@@ -869,54 +594,20 @@ function bindSetupScreen(){
   document.querySelectorAll('[data-l]').forEach(b=>{
     b.onclick = ()=>{ STATE.lang = b.getAttribute('data-l'); LS.set('otr_lang',STATE.lang); render(); };
   });
-  document.getElementById('btnSetupSave').onclick = ()=>{
-    const cid = document.getElementById('setClientId').value.trim();
-    const key = document.getElementById('setApiKey').value.trim();
-    if(!cid || !key){ toast(t('needClientId'), true); return; }
-    DB.clientId = cid; DB.apiKey = key;
-    localStorage.setItem('otr_clientid', cid);
-    localStorage.setItem('otr_apikey', key);
-    STATE.screen = 'connect';
+  document.getElementById('btnSetupSave').onclick = async ()=>{
+    const url = document.getElementById('setApiUrl').value.trim();
+    if(!url){ document.getElementById('setupErrBox').innerHTML = `<div class="warn-box">${t('fillRequired')}</div>`; return; }
+    API.setBaseUrl(url);
+    STATE.screen = 'boot';
+    render();
+    try{
+      await API.call('getBootstrap'); // harmless probe; will return unauthorized without a token, which is fine — just confirms the URL responds
+    }catch(e){
+      toast(t('networkErr'), true);
+    }
+    STATE.screen = STATE.session ? 'new' : 'login';
     render();
   };
-}
-
-function renderChooserScreen(){
-  return `
-  <div class="login-wrap">
-    <div class="login-card">
-      <div class="login-logo">OT</div>
-      <div style="text-align:center;margin-bottom:18px;">
-        <div class="disp" style="font-size:17px;font-weight:700;">${t('chooseSpreadsheetTitle')}</div>
-      </div>
-      <button class="btn btn-primary btn-block" id="btnCreateSS">${t('createNewSS')}</button>
-      <button class="btn btn-outline btn-block" id="btnPickSS" style="margin-top:10px;">${t('pickExistingSS')}</button>
-      <button class="btn btn-ghost btn-block" id="btnBackSetup" style="margin-top:16px;">${t('editCreds')}</button>
-    </div>
-  </div>`;
-}
-function bindChooserScreen(){
-  document.getElementById('btnCreateSS').onclick = ()=> DB.createSpreadsheet();
-  document.getElementById('btnPickSS').onclick = ()=> DB.openPicker();
-  document.getElementById('btnBackSetup').onclick = ()=>{ STATE.screen='setup'; render(); };
-}
-
-/* connect screen (after setup, before spreadsheet chosen / on token refresh) */
-function renderConnectScreen(){
-  return `
-  <div class="login-wrap">
-    <div class="login-card" style="text-align:center;">
-      <div class="login-logo">OT</div>
-      <div class="disp" style="font-size:17px;font-weight:700;margin-bottom:6px;">${t('appName')}</div>
-      <div style="font-size:12.5px;color:var(--ink-soft);margin-bottom:20px;">${t('connectGoogle')}</div>
-      <button class="btn btn-amber btn-block" id="btnConnectAcct">${t('connectGoogle')}</button>
-      <button class="btn btn-ghost btn-block" id="btnBackSetup2" style="margin-top:12px;">${t('editCreds')}</button>
-    </div>
-  </div>`;
-}
-function bindConnectScreen(){
-  document.getElementById('btnConnectAcct').onclick = ()=> DB.connectAccount();
-  document.getElementById('btnBackSetup2').onclick = ()=>{ STATE.screen='setup'; render(); };
 }
 
 /* ---------- topbar ---------- */
@@ -931,7 +622,7 @@ function renderTopbar(){
       </div>
     </div>
     <div class="topbar-actions">
-      <div class="topbar-sync" title="${t('syncTab')}"><span class="sync-dot ${DB.status==='on'?'on':(DB.status==='busy'||DB.status==='connecting'?'busy':'off')}" id="syncStatusDot"></span></div>
+      <div class="topbar-sync" title="API"><span class="sync-dot ${API.status==='on'?'on':(API.status==='busy'?'busy':'off')}" id="syncStatusDot"></span></div>
       <div class="icon-btn" id="btnLangTop" title="lang">${STATE.lang==='bn'?'EN':'বাং'}</div>
       <div class="icon-btn" id="btnLogout" title="logout">⏻</div>
     </div>
@@ -957,9 +648,9 @@ function bindGlobal(){
     LS.set('otr_lang', STATE.lang);
     render();
   };
-  document.getElementById('btnLogout').onclick = ()=>{
+  document.getElementById('btnLogout').onclick = async ()=>{
+    await API.logout();
     STATE.session = null;
-    LS.set('otr_session', null);
     STATE.screen='login';
     render();
   };
@@ -970,7 +661,7 @@ function bindGlobal(){
 }
 
 /* =========================================================
-   LOGIN
+   LOGIN  (username + password only — no Google account, ever)
    ========================================================= */
 let loginRole = 'admin';
 function renderLogin(){
@@ -996,15 +687,13 @@ function renderLogin(){
       </div>
       <div id="loginErrBox"></div>
       <button class="btn btn-primary btn-block" id="btnSignIn">${T[STATE.lang].signin}</button>
-      <div style="text-align:center;margin-top:16px;display:flex;justify-content:center;gap:14px;align-items:center;">
+      <div style="text-align:center;margin-top:16px;">
         <span class="lang-toggle">
           <button data-l="bn" class="${STATE.lang==='bn'?'active':''}">বাংলা</button>
           <button data-l="en" class="${STATE.lang==='en'?'active':''}">EN</button>
         </span>
-        <span class="sync-dot ${DB.status==='on'?'on':'off'}"></span>
       </div>
-      <button class="btn btn-ghost btn-block" id="btnGoSync" style="margin-top:14px;font-size:12px;">⚙ ${t('syncTab')}</button>
-      <button class="btn btn-ghost btn-block" id="btnRefreshLogin" style="margin-top:8px;font-size:12px;">↻ ${t('pullNow')}</button>
+      <button class="btn btn-ghost btn-block" id="btnEditApiUrl" style="margin-top:14px;font-size:12px;">${t('editApiUrl')}</button>
     </div>
   </div>`;
 }
@@ -1017,23 +706,42 @@ function bindLogin(){
   });
   document.getElementById('btnSignIn').onclick = doLogin;
   document.getElementById('loginPass').addEventListener('keydown', e=>{ if(e.key==='Enter') doLogin(); });
-  document.getElementById('btnGoSync').onclick = ()=>{ STATE.screen='chooser'; render(); };
-  document.getElementById('btnRefreshLogin').onclick = async ()=>{
-    try{ await DB.pullAll(); toast(t('savedOk')); render(); }catch(e){ toast(t('tokenExpired'), true); }
-  };
+  document.getElementById('btnEditApiUrl').onclick = ()=> API.changeServer();
 }
-function doLogin(){
+async function doLogin(){
   const u = document.getElementById('loginUser').value.trim();
-  const p = document.getElementById('loginPass').value.trim();
-  const found = STATE.users.find(x=>x.username.trim()===u && x.password.trim()===p && x.role===loginRole);
-  if(!found){
-    document.getElementById('loginErrBox').innerHTML = `<div class="warn-box">${t('loginErr')}</div>`;
-    return;
+  const p = document.getElementById('loginPass').value;
+  const btn = document.getElementById('btnSignIn');
+  btn.disabled = true;
+  document.getElementById('loginErrBox').innerHTML = '';
+  try{
+    const res = await API.login(u, p);
+    if(!res.ok || res.role !== loginRole){
+      const msg = res.error==='locked_out' ? t('lockedOut') : t('loginErr');
+      document.getElementById('loginErrBox').innerHTML = `<div class="warn-box">${msg}</div>`;
+      btn.disabled = false;
+      return;
+    }
+    STATE.session = {username: res.username, role: res.role};
+    await loadBootstrap();
+    STATE.screen = 'new';
+    render();
+  }catch(e){
+    document.getElementById('loginErrBox').innerHTML = `<div class="warn-box">${t('networkErr')}</div>`;
+    btn.disabled = false;
   }
-  STATE.session = {username:found.username, role:found.role};
-  LS.set('otr_session', STATE.session);
-  STATE.screen = 'new';
-  render();
+}
+
+async function loadBootstrap(){
+  const res = await API.call('getBootstrap');
+  if(res.ok){
+    STATE.employees = res.employees || [];
+    STATE.divisions = res.divisions || [];
+    STATE.sheets = res.sheets || [];
+    STATE.orgConfig = res.orgConfig || {};
+    STATE.loaded = true;
+  }
+  return res;
 }
 
 /* =========================================================
@@ -1088,17 +796,17 @@ function renderNewSheet(){
       <div class="field">
         <label>${t('division')}</label>
         <select id="fDivision">
-          ${divs.map(d=>`<option value="${d.id}" ${d.id===sheetDraft.division_id?'selected':''}>${STATE.lang==='bn'?d.name_bn:d.name_en}</option>`).join('')}
+          ${divs.map(d=>`<option value="${d.id}" ${d.id===sheetDraft.division_id?'selected':''}>${esc(STATE.lang==='bn'?d.name_bn:d.name_en)}</option>`).join('')}
         </select>
       </div>
     </div>
     <div class="field">
       <label>${t('workDesc')}</label>
-      <textarea id="fWorkDesc" placeholder="${t('workDesc')}">${sheetDraft.work_description||''}</textarea>
+      <textarea id="fWorkDesc" placeholder="${t('workDesc')}">${esc(sheetDraft.work_description||'')}</textarea>
     </div>
     <div class="field" style="margin-bottom:0;">
       <label>${t('remarks')}</label>
-      <textarea id="fRemarks" placeholder="${t('remarks')}">${sheetDraft.remarks||''}</textarea>
+      <textarea id="fRemarks" placeholder="${t('remarks')}">${esc(sheetDraft.remarks||'')}</textarea>
     </div>
   </div>
 
@@ -1156,8 +864,8 @@ function renderEmpRow(e){
     <div class="emp-row">
       <div class="emp-check ${checked?'checked':''}" data-emp-toggle="${e.id}">${checked?'✓':''}</div>
       <div style="flex:1;">
-        <div class="emp-name">${e.name}</div>
-        <div class="emp-desig">${e.designation}</div>
+        <div class="emp-name">${esc(e.name)}</div>
+        <div class="emp-desig">${esc(e.designation)}</div>
       </div>
     </div>
     ${checked? `
@@ -1273,11 +981,16 @@ function bindNewSheet(){
     reader.onload = async ev=>{
       byId('uploadStatus').innerHTML = `<div class="info-box">${t('uploading')}</div>`;
       try{
-        const url = await DB.uploadImage(ev.target.result, `OT_${sheetDraft.date}_${Date.now()}.jpg`, file.type||'image/jpeg');
-        sheetDraft.image = url;
-        render();
+        const res = await API.call('uploadImage', {
+          base64: ev.target.result,
+          filename: `OT_${sheetDraft.date}_${Date.now()}.jpg`,
+          mimeType: file.type || 'image/jpeg'
+        });
+        if(res.ok){ sheetDraft.image = res.url; render(); }
+        else { toast(t('networkErr'), true); byId('uploadStatus').innerHTML=''; }
       }catch(err){
-        toast(t('tokenExpired'), true);
+        toast(t('networkErr'), true);
+        byId('uploadStatus').innerHTML='';
       }
     };
     reader.readAsDataURL(file);
@@ -1305,34 +1018,38 @@ async function doSaveSheet(){
     const conflicts = findConflicts(emp.employee_id, sheetDraft.date, intervals, excludeId);
     if(conflicts.length>0){
       const empObj = STATE.employees.find(x=>x.id===emp.employee_id);
-      document.getElementById('formErrBox').innerHTML = `<div class="warn-box">⚠ ${empObj? empObj.name:''} — ${t('overlapErr')}</div>`;
+      document.getElementById('formErrBox').innerHTML = `<div class="warn-box">⚠ ${esc(empObj? empObj.name:'')} — ${t('overlapErr')}</div>`;
       return;
     }
   }
 
   const saveBtn = document.getElementById('btnSaveSheet');
-  if(saveBtn){ saveBtn.disabled = true; }
+  if(saveBtn) saveBtn.disabled = true;
 
   try{
-    if(sheetDraft.id){
-      sheetDraft.updated_by = STATE.session.username;
-      sheetDraft.updated_at = new Date().toISOString();
-      const idx = STATE.sheets.findIndex(s=>s.id===sheetDraft.id);
-      STATE.sheets[idx] = sheetDraft;
-    } else {
-      sheetDraft.id = uid('sheet');
-      sheetDraft.created_by = STATE.session.username;
-      sheetDraft.created_at = new Date().toISOString();
-      STATE.sheets.push(sheetDraft);
+    const res = await API.call('saveSheet', {sheet: sheetDraft});
+    if(!res.ok){
+      if(res.error==='overlap'){
+        const empObj = STATE.employees.find(x=>x.id===res.employee_id);
+        document.getElementById('formErrBox').innerHTML = `<div class="warn-box">⚠ ${esc(empObj?empObj.name:'')} — ${t('overlapErr')}</div>`;
+      } else if(res.error==='unauthorized'){
+        toast(t('sessionExpired'), true);
+        STATE.session = null; render();
+      } else {
+        document.getElementById('formErrBox').innerHTML = `<div class="warn-box">${t('networkErr')}</div>`;
+      }
+      if(saveBtn) saveBtn.disabled = false;
+      return;
     }
-    await DB.pushSheets();
-    toast(sheetDraft.updated_at ? t('updatedOk') : t('savedOk'));
+    const idx = STATE.sheets.findIndex(s=>s.id===res.sheet.id);
+    if(idx>=0) STATE.sheets[idx] = res.sheet; else STATE.sheets.push(res.sheet);
+    toast(sheetDraft.id ? t('updatedOk') : t('savedOk'));
     STATE.editingSheetId = null;
     sheetDraft = null;
     STATE.screen = 'records';
     render();
   }catch(e){
-    document.getElementById('formErrBox').innerHTML = `<div class="warn-box">${t('tokenExpired')}</div>`;
+    document.getElementById('formErrBox').innerHTML = `<div class="warn-box">${t('networkErr')}</div>`;
     if(saveBtn) saveBtn.disabled = false;
   }
 }
@@ -1354,7 +1071,7 @@ function renderRecords(){
     <div><h2>${t('recordsTitle')}</h2><div class="sub">${t('recordsSub')} · ${bnum(all.length)} ${t('otSheetsCount')}</div></div>
   </div>
   <div class="search-box">
-    <input type="text" id="recSearch" placeholder="${t('searchEmp')}" value="${recordsFilter}">
+    <input type="text" id="recSearch" placeholder="${t('searchEmp')}" value="${esc(recordsFilter)}">
   </div>
   ${filtered.length===0? `
     <div class="empty">
@@ -1376,8 +1093,8 @@ function renderSheetCard(s){
   return `
   <div class="sheet-card">
     <div class="date-block">${bnum(s.date)}</div>
-    <h4>${divName}</h4>
-    <p>${(s.work_description||'').slice(0,120) || t('na')}</p>
+    <h4>${esc(divName)}</h4>
+    <p>${esc((s.work_description||'').slice(0,120)) || t('na')}</p>
     <div class="sheet-meta">
       <span class="badge badge-amber">${bnum(empCount)} ${t('employees')}</span>
       <span class="badge badge-moss">${bnum(totalHrs.toFixed(2))} ${t('hours')}</span>
@@ -1412,8 +1129,8 @@ function openViewModal(sheetId){
     const hrs = e.adjustments.reduce((sum,a)=>sum+durationHours(a.actual_start,a.actual_end),0);
     const times = e.adjustments.map(a=>`${bnum(fmtHM(a.actual_start))}–${bnum(fmtHM(a.actual_end))}`).join(', ');
     return `<div class="emp-row"><div style="flex:1;">
-      <div class="emp-name">${emp.name}</div>
-      <div class="emp-desig">${emp.designation} · ${times}</div>
+      <div class="emp-name">${esc(emp.name)}</div>
+      <div class="emp-desig">${esc(emp.designation)} · ${times}</div>
     </div><span class="badge badge-moss">${bnum(hrs.toFixed(2))}${t('hours')}</span></div>`;
   }).join('');
 
@@ -1422,13 +1139,13 @@ function openViewModal(sheetId){
   modal.innerHTML = `
     <div class="modal-box">
       <div class="modal-handle"></div>
-      <div class="modal-title">${bnum(s.date)} — ${divName}</div>
-      <div class="modal-sub">${s.work_description || t('na')}</div>
-      ${s.remarks? `<div class="info-box">${s.remarks}</div>`:''}
+      <div class="modal-title">${bnum(s.date)} — ${esc(divName)}</div>
+      <div class="modal-sub">${esc(s.work_description) || t('na')}</div>
+      ${s.remarks? `<div class="info-box">${esc(s.remarks)}</div>`:''}
       <div class="divider"></div>
       ${empRows}
       ${s.image? `<img src="${s.image}" class="img-thumb">
-        <a href="${s.image}" target="_blank" class="btn btn-outline btn-block btn-sm" style="margin-top:8px;text-decoration:none;">${t('downloadImg')}</a>` : ''}
+        <a href="${s.image}" target="_blank" class="btn btn-outline btn-block btn-sm" style="margin-top:8px;text-decoration:none;">${t('view')}</a>` : ''}
       <button class="btn btn-primary btn-block" id="btnCloseModal" style="margin-top:14px;">${t('close')}</button>
     </div>`;
   document.body.appendChild(modal);
@@ -1451,8 +1168,13 @@ function openDeleteConfirm(sheetId){
   document.body.appendChild(modal);
   modal.querySelector('#btnNo').onclick = ()=> modal.remove();
   modal.querySelector('#btnYes').onclick = async ()=>{
-    STATE.sheets = STATE.sheets.filter(s=>s.id!==sheetId);
-    try{ await DB.pushSheets(); toast(t('deletedOk')); }catch(e){ toast(t('tokenExpired'), true); }
+    try{
+      const res = await API.call('deleteSheet', {id: sheetId});
+      if(res.ok){
+        STATE.sheets = STATE.sheets.filter(s=>s.id!==sheetId);
+        toast(t('deletedOk'));
+      } else { toast(t('networkErr'), true); }
+    }catch(e){ toast(t('networkErr'), true); }
     modal.remove();
     render();
   };
@@ -1514,7 +1236,7 @@ function renderSummary(){
         <tbody>
         ${data.length===0? `<tr><td colspan="4">${t('noData')}</td></tr>` :
           data.map(d=>`<tr>
-            <td>${d.emp.name}</td><td>${d.emp.designation}</td><td>${bnum(d.sheetsCount)}</td>
+            <td>${esc(d.emp.name)}</td><td>${esc(d.emp.designation)}</td><td>${bnum(d.sheetsCount)}</td>
             <td class="mono">${bnum(d.totalHours.toFixed(2))}</td>
           </tr>`).join('')
         }
@@ -1535,7 +1257,7 @@ function renderSummary(){
         <tbody>
         ${data.length===0? `<tr><td colspan="${dim+2}">${t('noData')}</td></tr>` :
           data.map(d=>`<tr>
-            <td>${d.emp.name}</td>
+            <td>${esc(d.emp.name)}</td>
             ${d.days.slice(1).map(h=> h>0? `<td class="cell-h">${bnum(trimNum(h))}</td>` : `<td class="cell-x">X</td>`).join('')}
             <td class="mono" style="font-weight:700;">${bnum(d.totalHours.toFixed(1))}</td>
           </tr>`).join('')
@@ -1553,7 +1275,7 @@ function bindSummary(){
   if(mp) mp.onchange = e=>{ summaryMonth = e.target.value; render(); };
   const exp = document.getElementById('btnExportCsv');
   if(exp) exp.onclick = ()=>{
-    if(!canExport()){ toast(t('permNoExport'), true); return; }
+    if(!canExport()){ return; }
     generateFullReport(summaryMonth);
   };
 }
@@ -1610,7 +1332,7 @@ function buildWeeklyAOA(ym){
   weekRanges.forEach((range, wi)=>{
     const startDay = range[0], endDay = Math.min(range[1], dim);
     const dayCols = []; for(let d=startDay; d<=endDay; d++) dayCols.push(d);
-    const lastColIdx = 3 + dayCols.length; // 0:serial 1:name 2:desig 3..: days, then total
+    const lastColIdx = 3 + dayCols.length;
 
     const headerRow1 = rows.length;
     rows.push([`${orgL1}\n${orgL2}\n${orgL3}`]);
@@ -1646,7 +1368,7 @@ function buildMonthlyAOA(ym){
   const {dim, data} = computeMonthlyData(ym);
   const rows = []; const merges = [];
   const monthLabel = ymLabel(ym);
-  const lastCol = 3 + dim; // total column index
+  const lastCol = 3 + dim;
 
   const titleRow = rows.length;
   rows.push([STATE.orgConfig.header_text ? (STATE.orgConfig.header_text + ' ' + monthLabel + ' মাসের অধিকাল কর্মঘন্টার বিবরণী।') : `অধিকাল কর্মঘন্টার বিবরণী — ${monthLabel}`]);
@@ -1693,7 +1415,6 @@ function buildMonthlyAOA(ym){
   rows.push(totalRowArr);
   rows.push([]); rows.push([]);
 
-  const sigRow = rows.length;
   const sigArr = []; sigArr[0]=STATE.orgConfig.sig1||''; sigArr[6]=STATE.orgConfig.sig2||''; sigArr[Math.min(13,lastCol)]=STATE.orgConfig.sig3||'';
   rows.push(sigArr);
   rows.push([]); rows.push([]);
@@ -1729,7 +1450,7 @@ function buildMonthlyAsPerWeekAOA(ym){
   });
 
   const grandTotal = data.reduce((s,d)=>s+d.totalHours,0);
-  const totalRow = ['জুন ইং মাসের মোট অধিকাল মোট কর্মঘন্টার পরিমান'.replace('জুন', monthLabel.split(' ')[0])];
+  const totalRow = [`${monthLabel} মাসের মোট অধিকাল মোট কর্মঘন্টার পরিমান`];
   for(let i=1;i<lastColIdx;i++) totalRow.push('');
   totalRow.push(bnForce(trimNum(grandTotal)));
   rows.push(totalRow);
@@ -1769,23 +1490,32 @@ function generateFullReport(ym){
 
 /* =========================================================
    SETTINGS
+   Employees + Divisions available to both roles (add-employee
+   is admin-only). Account and Organization tabs are admin-only.
+   There is no "Google Sync" tab at all — the frontend has no
+   Google integration to configure.
    ========================================================= */
 let settingsTab = 'employees';
 function renderSettings(){
+  const tabs = [
+    {id:'employees', label:t('empMgmt')},
+    {id:'divisions', label:t('divMgmt')}
+  ];
+  if(isAdmin()) tabs.push({id:'account', label:t('account')});
+  if(isAdmin()) tabs.push({id:'org', label:t('orgTab')});
+  if(!isAdmin() && (settingsTab==='account' || settingsTab==='org')) settingsTab = 'employees';
+
   return `
   <div class="section-head"><div><h2>${t('settingsTitle')}</h2></div></div>
 
   <div class="pill-scroll">
-    <div class="pill ${settingsTab==='employees'?'active':''}" data-stab="employees">${t('empMgmt')}</div>
-    <div class="pill ${settingsTab==='divisions'?'active':''}" data-stab="divisions">${t('divMgmt')}</div>
-    <div class="pill ${settingsTab==='account'?'active':''}" data-stab="account">${t('account')}</div>
-    <div class="pill ${settingsTab==='cloud'?'active':''}" data-stab="cloud">☁️ ${t('cloudTab')}</div>
+    ${tabs.map(tb=>`<div class="pill ${settingsTab===tb.id?'active':''}" data-stab="${tb.id}">${tb.label}</div>`).join('')}
   </div>
 
   ${settingsTab==='employees'? renderEmpSettings() : ''}
   ${settingsTab==='divisions'? renderDivSettings() : ''}
-  ${settingsTab==='account'? renderAccountSettings() : ''}
-  ${settingsTab==='cloud'? renderCloudSettings() : ''}
+  ${settingsTab==='account' && isAdmin()? renderAccountSettings() : ''}
+  ${settingsTab==='org' && isAdmin()? renderOrgSettings() : ''}
   `;
 }
 
@@ -1797,8 +1527,8 @@ function renderEmpSettings(){
     ${emps.map(e=>`
       <div class="emp-row">
         <div style="flex:1;">
-          <div class="emp-name">${e.name} ${!e.active?`<span class="badge badge-gray">${t('inactive')}</span>`:''}</div>
-          <div class="emp-desig">${e.designation}</div>
+          <div class="emp-name">${esc(e.name)} ${!e.active?`<span class="badge badge-gray">${t('inactive')}</span>`:''}</div>
+          <div class="emp-desig">${esc(e.designation)}</div>
         </div>
         <div style="display:flex;gap:6px;">
           <button class="btn btn-ghost btn-sm" data-emp-edit="${e.id}">${t('edit')}</button>
@@ -1820,8 +1550,8 @@ function renderDivSettings(){
     ${divs.map(d=>`
       <div class="emp-row">
         <div style="flex:1;">
-          <div class="emp-name">${STATE.lang==='bn'?d.name_bn:d.name_en} ${d.is_default?`<span class="badge badge-gray">default</span>`:''}</div>
-          <div class="emp-desig">${STATE.lang==='bn'?d.name_en:d.name_bn}</div>
+          <div class="emp-name">${esc(STATE.lang==='bn'?d.name_bn:d.name_en)} ${d.is_default?`<span class="badge badge-gray">default</span>`:''}</div>
+          <div class="emp-desig">${esc(STATE.lang==='bn'?d.name_en:d.name_bn)}</div>
         </div>
         ${!d.is_default? `<button class="btn btn-danger btn-sm" data-div-del="${d.id}">${t('del')}</button>` : ''}
       </div>
@@ -1834,7 +1564,7 @@ function renderAccountSettings(){
   return `
   <div class="card">
     <div class="card-title">${t('account')}</div>
-    <p style="font-size:13px;color:var(--ink-soft);margin:0 0 12px;">${t('loggedInAs')}: <b>${STATE.session.username}</b> (${STATE.session.role==='admin'?t('roleAdmin'):t('roleEmployee')})</p>
+    <p style="font-size:13px;color:var(--ink-soft);margin:0 0 12px;">${t('loggedInAs')}: <b>${esc(STATE.session.username)}</b> (${STATE.session.role==='admin'?t('roleAdmin'):t('roleEmployee')})</p>
     <div class="field">
       <label>${t('changePw')} — Admin</label>
       <input type="password" id="pwAdmin" placeholder="${t('newPw')}">
@@ -1851,23 +1581,28 @@ function renderAccountSettings(){
       <button data-l2="bn" class="${STATE.lang==='bn'?'active':''}">বাংলা</button>
       <button data-l2="en" class="${STATE.lang==='en'?'active':''}">English</button>
     </div>
+  </div>
+  <div class="card">
+    <div class="card-title">Server</div>
+    <button class="btn btn-outline btn-block" id="btnChangeServer">${t('editApiUrl')}</button>
   </div>`;
 }
 
-function renderCloudSettings(){
-  const statusLabel = DB.status==='on'?t('statusOn'):(DB.status==='busy'||DB.status==='connecting'?t('statusBusy'):t('statusOff'));
+function renderOrgSettings(){
+  const oc = STATE.orgConfig;
   return `
   <div class="card">
-    <div class="card-title"><span class="sync-dot ${DB.status==='on'?'on':(DB.status==='busy'||DB.status==='connecting'?'busy':'off')}"></span> ${t('syncTab')} — <span style="color:var(--ink-soft);font-weight:500;">${statusLabel}</span></div>
-    <div class="stat-row">
-      <div class="stat-box"><div class="sn" style="font-size:12.5px;">${DB.lastSync? new Date(DB.lastSync).toLocaleString(STATE.lang==='bn'?'bn-BD':'en-US'): '—'}</div><div class="sl">${t('lastSynced')}</div></div>
-      ${isAdmin()? `<div class="stat-box"><div class="sn" style="font-size:11px;word-break:break-all;">${DB.spreadsheetId||'—'}</div><div class="sl">Spreadsheet ID</div></div>` : ''}
-    </div>
-    ${isAdmin()? `<a href="https://docs.google.com/spreadsheets/d/${DB.spreadsheetId}" target="_blank" class="btn btn-outline btn-block btn-sm" style="text-decoration:none;margin-bottom:8px;">${t('openSheet')}</a>` : ''}
-    <button class="btn btn-primary btn-block" id="btnSyncNowS">${t('syncNow')}</button>
-    <button class="btn btn-outline btn-block" id="btnPullNowS" style="margin-top:8px;">${t('pullNow')}</button>
-    ${isAdmin()? `<button class="btn btn-outline btn-block" id="btnChangeSS" style="margin-top:8px;">${t('changeSpreadsheet')}</button>` : ''}
-    <button class="btn btn-danger btn-block" id="btnReconnectS" style="margin-top:8px;">${t('reconnect')}</button>
+    <div class="card-title">${t('orgTab')}</div>
+    <div class="field"><label>${t('orgHeaderText')}</label><textarea id="orgHeaderText">${esc(oc.header_text||'')}</textarea></div>
+    <div class="field"><label>${t('orgWeekLine1')}</label><input type="text" id="orgWeekLine1" value="${esc(oc.weekly_header_line1||'')}"></div>
+    <div class="field"><label>${t('orgWeekLine2')}</label><input type="text" id="orgWeekLine2" value="${esc(oc.weekly_header_line2||'')}"></div>
+    <div class="field"><label>${t('orgWeekLine3')}</label><input type="text" id="orgWeekLine3" value="${esc(oc.weekly_header_line3||'')}"></div>
+    <div class="field"><label>${t('orgSig1')}</label><textarea id="orgSig1">${esc(oc.sig1||'')}</textarea></div>
+    <div class="field"><label>${t('orgSig2')}</label><textarea id="orgSig2">${esc(oc.sig2||'')}</textarea></div>
+    <div class="field"><label>${t('orgSig3')}</label><textarea id="orgSig3">${esc(oc.sig3||'')}</textarea></div>
+    <div class="field"><label>${t('orgSig4')}</label><textarea id="orgSig4">${esc(oc.sig4||'')}</textarea></div>
+    <div class="field"><label>${t('orgSig5')}</label><textarea id="orgSig5">${esc(oc.sig5||'')}</textarea></div>
+    <button class="btn btn-primary btn-block" id="btnSaveOrg">${t('saveBtn')}</button>
   </div>`;
 }
 
@@ -1884,8 +1619,11 @@ function bindSettings(){
   document.querySelectorAll('[data-emp-del]').forEach(el=>{
     el.onclick = async ()=>{
       const id = el.getAttribute('data-emp-del');
-      STATE.employees = STATE.employees.filter(e=>e.id!==id);
-      try{ await DB.pushEmployees(); toast(t('empDeleted')); }catch(e){ toast(t('tokenExpired'), true); }
+      try{
+        const res = await API.call('deleteEmployee', {id});
+        if(res.ok){ STATE.employees = STATE.employees.filter(e=>e.id!==id); toast(t('empDeleted')); }
+        else toast(t('networkErr'), true);
+      }catch(e){ toast(t('networkErr'), true); }
       render();
     };
   });
@@ -1895,10 +1633,12 @@ function bindSettings(){
   document.querySelectorAll('[data-div-del]').forEach(el=>{
     el.onclick = async ()=>{
       const id = el.getAttribute('data-div-del');
-      const div = STATE.divisions.find(d=>d.id===id);
-      if(div.is_default){ toast(t('cannotDeleteDefault'), true); return; }
-      STATE.divisions = STATE.divisions.filter(d=>d.id!==id);
-      try{ await DB.pushDivisions(); toast(t('divDeleted')); }catch(e){ toast(t('tokenExpired'), true); }
+      try{
+        const res = await API.call('deleteDivision', {id});
+        if(res.ok){ STATE.divisions = STATE.divisions.filter(d=>d.id!==id); toast(t('divDeleted')); }
+        else if(res.error==='default'){ toast(t('cannotDeleteDefault'), true); }
+        else toast(t('networkErr'), true);
+      }catch(e){ toast(t('networkErr'), true); }
       render();
     };
   });
@@ -1910,41 +1650,54 @@ function bindSettings(){
   if(savePwBtn) savePwBtn.onclick = async ()=>{
     const pa = document.getElementById('pwAdmin').value.trim();
     const pe = document.getElementById('pwEmp').value.trim();
-    let changed = false;
-    if(pa){ const u=STATE.users.find(x=>x.role==='admin'); if(u){u.password=pa; changed=true;} }
-    if(pe){ const u=STATE.users.find(x=>x.role==='employee'); if(u){u.password=pe; changed=true;} }
-    if(changed){
-      try{ await DB.pushUsers(); toast(t('pwChanged')); render(); }catch(e){ toast(t('tokenExpired'), true); }
-    }
+    try{
+      if(pa) await API.call('changePassword', {role:'admin', newPassword:pa});
+      if(pe) await API.call('changePassword', {role:'employee', newPassword:pe});
+      if(pa||pe) toast(t('pwChanged'));
+    }catch(e){ toast(t('networkErr'), true); }
   };
+  const changeServerBtn = document.getElementById('btnChangeServer');
+  if(changeServerBtn) changeServerBtn.onclick = ()=> API.changeServer();
 
-  const syncNowBtn = document.getElementById('btnSyncNowS');
-  if(syncNowBtn) syncNowBtn.onclick = async ()=>{
-    try{ await DB.pullAll(); toast(t('savedOk')); render(); }catch(e){ toast(t('tokenExpired'), true); }
-  };
-  const pullNowBtn = document.getElementById('btnPullNowS');
-  if(pullNowBtn) pullNowBtn.onclick = async ()=>{
-    try{ await DB.pullAll(); toast(t('savedOk')); render(); }catch(e){ toast(t('tokenExpired'), true); }
-  };
-  const changeSSBtn = document.getElementById('btnChangeSS');
-  if(changeSSBtn) changeSSBtn.onclick = ()=> DB.changeSpreadsheet();
-  const reconnectBtn = document.getElementById('btnReconnectS');
-  if(reconnectBtn) reconnectBtn.onclick = ()=>{
-    DB.setStatus('connecting');
-    DB.ensureTokenClient(async ()=>{
-      DB.connected = true; DB.setStatus('on');
-      try{ await DB.pullAll(); toast(t('cloudConnected')||t('savedOk')); render(); }catch(e){ DB.setStatus('error'); }
-    });
+  const saveOrgBtn = document.getElementById('btnSaveOrg');
+  if(saveOrgBtn) saveOrgBtn.onclick = async ()=>{
+    const cfg = {
+      header_text: document.getElementById('orgHeaderText').value,
+      weekly_header_line1: document.getElementById('orgWeekLine1').value,
+      weekly_header_line2: document.getElementById('orgWeekLine2').value,
+      weekly_header_line3: document.getElementById('orgWeekLine3').value,
+      sig1: document.getElementById('orgSig1').value,
+      sig2: document.getElementById('orgSig2').value,
+      sig3: document.getElementById('orgSig3').value,
+      sig4: document.getElementById('orgSig4').value,
+      sig5: document.getElementById('orgSig5').value
+    };
+    try{
+      const res = await API.call('saveOrgConfig', {orgConfig: cfg});
+      if(res.ok){ STATE.orgConfig = cfg; toast(t('savedOk')); }
+      else toast(t('networkErr'), true);
+    }catch(e){ toast(t('networkErr'), true); }
   };
 }
 
 async function restoreDefaultEmployees(){
-  const defaults = seedRowsFor('employees'); // [id,name,designation,active,code,salary]
+  const defaults = [
+    ['emp1','জনাব মোঃ রেজাউল করিম','সিনিঃ ফোরম্যান'],
+    ['emp2','জনাব মোঃ ওমর ফারুক','সিনিঃ ফোরম্যান'],
+    ['emp3','জনাব মোঃ আলাল উদ্দিন','সিনিঃ টেকনিশিয়ান'],
+    ['emp4','জনাব মাসুদ রানা খান','জুনিঃ টেকনিশিয়ান'],
+    ['emp5','জনাব মমিন খন্দকার','জুনিঃ টেকনিশিয়ান'],
+    ['emp6','সুমন হোসেন','জুনিঃ টেকনিশিয়ান']
+  ];
   const missing = defaults.filter(row => !STATE.employees.find(e=>e.name===row[1]));
   if(missing.length===0){ toast(t('noneMissing')); return; }
-  const newOnes = missing.map(row=>({id:uid('emp'), name:row[1], designation:row[2], active:true, employee_code:'', basic_salary:''}));
-  STATE.employees = [...newOnes, ...STATE.employees];
-  try{ await DB.pushEmployees(); toast(t('savedOk')); }catch(e){ toast(t('tokenExpired'), true); }
+  try{
+    for(const row of missing.slice().reverse()){
+      const res = await API.call('saveEmployee', {employee:{name:row[1], designation:row[2], active:true, employee_code:'', basic_salary:''}});
+      if(res.ok) STATE.employees.unshift(res.employee);
+    }
+    toast(t('savedOk'));
+  }catch(e){ toast(t('networkErr'), true); }
   render();
 }
 
@@ -1956,11 +1709,11 @@ function openEmpModal(empId){
   modal.innerHTML = `
     <div class="modal-box">
       <div class="modal-title">${empId? t('edit') : t('addEmployee')}</div>
-      <div class="field"><label>${t('empName')}</label><input type="text" id="mEmpName" value="${emp.name}"></div>
-      <div class="field"><label>${t('empDesig')}</label><input type="text" id="mEmpDesig" value="${emp.designation}"></div>
+      <div class="field"><label>${t('empName')}</label><input type="text" id="mEmpName" value="${esc(emp.name)}"></div>
+      <div class="field"><label>${t('empDesig')}</label><input type="text" id="mEmpDesig" value="${esc(emp.designation)}"></div>
       <div class="row2">
-        <div class="field"><label>${t('empCode')}</label><input type="text" id="mEmpCode" value="${emp.employee_code||''}"></div>
-        <div class="field"><label>${t('empSalary')}</label><input type="text" id="mEmpSalary" value="${emp.basic_salary||''}"></div>
+        <div class="field"><label>${t('empCode')}</label><input type="text" id="mEmpCode" value="${esc(emp.employee_code||'')}"></div>
+        <div class="field"><label>${t('empSalary')}</label><input type="text" id="mEmpSalary" value="${esc(emp.basic_salary||'')}"></div>
       </div>
       <div style="display:flex;gap:8px;">
         <button class="btn btn-outline btn-block" id="mCancel">${t('cancel')}</button>
@@ -1975,13 +1728,21 @@ function openEmpModal(empId){
     const code = document.getElementById('mEmpCode').value.trim();
     const salary = document.getElementById('mEmpSalary').value.trim();
     if(!name){ toast(t('fillRequired'), true); return; }
-    if(empId){
-      const rec = STATE.employees.find(e=>e.id===empId);
-      rec.name = name; rec.designation = desig; rec.employee_code = code; rec.basic_salary = salary;
-    } else {
-      STATE.employees.unshift({id:uid('emp'), name, designation:desig, active:true, employee_code:code, basic_salary:salary});
-    }
-    try{ await DB.pushEmployees(); toast(t('savedOk')); }catch(e){ toast(t('tokenExpired'), true); }
+    try{
+      const payloadEmp = empId? {id:empId, name, designation:desig, active:true, employee_code:code, basic_salary:salary}
+                               : {name, designation:desig, active:true, employee_code:code, basic_salary:salary};
+      const res = await API.call('saveEmployee', {employee: payloadEmp});
+      if(res.ok){
+        if(empId){
+          const rec = STATE.employees.find(e=>e.id===empId);
+          Object.assign(rec, res.employee);
+        } else {
+          STATE.employees.unshift(res.employee);
+        }
+        toast(t('savedOk'));
+      } else if(res.error==='forbidden'){ toast(t('permNoAddEmp'), true); }
+      else { toast(t('networkErr'), true); }
+    }catch(e){ toast(t('networkErr'), true); }
     modal.remove();
     render();
   };
@@ -2006,71 +1767,43 @@ function openDivModal(){
     const bn = document.getElementById('mDivBn').value.trim();
     const en = document.getElementById('mDivEn').value.trim();
     if(!bn && !en){ toast(t('fillRequired'), true); return; }
-    STATE.divisions.push({id:uid('div'), name_bn:bn||en, name_en:en||bn, is_default:false, active:true});
-    try{ await DB.pushDivisions(); toast(t('savedOk')); }catch(e){ toast(t('tokenExpired'), true); }
+    try{
+      const res = await API.call('saveDivision', {division:{name_bn:bn||en, name_en:en||bn, is_default:false, active:true}});
+      if(res.ok){ STATE.divisions.push(res.division); toast(t('savedOk')); }
+      else toast(t('networkErr'), true);
+    }catch(e){ toast(t('networkErr'), true); }
     modal.remove();
     render();
   };
 }
 
 /* ---------- boot sequence ---------- */
-(function boot(){
+(async function boot(){
   STATE.screen = 'boot';
   render();
-  if(!DB.clientId || !DB.apiKey){
+
+  if(!API.baseUrl){
     STATE.screen = 'setup';
     render();
     return;
   }
-  if(!DB.spreadsheetId){
-    // first time on this device/browser: needs an explicit user gesture to consent
-    STATE.screen = 'connect';
-    render();
-    return;
-  }
-  // returning device that has already connected before: try a silent, no-UI reconnect
-  attemptSilentReconnect();
-})();
 
-function attemptSilentReconnect(){
-  STATE.screen = 'boot';
-  render();
-  let settled = false;
-  const failSafe = setTimeout(()=>{
-    if(settled) return;
-    settled = true;
-    STATE.screen = 'connect';
-    render();
-  }, 6000);
-
-  DB.setStatus('connecting');
-  DB.ensureTokenClient(async ()=>{
-    if(settled) return;
-    settled = true;
-    clearTimeout(failSafe);
-    DB.connected = true;
-    DB.setStatus('on');
+  if(API.token){
     try{
-      await DB.ensureTabsAndSeed();
-      await DB.pullAll();
-      finishBootAfterConnect();
-    }catch(e){
-      DB.setStatus('error');
-      STATE.screen = 'connect';
-      render();
-    }
-  }, {
-    prompt: 'none',
-    onError: ()=>{
-      if(settled) return;
-      settled = true;
-      clearTimeout(failSafe);
-      STATE.screen = 'connect';
-      render();
-    }
-  });
-}
+      const res = await API.call('verifySession');
+      if(res.ok){
+        STATE.session = {username: res.username, role: res.role};
+        await loadBootstrap();
+        STATE.screen = 'new';
+        render();
+        return;
+      }
+    }catch(e){ /* fall through to login */ }
+  }
 
+  STATE.screen = 'login';
+  render();
+})();
 </script>
 </body>
 </html>
