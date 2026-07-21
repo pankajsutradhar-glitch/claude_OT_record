@@ -12,6 +12,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script src="https://apis.google.com/js/api.js"></script>
+<script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
 <style>
 :root{
   --ink:#0F2E2C;
@@ -316,13 +317,16 @@ const T = {
     employees:'জন কর্মচারী', edit:'সম্পাদনা', del:'মুছুন', view:'দেখুন', replaceImg:'ছবি পরিবর্তন',
     confirmDelete:'আপনি কি নিশ্চিতভাবে এই ওটি শিটটি মুছে ফেলতে চান?', yesDelete:'হ্যাঁ, মুছুন',
     summaryTitle:'মাসিক সারাংশ', totalOtHours:'মোট ওভারটাইম ঘন্টা',
-    month:'মাস', exportCsv:'CSV এক্সপোর্ট', name:'নাম', designation:'পদবী',
+    month:'মাস', exportCsv:'রিপোর্ট এক্সপোর্ট (Excel)', name:'নাম', designation:'পদবী',
     noOfSheets:'শিট সংখ্যা', totalHours:'মোট ঘন্টা', total:'মোট',
     settingsTitle:'সেটিংস', empMgmt:'কর্মচারী তালিকা', divMgmt:'বিভাগ তালিকা', langSet:'ভাষা',
     addEmployee:'+ কর্মচারী যোগ করুন', addDivision:'+ বিভাগ যোগ করুন',
     active:'সক্রিয়', inactive:'নিষ্ক্রিয়', deleteConfirmDiv:'এই বিভাগটি মুছে ফেলবেন?',
     cannotDeleteDefault:'ডিফল্ট বিভাগ মুছে ফেলা যাবে না', nameBn:'নাম (বাংলা)', nameEn:'নাম (ইংরেজি)',
     saveBtn:'সংরক্ষণ', empName:'কর্মচারীর নাম', empDesig:'পদবী', required:'আবশ্যক',
+    empCode:'কর্মচারী আইডি (ঐচ্ছিক)', empSalary:'মূল বেতন (ঐচ্ছিক)',
+    restoreDefaults:'ডিফল্ট কর্মচারী পুনরুদ্ধার করুন', noneMissing:'সবগুলো ডিফল্ট কর্মচারী ইতিমধ্যে আছে',
+    xlsxNotLoaded:'রিপোর্ট লাইব্রেরি লোড হয়নি, ইন্টারনেট সংযোগ যাচাই করুন',
     overlapErr:'সময় দ্বন্দ্ব: এই কর্মচারীর অন্য একটি শিটে একই সময়ে ওভারটাইম রয়েছে',
     fillRequired:'অনুগ্রহ করে সব আবশ্যক তথ্য পূরণ করুন', selectAtLeastOne:'অন্তত একজন কর্মচারী নির্বাচন করুন',
     savedOk:'সফলভাবে সংরক্ষিত হয়েছে', deletedOk:'মুছে ফেলা হয়েছে', updatedOk:'আপডেট হয়েছে',
@@ -371,13 +375,16 @@ const T = {
     employees:'employees', edit:'Edit', del:'Delete', view:'View', replaceImg:'Replace Image',
     confirmDelete:'Are you sure you want to delete this OT sheet?', yesDelete:'Yes, Delete',
     summaryTitle:'Monthly Summary', totalOtHours:'Total Overtime Hours',
-    month:'Month', exportCsv:'Export CSV', name:'Name', designation:'Designation',
+    month:'Month', exportCsv:'Export Report (Excel)', name:'Name', designation:'Designation',
     noOfSheets:'No. of Sheets', totalHours:'Total Hours', total:'Total',
     settingsTitle:'Settings', empMgmt:'Employees', divMgmt:'Divisions', langSet:'Language',
     addEmployee:'+ Add Employee', addDivision:'+ Add Division',
     active:'Active', inactive:'Inactive', deleteConfirmDiv:'Delete this division?',
     cannotDeleteDefault:'Default divisions cannot be deleted', nameBn:'Name (Bengali)', nameEn:'Name (English)',
     saveBtn:'Save', empName:'Employee Name', empDesig:'Designation', required:'required',
+    empCode:'Employee ID (optional)', empSalary:'Basic Salary (optional)',
+    restoreDefaults:'Restore Default Employees', noneMissing:'All default employees are already present',
+    xlsxNotLoaded:'Report library failed to load — check your internet connection',
     overlapErr:'Time conflict: this employee already has overtime at this time on another sheet',
     fillRequired:'Please fill all required fields', selectAtLeastOne:'Select at least one employee',
     savedOk:'Saved successfully', deletedOk:'Deleted', updatedOk:'Updated',
@@ -423,9 +430,10 @@ function uid(prefix){ return (prefix||'id') + '_' + Date.now().toString(36) + Ma
 /* ---------- tab schema ---------- */
 const TABS = {
   users:      { name:'Users',      headers:['username','password','role'] },
-  employees:  { name:'Employees',  headers:['id','name','designation','active'] },
+  employees:  { name:'Employees',  headers:['id','name','designation','active','employee_code','basic_salary'] },
   divisions:  { name:'Divisions',  headers:['id','name_bn','name_en','is_default','active'] },
-  otsheets:   { name:'OTSheets',   headers:['id','date','division_id','work_description','remarks','image_url','slots_json','employees_json','created_by','created_at','updated_by','updated_at'] }
+  otsheets:   { name:'OTSheets',   headers:['id','date','division_id','work_description','remarks','image_url','slots_json','employees_json','created_by','created_at','updated_by','updated_at'] },
+  orgconfig:  { name:'OrgConfig',  headers:['key','value'] }
 };
 const SCOPES = 'https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/drive';
 
@@ -437,6 +445,7 @@ const STATE = {
   editingSheetId: null,
   toastTimer: null,
   users: [], employees: [], divisions: [], sheets: [],
+  orgConfig: {},
   loaded: false
 };
 
@@ -466,6 +475,15 @@ function durationHours(start, end){
   return +( (e-s)/60 ).toFixed(2);
 }
 function fmtHM(hhmm){ return hhmm || '—'; }
+
+/* ---------- Bengali numeral helper ---------- */
+const BN_DIGITS = ['০','১','২','৩','৪','৫','৬','৭','৮','৯'];
+function bnum(input){
+  if(input===null||input===undefined) return '';
+  let s = String(input);
+  if(STATE.lang!=='bn') return s;
+  return s.replace(/[0-9]/g, d=> BN_DIGITS[+d]);
+}
 function intervalsOverlap(aS,aE,bS,bE){
   let as=toMin(aS), ae=toMin(aE), bs=toMin(bS), be=toMin(bE);
   if(ae<=as) ae+=24*60;
@@ -506,20 +524,25 @@ const DB = {
 
   setStatus(s){ this.status = s; const el=document.getElementById('syncStatusDot'); if(el){ el.className='sync-dot '+(s==='on'?'on':(s==='busy'||s==='connecting'?'busy':'off')); } },
 
-  ensureTokenClient(cb){
+  ensureTokenClient(cb, opts={}){
     if(!window.google || !google.accounts || !google.accounts.oauth2){
-      toast(t('gsiNotLoaded'), true); return;
+      if(opts.onError) opts.onError('gsi_not_loaded'); else toast(t('gsiNotLoaded'), true);
+      return;
     }
     this.tokenClient = google.accounts.oauth2.initTokenClient({
       client_id: this.clientId,
       scope: SCOPES,
       callback: (resp)=>{
-        if(resp.error){ this.setStatus('error'); toast(t('cloudConnectFailed')||'Connect failed', true); return; }
+        if(resp.error){
+          this.setStatus('error');
+          if(opts.onError) opts.onError(resp.error); else toast(t('cloudConnectFailed')||'Connect failed', true);
+          return;
+        }
         this.accessToken = resp.access_token;
         cb && cb();
       }
     });
-    this.tokenClient.requestAccessToken({prompt:''});
+    this.tokenClient.requestAccessToken({prompt: opts.prompt !== undefined ? opts.prompt : ''});
   },
 
   async apiFetch(url, opts={}){
@@ -644,9 +667,10 @@ const DB = {
     }catch(e){ DB.setStatus('error'); toast(t('tokenExpired'), true); throw e; }
   },
 
-  async pushUsers(){ await DB.pushTab('users', STATE.users.map(u=>[u.username,u.password,u.role])); },
-  async pushEmployees(){ await DB.pushTab('employees', STATE.employees.map(e=>[e.id,e.name,e.designation,!!e.active])); },
+  async pushUsers(){ await DB.pushTab('users', STATE.users.map(u=>["'"+String(u.username), "'"+String(u.password), u.role])); },
+  async pushEmployees(){ await DB.pushTab('employees', STATE.employees.map(e=>[e.id,e.name,e.designation,!!e.active,e.employee_code||'',e.basic_salary||''])); },
   async pushDivisions(){ await DB.pushTab('divisions', STATE.divisions.map(d=>[d.id,d.name_bn,d.name_en,!!d.is_default,!!d.active])); },
+  async pushOrgConfig(){ await DB.pushTab('orgconfig', Object.keys(STATE.orgConfig).map(k=>[k, STATE.orgConfig[k]||''])); },
   async pushSheets(){
     await DB.pushTab('otsheets', STATE.sheets.map(s=>[
       s.id, "'"+s.date, s.division_id, s.work_description||'', s.remarks||'',
@@ -658,17 +682,19 @@ const DB = {
   async pullAll(){
     DB.setStatus('busy');
     try{
-      const [u,e,d,s] = await Promise.all([
-        DB.readTab('users'), DB.readTab('employees'), DB.readTab('divisions'), DB.readTab('otsheets')
+      const [u,e,d,s,oc] = await Promise.all([
+        DB.readTab('users'), DB.readTab('employees'), DB.readTab('divisions'), DB.readTab('otsheets'), DB.readTab('orgconfig')
       ]);
-      STATE.users = u.slice(1).filter(r=>r && r.length && r[0]!=='').map(r=>({username:r[0],password:String(r[1]),role:r[2]}));
-      STATE.employees = e.slice(1).filter(r=>r && r.length && r[0]!=='').map(r=>({id:r[0],name:r[1],designation:r[2]||'',active: r[3]===true}));
-      STATE.divisions = d.slice(1).filter(r=>r && r.length && r[0]!=='').map(r=>({id:r[0],name_bn:r[1],name_en:r[2],is_default: r[3]===true, active:r[4]===true}));
+      STATE.users = u.slice(1).filter(r=>r && r.length && r[0]!=='').map(r=>({username:String(r[0]).trim(),password:String(r[1]).trim(),role:String(r[2]||'').trim()}));
+      STATE.employees = e.slice(1).filter(r=>r && r.length && r[0]!=='').map(r=>({id:r[0],name:r[1],designation:r[2]||'',active: isTruthyCell(r[3]),employee_code:r[4]||'',basic_salary:r[5]||''}));
+      STATE.divisions = d.slice(1).filter(r=>r && r.length && r[0]!=='').map(r=>({id:r[0],name_bn:r[1],name_en:r[2],is_default: isTruthyCell(r[3]), active:isTruthyCell(r[4])}));
       STATE.sheets = s.slice(1).filter(r=>r && r.length && r[0]!=='').map(r=>({
         id:r[0], date:String(r[1]).replace(/^'/,''), division_id:r[2], work_description:r[3]||'', remarks:r[4]||'',
         image:r[5]||'', slots: safeParseJson(r[6],[]), employees: safeParseJson(r[7],[]),
         created_by:r[8]||'', created_at:r[9]||'', updated_by:r[10]||'', updated_at:r[11]||''
       }));
+      STATE.orgConfig = {};
+      oc.slice(1).forEach(r=>{ if(r && r[0]!=='') STATE.orgConfig[r[0]] = r[1]||''; });
       STATE.loaded = true;
       DB.setStatus('on');
     }catch(e){ DB.setStatus('error'); throw e; }
@@ -720,20 +746,37 @@ const DB = {
 };
 
 function safeParseJson(s, fallback){ try{ return s? JSON.parse(s): fallback; }catch(e){ return fallback; } }
+function isTruthyCell(v){
+  if(v===true) return true;
+  if(typeof v==='string') return ['true','TRUE','১','1','yes','হ্যাঁ'].includes(v.trim());
+  if(typeof v==='number') return v===1;
+  return false;
+}
 
 function seedRowsFor(key){
   if(key==='users') return [['admin','123','admin'],['user','123','employee']];
   if(key==='employees') return [
-    ['emp1','জনাব মোঃ রেজাউল করিম','সিনিঃ ফোরম্যান',true],
-    ['emp2','জনাব মোঃ ওমর ফারুক','সিনিঃ ফোরম্যান',true],
-    ['emp3','জনাব মোঃ আলাল উদ্দিন','সিনিঃ টেকনিশিয়ান',true],
-    ['emp4','জনাব মাসুদ রানা খান','জুনিঃ টেকনিশিয়ান',true],
-    ['emp5','জনাব মমিন খন্দকার','জুনিঃ টেকনিশিয়ান',true],
-    ['emp6','সুমন হোসেন','জুনিঃ টেকনিশিয়ান',true]
+    ['emp1','জনাব মোঃ রেজাউল করিম','সিনিঃ ফোরম্যান',true,'',''],
+    ['emp2','জনাব মোঃ ওমর ফারুক','সিনিঃ ফোরম্যান',true,'',''],
+    ['emp3','জনাব মোঃ আলাল উদ্দিন','সিনিঃ টেকনিশিয়ান',true,'',''],
+    ['emp4','জনাব মাসুদ রানা খান','জুনিঃ টেকনিশিয়ান',true,'',''],
+    ['emp5','জনাব মমিন খন্দকার','জুনিঃ টেকনিশিয়ান',true,'',''],
+    ['emp6','সুমন হোসেন','জুনিঃ টেকনিশিয়ান',true,'','']
   ];
   if(key==='divisions') return [
     ['div1','যান্ত্রিক, জিটি, নর্থ','Mechanical, GT, North', true, true],
     ['div2','যান্ত্রিক, এসটি, নর্থ','Mechanical, ST, North', true, true]
+  ];
+  if(key==='orgconfig') return [
+    ['header_text', 'আশুগঞ্জ ৪৫০ মে.ও. সিসিপিপি (নর্থ) প্লান্টের তত্ত্বাবধায়ক প্রকৌশলী (যান্ত্রিক সংরক্ষণ) জোন-বি দপ্তরের অধীনে যান্ত্রিক (জিটি, এইচআরএসজি ও অক্সিলারি) সংরক্ষন, নর্থ জোন-বি বিভাগে কর্মরত কর্মচারীদের অধীকাল কর্মঘন্টার বিবরণী।'],
+    ['weekly_header_line1', 'আশুগঞ্জ পাওয়ার স্টেশন কোম্পানী লিঃ (এপিএসসিএল)'],
+    ['weekly_header_line2', 'আশুগঞ্জ, ব্রাহ্মণবাড়িয়া।'],
+    ['weekly_header_line3', 'যান্ত্রিক (জিটি, এইচআরএসজি ও অক্সিলারিজ), নর্থ, জোন-বি'],
+    ['sig1', 'সহকারী/উপ-বিভাগীয় প্রকৌশলী (যান্ত্রিক)\nআশুগঞ্জ ৪৫০মেঃওঃ সিসিপিপি (নর্থ)\nএপিএসসিএল'],
+    ['sig2', 'নির্বাহী প্রকৌশলী (যান্ত্রিক)\nআশুগঞ্জ ৪৫০মেঃওঃ সিসিপিপি (নর্থ)\nএপিএসসিএল'],
+    ['sig3', 'তত্ত্বাবধায়ক প্রকৌশলী (যান্ত্রিক)\nআশুগঞ্জ ৪৫০মেঃওঃ সিসিপিপি (নর্থ)\nএপিএসসিএল'],
+    ['sig4', 'প্রধান প্রকৌশলী\nআশুগঞ্জ ৪৫০মেঃওঃ সিসিপিপি (নর্থ)\nএপিএসসিএল'],
+    ['sig5', 'নির্বাহী পরিচালক (প্রকৌশল)\nএপিএসসিএল']
   ];
   return [];
 }
@@ -961,6 +1004,7 @@ function renderLogin(){
         <span class="sync-dot ${DB.status==='on'?'on':'off'}"></span>
       </div>
       <button class="btn btn-ghost btn-block" id="btnGoSync" style="margin-top:14px;font-size:12px;">⚙ ${t('syncTab')}</button>
+      <button class="btn btn-ghost btn-block" id="btnRefreshLogin" style="margin-top:8px;font-size:12px;">↻ ${t('pullNow')}</button>
     </div>
   </div>`;
 }
@@ -974,11 +1018,14 @@ function bindLogin(){
   document.getElementById('btnSignIn').onclick = doLogin;
   document.getElementById('loginPass').addEventListener('keydown', e=>{ if(e.key==='Enter') doLogin(); });
   document.getElementById('btnGoSync').onclick = ()=>{ STATE.screen='chooser'; render(); };
+  document.getElementById('btnRefreshLogin').onclick = async ()=>{
+    try{ await DB.pullAll(); toast(t('savedOk')); render(); }catch(e){ toast(t('tokenExpired'), true); }
+  };
 }
 function doLogin(){
   const u = document.getElementById('loginUser').value.trim();
-  const p = document.getElementById('loginPass').value;
-  const found = STATE.users.find(x=>x.username===u && x.password===p && x.role===loginRole);
+  const p = document.getElementById('loginPass').value.trim();
+  const found = STATE.users.find(x=>x.username.trim()===u && x.password.trim()===p && x.role===loginRole);
   if(!found){
     document.getElementById('loginErrBox').innerHTML = `<div class="warn-box">${t('loginErr')}</div>`;
     return;
@@ -1027,7 +1074,7 @@ function renderNewSheet(){
   <div class="section-head">
     <div>
       <h2>${isEdit? t('editSheetTitle') : t('newSheetTitle')}</h2>
-      <div class="sub">${sheetDraft.date}</div>
+      <div class="sub">${bnum(sheetDraft.date)}</div>
     </div>
   </div>
 
@@ -1060,7 +1107,7 @@ function renderNewSheet(){
     <div id="slotsList">
       ${sheetDraft.slots.map((s,i)=>`
         <div class="slot-item">
-          <span class="mono">${i+1}</span>
+          <span class="mono">${bnum(i+1)}</span>
           <input type="time" value="${s.start}" data-slot-start="${s.id}" style="flex:1;">
           <span>→</span>
           <input type="time" value="${s.end}" data-slot-end="${s.id}" style="flex:1;">
@@ -1075,7 +1122,7 @@ function renderNewSheet(){
     <div class="card-title"><span class="tag">03</span> ${t('selectEmployees')}</div>
     ${emps.length===0? `<div class="empty" style="padding:20px;"><p>${t('noEmployees')}</p></div>` : `
     <div class="selectall-bar">
-      <span>${sheetDraft.employees.length} / ${emps.length} ${t('employees')}</span>
+      <span>${bnum(sheetDraft.employees.length)} / ${bnum(emps.length)} ${t('employees')}</span>
       <button class="btn btn-sm ${allSelected?'btn-outline':'btn-amber'}" id="btnSelectAll">${allSelected? t('deselectAll') : t('selectAll')}</button>
     </div>
     <div id="empChecklist">
@@ -1121,11 +1168,11 @@ function renderEmpRow(e){
         return `
         <div class="row2" style="margin-bottom:6px;">
           <div>
-            <label style="margin-bottom:3px;">${t('start')} (${i+1})</label>
+            <label style="margin-bottom:3px;">${t('start')} (${bnum(i+1)})</label>
             <input type="time" value="${adj.actual_start}" data-adj-start="${e.id}|${s.id}">
           </div>
           <div>
-            <label style="margin-bottom:3px;">${t('end')} (${i+1})</label>
+            <label style="margin-bottom:3px;">${t('end')} (${bnum(i+1)})</label>
             <input type="time" value="${adj.actual_end}" data-adj-end="${e.id}|${s.id}">
           </div>
         </div>`;
@@ -1304,7 +1351,7 @@ function renderRecords(){
 
   return `
   <div class="section-head">
-    <div><h2>${t('recordsTitle')}</h2><div class="sub">${t('recordsSub')} · ${all.length} ${t('otSheetsCount')}</div></div>
+    <div><h2>${t('recordsTitle')}</h2><div class="sub">${t('recordsSub')} · ${bnum(all.length)} ${t('otSheetsCount')}</div></div>
   </div>
   <div class="search-box">
     <input type="text" id="recSearch" placeholder="${t('searchEmp')}" value="${recordsFilter}">
@@ -1328,12 +1375,12 @@ function renderSheetCard(s){
   s.employees.forEach(e=> e.adjustments.forEach(a=> totalHrs += durationHours(a.actual_start,a.actual_end)));
   return `
   <div class="sheet-card">
-    <div class="date-block">${s.date}</div>
+    <div class="date-block">${bnum(s.date)}</div>
     <h4>${divName}</h4>
     <p>${(s.work_description||'').slice(0,120) || t('na')}</p>
     <div class="sheet-meta">
-      <span class="badge badge-amber">${empCount} ${t('employees')}</span>
-      <span class="badge badge-moss">${totalHrs.toFixed(2)} ${t('hours')}</span>
+      <span class="badge badge-amber">${bnum(empCount)} ${t('employees')}</span>
+      <span class="badge badge-moss">${bnum(totalHrs.toFixed(2))} ${t('hours')}</span>
       ${s.image? `<span class="badge badge-gray">📷</span>`:''}
     </div>
     <div class="sheet-actions">
@@ -1363,11 +1410,11 @@ function openViewModal(sheetId){
   const empRows = s.employees.map(e=>{
     const emp = STATE.employees.find(x=>x.id===e.employee_id) || {name:'?',designation:''};
     const hrs = e.adjustments.reduce((sum,a)=>sum+durationHours(a.actual_start,a.actual_end),0);
-    const times = e.adjustments.map(a=>`${fmtHM(a.actual_start)}–${fmtHM(a.actual_end)}`).join(', ');
+    const times = e.adjustments.map(a=>`${bnum(fmtHM(a.actual_start))}–${bnum(fmtHM(a.actual_end))}`).join(', ');
     return `<div class="emp-row"><div style="flex:1;">
       <div class="emp-name">${emp.name}</div>
       <div class="emp-desig">${emp.designation} · ${times}</div>
-    </div><span class="badge badge-moss">${hrs.toFixed(2)}${t('hours')}</span></div>`;
+    </div><span class="badge badge-moss">${bnum(hrs.toFixed(2))}${t('hours')}</span></div>`;
   }).join('');
 
   const modal = document.createElement('div');
@@ -1375,7 +1422,7 @@ function openViewModal(sheetId){
   modal.innerHTML = `
     <div class="modal-box">
       <div class="modal-handle"></div>
-      <div class="modal-title">${s.date} — ${divName}</div>
+      <div class="modal-title">${bnum(s.date)} — ${divName}</div>
       <div class="modal-sub">${s.work_description || t('na')}</div>
       ${s.remarks? `<div class="info-box">${s.remarks}</div>`:''}
       <div class="divider"></div>
@@ -1450,15 +1497,13 @@ function renderSummary(){
         <label>${t('month')}</label>
         <input type="month" id="monthPicker" value="${summaryMonth}">
       </div>
-      ${canExport()? `<button class="btn btn-amber" id="btnExportCsv">${t('exportCsv')}</button>` :
-        `<button class="btn btn-outline" disabled title="${t('permNoExport')}" style="opacity:.5;">${t('exportCsv')}</button>`}
+      ${canExport()? `<button class="btn btn-amber" id="btnExportCsv">${t('exportCsv')}</button>` : ''}
     </div>
-    ${!canExport()? `<div class="info-box" style="margin-top:10px;margin-bottom:0;">${t('permNoExport')}</div>`:''}
   </div>
 
   <div class="stat-row">
-    <div class="stat-box"><div class="sn mono">${grandTotal.toFixed(1)}</div><div class="sl">${t('totalHours')}</div></div>
-    <div class="stat-box"><div class="sn mono">${totalSheets}</div><div class="sl">${t('otSheetsCount')}</div></div>
+    <div class="stat-box"><div class="sn mono">${bnum(grandTotal.toFixed(1))}</div><div class="sl">${t('totalHours')}</div></div>
+    <div class="stat-box"><div class="sn mono">${bnum(totalSheets)}</div><div class="sl">${t('otSheetsCount')}</div></div>
   </div>
 
   <div class="card">
@@ -1469,8 +1514,8 @@ function renderSummary(){
         <tbody>
         ${data.length===0? `<tr><td colspan="4">${t('noData')}</td></tr>` :
           data.map(d=>`<tr>
-            <td>${d.emp.name}</td><td>${d.emp.designation}</td><td>${d.sheetsCount}</td>
-            <td class="mono">${d.totalHours.toFixed(2)}</td>
+            <td>${d.emp.name}</td><td>${d.emp.designation}</td><td>${bnum(d.sheetsCount)}</td>
+            <td class="mono">${bnum(d.totalHours.toFixed(2))}</td>
           </tr>`).join('')
         }
         </tbody>
@@ -1484,15 +1529,15 @@ function renderSummary(){
       <table>
         <thead><tr>
           <th>${t('name')}</th>
-          ${Array.from({length:dim},(_,i)=>`<th>${i+1}</th>`).join('')}
+          ${Array.from({length:dim},(_,i)=>`<th>${bnum(i+1)}</th>`).join('')}
           <th>${t('total')}</th>
         </tr></thead>
         <tbody>
         ${data.length===0? `<tr><td colspan="${dim+2}">${t('noData')}</td></tr>` :
           data.map(d=>`<tr>
             <td>${d.emp.name}</td>
-            ${d.days.slice(1).map(h=> h>0? `<td class="cell-h">${trimNum(h)}</td>` : `<td class="cell-x">X</td>`).join('')}
-            <td class="mono" style="font-weight:700;">${d.totalHours.toFixed(1)}</td>
+            ${d.days.slice(1).map(h=> h>0? `<td class="cell-h">${bnum(trimNum(h))}</td>` : `<td class="cell-x">X</td>`).join('')}
+            <td class="mono" style="font-weight:700;">${bnum(d.totalHours.toFixed(1))}</td>
           </tr>`).join('')
         }
         </tbody>
@@ -1509,31 +1554,217 @@ function bindSummary(){
   const exp = document.getElementById('btnExportCsv');
   if(exp) exp.onclick = ()=>{
     if(!canExport()){ toast(t('permNoExport'), true); return; }
-    exportMonthlyCsv();
+    generateFullReport(summaryMonth);
   };
 }
 
-function exportMonthlyCsv(){
-  const {dim, data} = computeMonthlyData(summaryMonth);
-  const headers = [t('name'), t('designation'), ...Array.from({length:dim},(_,i)=>String(i+1)), t('total')];
-  const rows = data.map(d=>[
-    d.emp.name, d.emp.designation,
-    ...d.days.slice(1).map(h=> h>0 ? trimNum(h) : 'X'),
-    d.totalHours.toFixed(2)
-  ]);
-  downloadCsv(`OT_Summary_${summaryMonth}.csv`, [headers, ...rows]);
+/* ---------- Bengali-only formal report (4 sheets, matches original workbook layout) ---------- */
+const BN_MONTHS = ['জানুয়ারি','ফেব্রুয়ারি','মার্চ','এপ্রিল','মে','জুন','জুলাই','আগস্ট','সেপ্টেম্বর','অক্টোবর','নভেম্বর','ডিসেম্বর'];
+const ORD_WEEK = ['১ম সপ্তাহ','২য় সপ্তাহ','৩য় সপ্তাহ','৪র্থ সপ্তাহ','৫ম সপ্তাহ'];
+function bnForce(input){ if(input===null||input===undefined) return ''; return String(input).replace(/[0-9]/g, d=>BN_DIGITS[+d]); }
+function ymLabel(ym){ const [y,m] = ym.split('-').map(Number); return BN_MONTHS[m-1] + ' ' + bnForce(y) + 'ইং'; }
+function bnDateDMY(iso){ const [y,m,d] = iso.split('-').map(Number); return bnForce(d)+'/'+bnForce(m)+'/'+bnForce(y); }
+function weekRangesFor(dim){ return [[1,7],[8,14],[15,21],[22,28],[29,dim]].filter(r=>r[0]<=dim); }
+
+function buildEntryFormAOA(ym){
+  const rows = [['তারিখ','অতিরিক্ত কাজের বিবরণী','ক্রঃ','কর্মচারীদের নাম','পদবী','সময়কাল','মোট ঘন্টা','মন্তব্য']];
+  const merges = [];
+  const sheetsInMonth = STATE.sheets.filter(s=>s.date.startsWith(ym)).sort((a,b)=>a.date.localeCompare(b.date));
+  sheetsInMonth.forEach(s=>{
+    const empList = s.employees.map(se=>{
+      const emp = STATE.employees.find(e=>e.id===se.employee_id) || {name:'?',designation:''};
+      const hrs = se.adjustments.reduce((sum,a)=>sum+durationHours(a.actual_start,a.actual_end),0);
+      const timeStr = se.adjustments.map(a=> bnForce(a.actual_start)+'-'+bnForce(a.actual_end)).join('\n');
+      return {name:emp.name, designation:emp.designation, hrs, timeStr};
+    });
+    const startRow = rows.length;
+    empList.forEach((e,i)=>{
+      rows.push([
+        i===0? bnDateDMY(s.date) : '',
+        i===0? (s.work_description||'') : '',
+        bnForce(i+1)+'।',
+        e.name, e.designation, e.timeStr || 'X',
+        e.hrs>0? bnForce(trimNum(e.hrs)) : 'X',
+        i===0? (s.remarks||'') : ''
+      ]);
+    });
+    if(empList.length>1){
+      merges.push({s:{r:startRow,c:0}, e:{r:startRow+empList.length-1,c:0}});
+      merges.push({s:{r:startRow,c:1}, e:{r:startRow+empList.length-1,c:1}});
+      merges.push({s:{r:startRow,c:7}, e:{r:startRow+empList.length-1,c:7}});
+    }
+  });
+  if(sheetsInMonth.length===0) rows.push(['','','','এই মাসে কোনো ওটি শিট পাওয়া যায়নি','','','','']);
+  return {rows, merges};
 }
-function downloadCsv(filename, rows){
-  const csv = rows.map(r=> r.map(cell=>{
-    const s = String(cell ?? '');
-    return /[",\n]/.test(s) ? '"'+s.replace(/"/g,'""')+'"' : s;
-  }).join(',')).join('\r\n');
-  const blob = new Blob(['\uFEFF'+csv], {type:'text/csv;charset=utf-8;'});
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url; a.download = filename;
-  document.body.appendChild(a); a.click(); document.body.removeChild(a);
-  URL.revokeObjectURL(url);
+
+function buildWeeklyAOA(ym){
+  const {dim, data} = computeMonthlyData(ym);
+  const weekRanges = weekRangesFor(dim);
+  const rows = []; const merges = [];
+  const orgL1 = STATE.orgConfig.weekly_header_line1 || '';
+  const orgL2 = STATE.orgConfig.weekly_header_line2 || '';
+  const orgL3 = STATE.orgConfig.weekly_header_line3 || '';
+  const monthLabel = ymLabel(ym);
+
+  weekRanges.forEach((range, wi)=>{
+    const startDay = range[0], endDay = Math.min(range[1], dim);
+    const dayCols = []; for(let d=startDay; d<=endDay; d++) dayCols.push(d);
+    const lastColIdx = 3 + dayCols.length; // 0:serial 1:name 2:desig 3..: days, then total
+
+    const headerRow1 = rows.length;
+    rows.push([`${orgL1}\n${orgL2}\n${orgL3}`]);
+    merges.push({s:{r:headerRow1,c:0}, e:{r:headerRow1,c:lastColIdx}});
+
+    const headerRow2 = rows.length;
+    rows.push([`অধিকাল ভাতা সম্পর্কিত ${monthLabel} মাসের ${ORD_WEEK[wi]} প্রতিবেদনঃ`]);
+    merges.push({s:{r:headerRow2,c:0}, e:{r:headerRow2,c:lastColIdx}});
+
+    const tblHeadRow = rows.length;
+    const headArr = ['ক্রঃ নং','কর্মচারীদের নাম','পদবী','তারিখ'];
+    for(let i=1;i<dayCols.length;i++) headArr.push('');
+    headArr.push('মোট ঘন্টা');
+    rows.push(headArr);
+    if(dayCols.length>1) merges.push({s:{r:tblHeadRow,c:3}, e:{r:tblHeadRow,c:3+dayCols.length-1}});
+
+    const dayRow = ['','',''];
+    dayCols.forEach(d=> dayRow.push(bnForce(d)));
+    dayRow.push('');
+    rows.push(dayRow);
+
+    data.forEach((d,idx)=>{
+      const dayVals = dayCols.map(dayNum=> bnForce(trimNum(d.days[dayNum]||0)));
+      const weekTotal = dayCols.reduce((a,dayNum)=>a+(d.days[dayNum]||0),0);
+      rows.push([bnForce(idx+1), d.emp.name, d.emp.designation, ...dayVals, bnForce(trimNum(weekTotal))]);
+    });
+    rows.push([]);
+  });
+  return {rows, merges};
+}
+
+function buildMonthlyAOA(ym){
+  const {dim, data} = computeMonthlyData(ym);
+  const rows = []; const merges = [];
+  const monthLabel = ymLabel(ym);
+  const lastCol = 3 + dim; // total column index
+
+  const titleRow = rows.length;
+  rows.push([STATE.orgConfig.header_text ? (STATE.orgConfig.header_text + ' ' + monthLabel + ' মাসের অধিকাল কর্মঘন্টার বিবরণী।') : `অধিকাল কর্মঘন্টার বিবরণী — ${monthLabel}`]);
+  merges.push({s:{r:titleRow,c:0}, e:{r:titleRow,c:lastCol}});
+  rows.push([]);
+
+  const headRow = rows.length;
+  const headArr = ['ক্রঃ নং','কর্মচারীদের নাম','পদবী', `মাসের নামঃ ${monthLabel}`];
+  for(let i=1;i<dim;i++) headArr.push('');
+  headArr.push('মোট ঘন্টা');
+  rows.push(headArr);
+  merges.push({s:{r:headRow,c:3}, e:{r:headRow,c:3+dim-1}});
+
+  const weekRow = rows.length;
+  const wArr = ['','',''];
+  const weekRanges = weekRangesFor(dim);
+  weekRanges.forEach((r,i)=>{
+    const span = Math.min(r[1],dim)-r[0]+1;
+    wArr.push(ORD_WEEK[i]);
+    for(let k=1;k<span;k++) wArr.push('');
+  });
+  rows.push(wArr);
+  let colCursor = 3;
+  weekRanges.forEach((r)=>{
+    const span = Math.min(r[1],dim)-r[0]+1;
+    if(span>1) merges.push({s:{r:weekRow,c:colCursor}, e:{r:weekRow,c:colCursor+span-1}});
+    colCursor += span;
+  });
+
+  const dArr = ['','',''];
+  for(let d=1; d<=dim; d++) dArr.push(bnForce(d));
+  dArr.push('');
+  rows.push(dArr);
+
+  data.forEach((d,idx)=>{
+    const dayVals = d.days.slice(1).map(h=>bnForce(trimNum(h)));
+    rows.push([bnForce(idx+1), d.emp.name, d.emp.designation, ...dayVals, bnForce(trimNum(d.totalHours))]);
+  });
+
+  const grandTotal = data.reduce((s,d)=>s+d.totalHours,0);
+  const totalRowArr = new Array(lastCol+1).fill('');
+  totalRowArr[0] = `${monthLabel} মাসের মোট অধিকাল মোট কর্মঘন্টার পরিমান`;
+  totalRowArr[lastCol] = bnForce(trimNum(grandTotal));
+  rows.push(totalRowArr);
+  rows.push([]); rows.push([]);
+
+  const sigRow = rows.length;
+  const sigArr = []; sigArr[0]=STATE.orgConfig.sig1||''; sigArr[6]=STATE.orgConfig.sig2||''; sigArr[Math.min(13,lastCol)]=STATE.orgConfig.sig3||'';
+  rows.push(sigArr);
+  rows.push([]); rows.push([]);
+  const sigArr2 = []; sigArr2[0]=STATE.orgConfig.sig4||''; sigArr2[6]=STATE.orgConfig.sig5||'';
+  rows.push(sigArr2);
+
+  return {rows, merges};
+}
+
+function buildMonthlyAsPerWeekAOA(ym){
+  const {dim, data} = computeMonthlyData(ym);
+  const weekRanges = weekRangesFor(dim);
+  const rows = []; const merges = [];
+  const monthLabel = ymLabel(ym);
+  const totalColsCount = 4 + weekRanges.length + 1;
+  const lastColIdx = totalColsCount - 1;
+
+  const titleRow = rows.length;
+  rows.push([STATE.orgConfig.header_text ? (STATE.orgConfig.header_text + ' ' + monthLabel + ' মাসের অধিকাল কর্মঘন্টার বিবরণী (সাপ্তাহিক ভিত্তিতে)।') : `অধিকাল কর্মঘন্টার বিবরণী (সাপ্তাহিক ভিত্তিতে) — ${monthLabel}`]);
+  merges.push({s:{r:titleRow,c:0}, e:{r:titleRow,c:lastColIdx}});
+  rows.push([]);
+
+  rows.push(['ক্রঃ নং','কর্মচারীদের নাম','পদবী','Employee ID', ...ORD_WEEK.slice(0,weekRanges.length), 'মোট ঘন্টা']);
+
+  data.forEach((d,idx)=>{
+    const weekTotals = weekRanges.map(r=>{
+      const end = Math.min(r[1],dim);
+      let sum=0;
+      for(let day=r[0]; day<=end; day++) sum += d.days[day]||0;
+      return bnForce(trimNum(sum));
+    });
+    rows.push([bnForce(idx+1), d.emp.name, d.emp.designation, d.emp.employee_code? bnForce(d.emp.employee_code): '', ...weekTotals, bnForce(trimNum(d.totalHours))]);
+  });
+
+  const grandTotal = data.reduce((s,d)=>s+d.totalHours,0);
+  const totalRow = ['জুন ইং মাসের মোট অধিকাল মোট কর্মঘন্টার পরিমান'.replace('জুন', monthLabel.split(' ')[0])];
+  for(let i=1;i<lastColIdx;i++) totalRow.push('');
+  totalRow.push(bnForce(trimNum(grandTotal)));
+  rows.push(totalRow);
+  rows.push([]);
+  rows.push([STATE.orgConfig.sig1||'']);
+
+  return {rows, merges};
+}
+
+function generateFullReport(ym){
+  if(typeof XLSX === 'undefined'){ toast(t('xlsxNotLoaded'), true); return; }
+  const wb = XLSX.utils.book_new();
+
+  const ef = buildEntryFormAOA(ym);
+  const wsEF = XLSX.utils.aoa_to_sheet(ef.rows);
+  wsEF['!merges'] = ef.merges;
+  XLSX.utils.book_append_sheet(wb, wsEF, 'Entry Form');
+
+  const wk = buildWeeklyAOA(ym);
+  const wsWK = XLSX.utils.aoa_to_sheet(wk.rows);
+  wsWK['!merges'] = wk.merges;
+  XLSX.utils.book_append_sheet(wb, wsWK, 'weekly');
+
+  const mo = buildMonthlyAOA(ym);
+  const wsMO = XLSX.utils.aoa_to_sheet(mo.rows);
+  wsMO['!merges'] = mo.merges;
+  XLSX.utils.book_append_sheet(wb, wsMO, 'monthly');
+
+  const mw = buildMonthlyAsPerWeekAOA(ym);
+  const wsMW = XLSX.utils.aoa_to_sheet(mw.rows);
+  wsMW['!merges'] = mw.merges;
+  XLSX.utils.book_append_sheet(wb, wsMW, 'monthly_as_per_Week');
+
+  XLSX.writeFile(wb, `OT_Report_${ym}.xlsx`);
+  toast(t('savedOk'));
 }
 
 /* =========================================================
@@ -1577,6 +1808,7 @@ function renderEmpSettings(){
     `).join('')}
     ${canAddEmployee()? `<button class="btn btn-amber btn-block" id="btnAddEmp" style="margin-top:10px;">${t('addEmployee')}</button>` :
       `<div class="info-box" style="margin-top:10px;">${t('permNoAddEmp')}</div>`}
+    ${canAddEmployee()? `<button class="btn btn-outline btn-block" id="btnRestoreDefaults" style="margin-top:8px;">${t('restoreDefaults')}</button>`:''}
   </div>`;
 }
 
@@ -1629,12 +1861,12 @@ function renderCloudSettings(){
     <div class="card-title"><span class="sync-dot ${DB.status==='on'?'on':(DB.status==='busy'||DB.status==='connecting'?'busy':'off')}"></span> ${t('syncTab')} — <span style="color:var(--ink-soft);font-weight:500;">${statusLabel}</span></div>
     <div class="stat-row">
       <div class="stat-box"><div class="sn" style="font-size:12.5px;">${DB.lastSync? new Date(DB.lastSync).toLocaleString(STATE.lang==='bn'?'bn-BD':'en-US'): '—'}</div><div class="sl">${t('lastSynced')}</div></div>
-      <div class="stat-box"><div class="sn" style="font-size:11px;word-break:break-all;">${DB.spreadsheetId||'—'}</div><div class="sl">Spreadsheet ID</div></div>
+      ${isAdmin()? `<div class="stat-box"><div class="sn" style="font-size:11px;word-break:break-all;">${DB.spreadsheetId||'—'}</div><div class="sl">Spreadsheet ID</div></div>` : ''}
     </div>
-    <a href="https://docs.google.com/spreadsheets/d/${DB.spreadsheetId}" target="_blank" class="btn btn-outline btn-block btn-sm" style="text-decoration:none;margin-bottom:8px;">${t('openSheet')}</a>
+    ${isAdmin()? `<a href="https://docs.google.com/spreadsheets/d/${DB.spreadsheetId}" target="_blank" class="btn btn-outline btn-block btn-sm" style="text-decoration:none;margin-bottom:8px;">${t('openSheet')}</a>` : ''}
     <button class="btn btn-primary btn-block" id="btnSyncNowS">${t('syncNow')}</button>
     <button class="btn btn-outline btn-block" id="btnPullNowS" style="margin-top:8px;">${t('pullNow')}</button>
-    <button class="btn btn-outline btn-block" id="btnChangeSS" style="margin-top:8px;">${t('changeSpreadsheet')}</button>
+    ${isAdmin()? `<button class="btn btn-outline btn-block" id="btnChangeSS" style="margin-top:8px;">${t('changeSpreadsheet')}</button>` : ''}
     <button class="btn btn-danger btn-block" id="btnReconnectS" style="margin-top:8px;">${t('reconnect')}</button>
   </div>`;
 }
@@ -1646,6 +1878,8 @@ function bindSettings(){
 
   const addEmpBtn = document.getElementById('btnAddEmp');
   if(addEmpBtn) addEmpBtn.onclick = ()=> openEmpModal(null);
+  const restoreBtn = document.getElementById('btnRestoreDefaults');
+  if(restoreBtn) restoreBtn.onclick = restoreDefaultEmployees;
   document.querySelectorAll('[data-emp-edit]').forEach(el=>{ el.onclick = ()=> openEmpModal(el.getAttribute('data-emp-edit')); });
   document.querySelectorAll('[data-emp-del]').forEach(el=>{
     el.onclick = async ()=>{
@@ -1704,9 +1938,19 @@ function bindSettings(){
   };
 }
 
+async function restoreDefaultEmployees(){
+  const defaults = seedRowsFor('employees'); // [id,name,designation,active,code,salary]
+  const missing = defaults.filter(row => !STATE.employees.find(e=>e.name===row[1]));
+  if(missing.length===0){ toast(t('noneMissing')); return; }
+  const newOnes = missing.map(row=>({id:uid('emp'), name:row[1], designation:row[2], active:true, employee_code:'', basic_salary:''}));
+  STATE.employees = [...newOnes, ...STATE.employees];
+  try{ await DB.pushEmployees(); toast(t('savedOk')); }catch(e){ toast(t('tokenExpired'), true); }
+  render();
+}
+
 function openEmpModal(empId){
   if(!empId && !canAddEmployee()){ toast(t('permNoAddEmp'), true); return; }
-  const emp = empId ? STATE.employees.find(e=>e.id===empId) : {name:'', designation:'', active:true};
+  const emp = empId ? STATE.employees.find(e=>e.id===empId) : {name:'', designation:'', active:true, employee_code:'', basic_salary:''};
   const modal = document.createElement('div');
   modal.className = 'modal-bg center';
   modal.innerHTML = `
@@ -1714,6 +1958,10 @@ function openEmpModal(empId){
       <div class="modal-title">${empId? t('edit') : t('addEmployee')}</div>
       <div class="field"><label>${t('empName')}</label><input type="text" id="mEmpName" value="${emp.name}"></div>
       <div class="field"><label>${t('empDesig')}</label><input type="text" id="mEmpDesig" value="${emp.designation}"></div>
+      <div class="row2">
+        <div class="field"><label>${t('empCode')}</label><input type="text" id="mEmpCode" value="${emp.employee_code||''}"></div>
+        <div class="field"><label>${t('empSalary')}</label><input type="text" id="mEmpSalary" value="${emp.basic_salary||''}"></div>
+      </div>
       <div style="display:flex;gap:8px;">
         <button class="btn btn-outline btn-block" id="mCancel">${t('cancel')}</button>
         <button class="btn btn-primary btn-block" id="mSave">${t('saveBtn')}</button>
@@ -1724,12 +1972,14 @@ function openEmpModal(empId){
   modal.querySelector('#mSave').onclick = async ()=>{
     const name = document.getElementById('mEmpName').value.trim();
     const desig = document.getElementById('mEmpDesig').value.trim();
+    const code = document.getElementById('mEmpCode').value.trim();
+    const salary = document.getElementById('mEmpSalary').value.trim();
     if(!name){ toast(t('fillRequired'), true); return; }
     if(empId){
       const rec = STATE.employees.find(e=>e.id===empId);
-      rec.name = name; rec.designation = desig;
+      rec.name = name; rec.designation = desig; rec.employee_code = code; rec.basic_salary = salary;
     } else {
-      STATE.employees.push({id:uid('emp'), name, designation:desig, active:true});
+      STATE.employees.unshift({id:uid('emp'), name, designation:desig, active:true, employee_code:code, basic_salary:salary});
     }
     try{ await DB.pushEmployees(); toast(t('savedOk')); }catch(e){ toast(t('tokenExpired'), true); }
     modal.remove();
@@ -1772,10 +2022,54 @@ function openDivModal(){
     render();
     return;
   }
-  // have credentials saved: show the connect button (token requests need a user gesture)
-  STATE.screen = 'connect';
-  render();
+  if(!DB.spreadsheetId){
+    // first time on this device/browser: needs an explicit user gesture to consent
+    STATE.screen = 'connect';
+    render();
+    return;
+  }
+  // returning device that has already connected before: try a silent, no-UI reconnect
+  attemptSilentReconnect();
 })();
+
+function attemptSilentReconnect(){
+  STATE.screen = 'boot';
+  render();
+  let settled = false;
+  const failSafe = setTimeout(()=>{
+    if(settled) return;
+    settled = true;
+    STATE.screen = 'connect';
+    render();
+  }, 6000);
+
+  DB.setStatus('connecting');
+  DB.ensureTokenClient(async ()=>{
+    if(settled) return;
+    settled = true;
+    clearTimeout(failSafe);
+    DB.connected = true;
+    DB.setStatus('on');
+    try{
+      await DB.ensureTabsAndSeed();
+      await DB.pullAll();
+      finishBootAfterConnect();
+    }catch(e){
+      DB.setStatus('error');
+      STATE.screen = 'connect';
+      render();
+    }
+  }, {
+    prompt: 'none',
+    onError: ()=>{
+      if(settled) return;
+      settled = true;
+      clearTimeout(failSafe);
+      STATE.screen = 'connect';
+      render();
+    }
+  });
+}
 
 </script>
 </body>
