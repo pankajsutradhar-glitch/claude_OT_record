@@ -144,12 +144,6 @@ textarea{resize:vertical;min-height:64px;}
 .sheet-card p{margin:0;font-size:12.5px;color:var(--ink-soft);line-height:1.5;}
 .sheet-meta{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;}
 .sheet-actions{display:flex;gap:8px;margin-top:10px;}
-.sheet-emp-list{margin:8px 0;border-top:1px dashed var(--line);padding-top:6px;}
-.sheet-emp-line{display:flex;align-items:center;gap:8px;font-size:11.5px;padding:3px 0;color:var(--ink-soft);}
-.sheet-emp-line b{color:var(--ink);font-weight:600;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-.sheet-emp-line .t{font-family:'JetBrains Mono',monospace;color:var(--ink);white-space:nowrap;font-size:11px;}
-.hrs-live{font-size:11.5px;color:var(--moss);font-weight:700;margin:-2px 0 8px;text-align:right;}
-.hrs-live-total{font-size:12px;font-weight:700;color:var(--ink);text-align:right;margin-top:4px;padding-top:6px;border-top:1px dashed var(--line);}
 
 .emp-row{
   display:flex;align-items:center;gap:10px;padding:10px 4px;border-bottom:1px solid var(--paper-2);
@@ -879,7 +873,6 @@ function renderEmpRow(e){
       <div class="slot-adjust-title">${t('actualTime')}</div>
       ${sheetDraft.slots.map((s,i)=>{
         const adj = inSheet.adjustments.find(a=>a.slot_id===s.id) || {actual_start:s.start, actual_end:s.end};
-        const hrs = durationHours(adj.actual_start, adj.actual_end);
         return `
         <div class="row2" style="margin-bottom:6px;">
           <div>
@@ -890,24 +883,10 @@ function renderEmpRow(e){
             <label style="margin-bottom:3px;">${t('end')} (${bnum(i+1)})</label>
             <input type="time" value="${adj.actual_end}" data-adj-end="${e.id}|${s.id}">
           </div>
-        </div>
-        <div class="hrs-live" id="hrs-${e.id}-${s.id}">= ${bnum(trimNum(hrs))} ${t('hours')}</div>`;
+        </div>`;
       }).join('')}
-      <div class="hrs-live-total" id="hrstotal-${e.id}">${t('total')}: ${bnum(trimNum(inSheet.adjustments.reduce((sum,a)=>sum+durationHours(a.actual_start,a.actual_end),0)))} ${t('hours')}</div>
     </div>` : ''}
   </div>`;
-}
-
-function updateHrsLive(eid, sid){
-  const empEntry = sheetDraft.employees.find(x=>x.employee_id===eid);
-  if(!empEntry) return;
-  const adj = empEntry.adjustments.find(a=>a.slot_id===sid);
-  const hrs = durationHours(adj.actual_start, adj.actual_end);
-  const elS = document.getElementById(`hrs-${eid}-${sid}`);
-  if(elS) elS.textContent = `= ${bnum(trimNum(hrs))} ${t('hours')}`;
-  const total = empEntry.adjustments.reduce((sum,a)=>sum+durationHours(a.actual_start,a.actual_end),0);
-  const elT = document.getElementById(`hrstotal-${eid}`);
-  if(elT) elT.textContent = `${t('total')}: ${bnum(trimNum(total))} ${t('hours')}`;
 }
 
 function bindScreenSpecific(){
@@ -983,14 +962,12 @@ function bindNewSheet(){
     el.onchange = e=>{
       const [eid,sid] = el.getAttribute('data-adj-start').split('|');
       sheetDraft.employees.find(x=>x.employee_id===eid).adjustments.find(a=>a.slot_id===sid).actual_start = e.target.value;
-      updateHrsLive(eid, sid);
     };
   });
   document.querySelectorAll('[data-adj-end]').forEach(el=>{
     el.onchange = e=>{
       const [eid,sid] = el.getAttribute('data-adj-end').split('|');
       sheetDraft.employees.find(x=>x.employee_id===eid).adjustments.find(a=>a.slot_id===sid).actual_end = e.target.value;
-      updateHrsLive(eid, sid);
     };
   });
 
@@ -1112,22 +1089,12 @@ function renderSheetCard(s){
   const divName = div ? (STATE.lang==='bn'?div.name_bn:div.name_en) : t('na');
   const empCount = s.employees.length;
   let totalHrs = 0;
-  const empLines = s.employees.map(e=>{
-    const emp = STATE.employees.find(x=>x.id===e.employee_id) || {name:'?'};
-    let hrs = 0;
-    const times = e.adjustments.map(a=>{
-      hrs += durationHours(a.actual_start,a.actual_end);
-      return `${bnum(fmtHM(a.actual_start))}–${bnum(fmtHM(a.actual_end))}`;
-    }).join(', ');
-    totalHrs += hrs;
-    return `<div class="sheet-emp-line"><b>${esc(emp.name)}</b><span class="t">${times}</span><span class="t">${bnum(trimNum(hrs))} ${t('hours')}</span></div>`;
-  }).join('');
+  s.employees.forEach(e=> e.adjustments.forEach(a=> totalHrs += durationHours(a.actual_start,a.actual_end)));
   return `
   <div class="sheet-card">
     <div class="date-block">${bnum(s.date)}</div>
     <h4>${esc(divName)}</h4>
     <p>${esc((s.work_description||'').slice(0,120)) || t('na')}</p>
-    <div class="sheet-emp-list">${empLines}</div>
     <div class="sheet-meta">
       <span class="badge badge-amber">${bnum(empCount)} ${t('employees')}</span>
       <span class="badge badge-moss">${bnum(totalHrs.toFixed(2))} ${t('hours')}</span>
