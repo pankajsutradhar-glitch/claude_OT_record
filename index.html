@@ -10,7 +10,6 @@
 <title>OT_Record — অতিরিক্ত কর্মঘন্টা ব্যবস্থাপনা</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-<script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
 <style>
 :root{
   --ink:#0F2E2C;
@@ -333,6 +332,7 @@ const T = {
     apiUrlHelp:'আপনার প্রকাশিত (deployed) Google Apps Script Web App-এর URL এখানে বসান। এই URL গোপন তথ্য নয় — শুধু আপনার সার্ভারের ঠিকানা।',
     saveContinue:'সংরক্ষণ করে এগিয়ে যান', connecting:'সংযোগ হচ্ছে...',
     xlsxNotLoaded:'রিপোর্ট লাইব্রেরি লোড হয়নি, ইন্টারনেট সংযোগ যাচাই করুন',
+    generatingReport:'রিপোর্ট তৈরি হচ্ছে...', timeHrs:'সময়কাল (ঘন্টা)',
     networkErr:'সার্ভারের সাথে সংযোগ করা যায়নি, ইন্টারনেট ও URL যাচাই করুন',
     editApiUrl:'সার্ভার ঠিকানা পরিবর্তন করুন', sessionExpired:'সেশনের মেয়াদ শেষ, আবার লগইন করুন',
     orgTab:'প্রতিষ্ঠান', orgHeaderText:'রিপোর্ট শিরোনাম', orgWeekLine1:'সাপ্তাহিক হেডার লাইন ১',
@@ -381,6 +381,7 @@ const T = {
     apiUrlHelp:"Paste your deployed Google Apps Script Web App URL here. This URL isn't secret — it's just your server's address.",
     saveContinue:'Save & Continue', connecting:'Connecting...',
     xlsxNotLoaded:'Report library failed to load — check your internet connection',
+    generatingReport:'Generating report...', timeHrs:'Time (Hrs)',
     networkErr:'Could not reach the server — check your internet connection and URL',
     editApiUrl:'Change Server Address', sessionExpired:'Session expired — please log in again',
     orgTab:'Organization', orgHeaderText:'Report Title', orgWeekLine1:'Weekly Header Line 1',
@@ -827,6 +828,7 @@ function renderNewSheet(){
           <input type="time" value="${s.end}" data-slot-end="${s.id}" style="flex:1;">
           ${sheetDraft.slots.length>1?`<button class="btn btn-sm btn-danger" data-slot-del="${s.id}">✕</button>`:''}
         </div>
+        <div class="hrs-live" id="slothrs-${s.id}" style="margin-top:-6px;">${t('timeHrs')}: ${bnum(trimNum(durationHours(s.start,s.end)))}</div>
       `).join('')}
     </div>
     <button class="btn btn-outline btn-sm" id="btnAddSlot" style="margin-top:4px;">${t('addSlot')}</button>
@@ -898,6 +900,14 @@ function renderEmpRow(e){
   </div>`;
 }
 
+function updateSlotHrsLive(sid){
+  const slot = sheetDraft.slots.find(s=>s.id===sid);
+  if(!slot) return;
+  const hrs = durationHours(slot.start, slot.end);
+  const el = document.getElementById(`slothrs-${sid}`);
+  if(el) el.textContent = `${t('timeHrs')}: ${bnum(trimNum(hrs))}`;
+}
+
 function updateHrsLive(eid, sid){
   const empEntry = sheetDraft.employees.find(x=>x.employee_id===eid);
   if(!empEntry) return;
@@ -925,10 +935,18 @@ function bindNewSheet(){
   if(byId('fRemarks')) byId('fRemarks').oninput = e=>{ sheetDraft.remarks = e.target.value; };
 
   document.querySelectorAll('[data-slot-start]').forEach(el=>{
-    el.onchange = e=>{ sheetDraft.slots.find(s=>s.id===el.getAttribute('data-slot-start')).start = e.target.value; };
+    el.onchange = e=>{
+      const sid = el.getAttribute('data-slot-start');
+      sheetDraft.slots.find(s=>s.id===sid).start = e.target.value;
+      updateSlotHrsLive(sid);
+    };
   });
   document.querySelectorAll('[data-slot-end]').forEach(el=>{
-    el.onchange = e=>{ sheetDraft.slots.find(s=>s.id===el.getAttribute('data-slot-end')).end = e.target.value; };
+    el.onchange = e=>{
+      const sid = el.getAttribute('data-slot-end');
+      sheetDraft.slots.find(s=>s.id===sid).end = e.target.value;
+      updateSlotHrsLive(sid);
+    };
   });
   document.querySelectorAll('[data-slot-del]').forEach(el=>{
     el.onclick = ()=>{
@@ -1313,212 +1331,26 @@ function bindSummary(){
   };
 }
 
-/* ---------- Bengali-only formal report (4 sheets, matches original workbook layout) ---------- */
-const BN_MONTHS = ['জানুয়ারি','ফেব্রুয়ারি','মার্চ','এপ্রিল','মে','জুন','জুলাই','আগস্ট','সেপ্টেম্বর','অক্টোবর','নভেম্বর','ডিসেম্বর'];
-const ORD_WEEK = ['১ম সপ্তাহ','২য় সপ্তাহ','৩য় সপ্তাহ','৪র্থ সপ্তাহ','৫ম সপ্তাহ'];
-function bnForce(input){ if(input===null||input===undefined) return ''; return String(input).replace(/[0-9]/g, d=>BN_DIGITS[+d]); }
-function ymLabel(ym){ const [y,m] = ym.split('-').map(Number); return BN_MONTHS[m-1] + ' ' + bnForce(y) + 'ইং'; }
-function bnDateDMY(iso){ const [y,m,d] = iso.split('-').map(Number); return bnForce(d)+'/'+bnForce(m)+'/'+bnForce(y); }
-function weekRangesFor(dim){ return [[1,7],[8,14],[15,21],[22,28],[29,dim]].filter(r=>r[0]<=dim); }
-
-function buildEntryFormAOA(ym){
-  const rows = [['তারিখ','অতিরিক্ত কাজের বিবরণী','ক্রঃ','কর্মচারীদের নাম','পদবী','সময়কাল','মোট ঘন্টা','মন্তব্য']];
-  const merges = [];
-  const sheetsInMonth = STATE.sheets.filter(s=>s.date.startsWith(ym)).sort((a,b)=>a.date.localeCompare(b.date));
-  sheetsInMonth.forEach(s=>{
-    const empList = s.employees.map(se=>{
-      const emp = STATE.employees.find(e=>e.id===se.employee_id) || {name:'?',designation:''};
-      const hrs = se.adjustments.reduce((sum,a)=>sum+durationHours(a.actual_start,a.actual_end),0);
-      const timeStr = se.adjustments.map(a=> bnForce(a.actual_start)+'-'+bnForce(a.actual_end)).join('\n');
-      return {name:emp.name, designation:emp.designation, hrs, timeStr};
-    });
-    const startRow = rows.length;
-    empList.forEach((e,i)=>{
-      rows.push([
-        i===0? bnDateDMY(s.date) : '',
-        i===0? (s.work_description||'') : '',
-        bnForce(i+1)+'।',
-        e.name, e.designation, e.timeStr || 'X',
-        e.hrs>0? bnForce(trimNum(e.hrs)) : 'X',
-        i===0? (s.remarks||'') : ''
-      ]);
-    });
-    if(empList.length>1){
-      merges.push({s:{r:startRow,c:0}, e:{r:startRow+empList.length-1,c:0}});
-      merges.push({s:{r:startRow,c:1}, e:{r:startRow+empList.length-1,c:1}});
-      merges.push({s:{r:startRow,c:7}, e:{r:startRow+empList.length-1,c:7}});
-    }
-  });
-  if(sheetsInMonth.length===0) rows.push(['','','','এই মাসে কোনো ওটি শিট পাওয়া যায়নি','','','','']);
-  return {rows, merges};
-}
-
-function buildWeeklyAOA(ym){
-  const {dim, data} = computeMonthlyData(ym);
-  const weekRanges = weekRangesFor(dim);
-  const rows = []; const merges = [];
-  const orgL1 = STATE.orgConfig.weekly_header_line1 || '';
-  const orgL2 = STATE.orgConfig.weekly_header_line2 || '';
-  const orgL3 = STATE.orgConfig.weekly_header_line3 || '';
-  const monthLabel = ymLabel(ym);
-
-  weekRanges.forEach((range, wi)=>{
-    const startDay = range[0], endDay = Math.min(range[1], dim);
-    const dayCols = []; for(let d=startDay; d<=endDay; d++) dayCols.push(d);
-    const lastColIdx = 3 + dayCols.length;
-
-    const headerRow1 = rows.length;
-    rows.push([`${orgL1}\n${orgL2}\n${orgL3}`]);
-    merges.push({s:{r:headerRow1,c:0}, e:{r:headerRow1,c:lastColIdx}});
-
-    const headerRow2 = rows.length;
-    rows.push([`অধিকাল ভাতা সম্পর্কিত ${monthLabel} মাসের ${ORD_WEEK[wi]} প্রতিবেদনঃ`]);
-    merges.push({s:{r:headerRow2,c:0}, e:{r:headerRow2,c:lastColIdx}});
-
-    const tblHeadRow = rows.length;
-    const headArr = ['ক্রঃ নং','কর্মচারীদের নাম','পদবী','তারিখ'];
-    for(let i=1;i<dayCols.length;i++) headArr.push('');
-    headArr.push('মোট ঘন্টা');
-    rows.push(headArr);
-    if(dayCols.length>1) merges.push({s:{r:tblHeadRow,c:3}, e:{r:tblHeadRow,c:3+dayCols.length-1}});
-
-    const dayRow = ['','',''];
-    dayCols.forEach(d=> dayRow.push(bnForce(d)));
-    dayRow.push('');
-    rows.push(dayRow);
-
-    data.forEach((d,idx)=>{
-      const dayVals = dayCols.map(dayNum=> bnForce(trimNum(d.days[dayNum]||0)));
-      const weekTotal = dayCols.reduce((a,dayNum)=>a+(d.days[dayNum]||0),0);
-      rows.push([bnForce(idx+1), d.emp.name, d.emp.designation, ...dayVals, bnForce(trimNum(weekTotal))]);
-    });
-    rows.push([]);
-  });
-  return {rows, merges};
-}
-
-function buildMonthlyAOA(ym){
-  const {dim, data} = computeMonthlyData(ym);
-  const rows = []; const merges = [];
-  const monthLabel = ymLabel(ym);
-  const lastCol = 3 + dim;
-
-  const titleRow = rows.length;
-  rows.push([STATE.orgConfig.header_text ? (STATE.orgConfig.header_text + ' ' + monthLabel + ' মাসের অধিকাল কর্মঘন্টার বিবরণী।') : `অধিকাল কর্মঘন্টার বিবরণী — ${monthLabel}`]);
-  merges.push({s:{r:titleRow,c:0}, e:{r:titleRow,c:lastCol}});
-  rows.push([]);
-
-  const headRow = rows.length;
-  const headArr = ['ক্রঃ নং','কর্মচারীদের নাম','পদবী', `মাসের নামঃ ${monthLabel}`];
-  for(let i=1;i<dim;i++) headArr.push('');
-  headArr.push('মোট ঘন্টা');
-  rows.push(headArr);
-  merges.push({s:{r:headRow,c:3}, e:{r:headRow,c:3+dim-1}});
-
-  const weekRow = rows.length;
-  const wArr = ['','',''];
-  const weekRanges = weekRangesFor(dim);
-  weekRanges.forEach((r,i)=>{
-    const span = Math.min(r[1],dim)-r[0]+1;
-    wArr.push(ORD_WEEK[i]);
-    for(let k=1;k<span;k++) wArr.push('');
-  });
-  rows.push(wArr);
-  let colCursor = 3;
-  weekRanges.forEach((r)=>{
-    const span = Math.min(r[1],dim)-r[0]+1;
-    if(span>1) merges.push({s:{r:weekRow,c:colCursor}, e:{r:weekRow,c:colCursor+span-1}});
-    colCursor += span;
-  });
-
-  const dArr = ['','',''];
-  for(let d=1; d<=dim; d++) dArr.push(bnForce(d));
-  dArr.push('');
-  rows.push(dArr);
-
-  data.forEach((d,idx)=>{
-    const dayVals = d.days.slice(1).map(h=>bnForce(trimNum(h)));
-    rows.push([bnForce(idx+1), d.emp.name, d.emp.designation, ...dayVals, bnForce(trimNum(d.totalHours))]);
-  });
-
-  const grandTotal = data.reduce((s,d)=>s+d.totalHours,0);
-  const totalRowArr = new Array(lastCol+1).fill('');
-  totalRowArr[0] = `${monthLabel} মাসের মোট অধিকাল মোট কর্মঘন্টার পরিমান`;
-  totalRowArr[lastCol] = bnForce(trimNum(grandTotal));
-  rows.push(totalRowArr);
-  rows.push([]); rows.push([]);
-
-  const sigArr = []; sigArr[0]=STATE.orgConfig.sig1||''; sigArr[6]=STATE.orgConfig.sig2||''; sigArr[Math.min(13,lastCol)]=STATE.orgConfig.sig3||'';
-  rows.push(sigArr);
-  rows.push([]); rows.push([]);
-  const sigArr2 = []; sigArr2[0]=STATE.orgConfig.sig4||''; sigArr2[6]=STATE.orgConfig.sig5||'';
-  rows.push(sigArr2);
-
-  return {rows, merges};
-}
-
-function buildMonthlyAsPerWeekAOA(ym){
-  const {dim, data} = computeMonthlyData(ym);
-  const weekRanges = weekRangesFor(dim);
-  const rows = []; const merges = [];
-  const monthLabel = ymLabel(ym);
-  const totalColsCount = 4 + weekRanges.length + 1;
-  const lastColIdx = totalColsCount - 1;
-
-  const titleRow = rows.length;
-  rows.push([STATE.orgConfig.header_text ? (STATE.orgConfig.header_text + ' ' + monthLabel + ' মাসের অধিকাল কর্মঘন্টার বিবরণী (সাপ্তাহিক ভিত্তিতে)।') : `অধিকাল কর্মঘন্টার বিবরণী (সাপ্তাহিক ভিত্তিতে) — ${monthLabel}`]);
-  merges.push({s:{r:titleRow,c:0}, e:{r:titleRow,c:lastColIdx}});
-  rows.push([]);
-
-  rows.push(['ক্রঃ নং','কর্মচারীদের নাম','পদবী','Employee ID', ...ORD_WEEK.slice(0,weekRanges.length), 'মোট ঘন্টা']);
-
-  data.forEach((d,idx)=>{
-    const weekTotals = weekRanges.map(r=>{
-      const end = Math.min(r[1],dim);
-      let sum=0;
-      for(let day=r[0]; day<=end; day++) sum += d.days[day]||0;
-      return bnForce(trimNum(sum));
-    });
-    rows.push([bnForce(idx+1), d.emp.name, d.emp.designation, d.emp.employee_code? bnForce(d.emp.employee_code): '', ...weekTotals, bnForce(trimNum(d.totalHours))]);
-  });
-
-  const grandTotal = data.reduce((s,d)=>s+d.totalHours,0);
-  const totalRow = [`${monthLabel} মাসের মোট অধিকাল মোট কর্মঘন্টার পরিমান`];
-  for(let i=1;i<lastColIdx;i++) totalRow.push('');
-  totalRow.push(bnForce(trimNum(grandTotal)));
-  rows.push(totalRow);
-  rows.push([]);
-  rows.push([STATE.orgConfig.sig1||'']);
-
-  return {rows, merges};
-}
-
 function generateFullReport(ym){
-  if(typeof XLSX === 'undefined'){ toast(t('xlsxNotLoaded'), true); return; }
-  const wb = XLSX.utils.book_new();
-
-  const ef = buildEntryFormAOA(ym);
-  const wsEF = XLSX.utils.aoa_to_sheet(ef.rows);
-  wsEF['!merges'] = ef.merges;
-  XLSX.utils.book_append_sheet(wb, wsEF, 'Entry Form');
-
-  const wk = buildWeeklyAOA(ym);
-  const wsWK = XLSX.utils.aoa_to_sheet(wk.rows);
-  wsWK['!merges'] = wk.merges;
-  XLSX.utils.book_append_sheet(wb, wsWK, 'weekly');
-
-  const mo = buildMonthlyAOA(ym);
-  const wsMO = XLSX.utils.aoa_to_sheet(mo.rows);
-  wsMO['!merges'] = mo.merges;
-  XLSX.utils.book_append_sheet(wb, wsMO, 'monthly');
-
-  const mw = buildMonthlyAsPerWeekAOA(ym);
-  const wsMW = XLSX.utils.aoa_to_sheet(mw.rows);
-  wsMW['!merges'] = mw.merges;
-  XLSX.utils.book_append_sheet(wb, wsMW, 'monthly_as_per_Week');
-
-  XLSX.writeFile(wb, `OT_Report_${ym}.xlsx`);
-  toast(t('savedOk'));
+  toast(t('generatingReport'));
+  API.call('generateReport', {ym})
+    .then(res=>{
+      if(!res.ok){
+        toast(t('networkErr'), true);
+        return;
+      }
+      const byteChars = atob(res.base64);
+      const bytes = new Uint8Array(byteChars.length);
+      for(let i=0;i<byteChars.length;i++) bytes[i] = byteChars.charCodeAt(i);
+      const blob = new Blob([bytes], {type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = res.filename || ('OT_Report_'+ym+'.xlsx');
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      toast(t('savedOk'));
+    })
+    .catch(()=>{ toast(t('networkErr'), true); });
 }
 
 /* =========================================================
