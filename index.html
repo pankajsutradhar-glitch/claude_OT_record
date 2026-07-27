@@ -1,898 +1,1004 @@
-<!DOCTYPE html>
-<html lang="bn">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover">
-<meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="theme-color" content="#0F2E2C">
-<title>Maint_Record — দৈনিক রক্ষণাবেক্ষণ কার্যক্রম</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-<style>
-:root{
-  --ink:#0F2E2C; --ink-2:#163F3B; --paper:#F6F4EE; --paper-2:#EDEAE1; --line:#D9D4C6;
-  --amber:#C77C2C; --amber-2:#E0954A; --rust:#B0483B; --moss:#4B7A5A; --white:#FFFFFF;
-  --ink-soft:#5B6A66; --shadow:0 1px 2px rgba(15,46,44,.06),0 4px 14px rgba(15,46,44,.07); --radius:14px;
-}
-*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
-html,body{margin:0;padding:0;height:100%;}
-body{font-family:'Hind Siliguri','Space Grotesk',system-ui,sans-serif;background:radial-gradient(1200px 500px at 100% -10%,rgba(199,124,44,.08),transparent 60%),var(--paper);color:var(--ink);min-height:100vh;overflow-x:hidden;}
-.mono{font-family:'JetBrains Mono',monospace;}
-.disp{font-family:'Space Grotesk',sans-serif;}
-#root{max-width:560px;margin:0 auto;min-height:100vh;position:relative;padding-bottom:82px;}
-.topbar{position:sticky;top:0;z-index:30;background:var(--ink);color:var(--paper);padding:14px 18px;display:flex;align-items:center;justify-content:space-between;box-shadow:var(--shadow);}
-.topbar .brand{display:flex;align-items:center;gap:10px;}
-.brand-mark{width:34px;height:34px;border-radius:9px;background:linear-gradient(135deg,var(--amber),var(--rust));display:flex;align-items:center;justify-content:center;font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:13px;color:#fff;flex-shrink:0;}
-.brand-title{font-size:15px;font-weight:600;line-height:1.15;}
-.brand-sub{font-size:10.5px;color:#9FC2B8;letter-spacing:.04em;}
-.topbar-actions{display:flex;gap:8px;align-items:center;}
-.icon-btn{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.14);color:var(--paper);width:34px;height:34px;border-radius:9px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:15px;}
-.icon-btn:active{background:rgba(255,255,255,.18);}
-main{padding:16px 16px 24px;}
-.card{background:var(--white);border:1px solid var(--line);border-radius:var(--radius);padding:16px;margin-bottom:14px;box-shadow:var(--shadow);}
-.card-title{font-size:13px;font-weight:600;color:var(--ink);margin:0 0 12px;display:flex;align-items:center;gap:8px;}
-.card-title .tag{font-family:'JetBrains Mono',monospace;font-size:9.5px;color:var(--amber);background:rgba(199,124,44,.1);border:1px solid rgba(199,124,44,.25);padding:2px 6px;border-radius:5px;letter-spacing:.05em;}
-label{display:block;font-size:12px;font-weight:600;color:var(--ink-soft);margin:0 0 6px;letter-spacing:.01em;}
-input[type=text],input[type=password],input[type=date],input[type=time],input[type=number],input[type=month],textarea,select{width:100%;padding:11px 12px;border:1.5px solid var(--line);border-radius:10px;font-family:inherit;font-size:14.5px;background:var(--paper);color:var(--ink);outline:none;transition:border-color .15s;}
-input:focus,textarea:focus,select:focus{border-color:var(--amber);background:#fff;}
-textarea{resize:vertical;min-height:90px;}
-.field{margin-bottom:14px;}
-.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
-.btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;padding:11px 18px;border-radius:10px;border:none;font-weight:600;font-size:14px;cursor:pointer;font-family:inherit;transition:transform .06s,opacity .15s;}
-.btn:active{transform:scale(.97);}
-.btn-primary{background:var(--ink);color:var(--paper);}
-.btn-primary:disabled{opacity:.35;cursor:not-allowed;}
-.btn-amber{background:var(--amber);color:#fff;}
-.btn-outline{background:transparent;color:var(--ink);border:1.5px solid var(--line);}
-.btn-danger{background:transparent;color:var(--rust);border:1.5px solid rgba(176,72,59,.3);}
-.btn-ghost{background:rgba(15,46,44,.05);color:var(--ink);}
-.btn-block{width:100%;}
-.btn-sm{padding:7px 12px;font-size:12.5px;border-radius:8px;}
-.btn-mic{background:var(--paper);border:1.5px solid var(--line);color:var(--ink);width:40px;height:40px;border-radius:10px;flex-shrink:0;font-size:16px;}
-.btn-mic.rec{background:var(--rust);color:#fff;border-color:var(--rust);animation:pulse 1s infinite;}
-.bottomnav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:560px;background:var(--ink);display:flex;justify-content:space-around;align-items:center;padding:8px 4px calc(8px + env(safe-area-inset-bottom));z-index:40;box-shadow:0 -4px 16px rgba(0,0,0,.15);}
-.navitem{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px 2px;border-radius:10px;color:#7FA79C;cursor:pointer;font-size:10px;font-weight:600;letter-spacing:.01em;}
-.navitem .ni-ico{font-size:18px;line-height:1;}
-.navitem.active{color:var(--amber-2);}
-.badge{display:inline-block;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:600;}
-.badge-amber{background:rgba(199,124,44,.12);color:var(--amber);}
-.badge-moss{background:rgba(75,122,90,.12);color:var(--moss);}
-.badge-rust{background:rgba(176,72,59,.12);color:var(--rust);}
-.badge-gray{background:var(--paper-2);color:var(--ink-soft);}
-.rec-card{background:#fff;border:1px solid var(--line);border-radius:var(--radius);padding:14px;margin-bottom:10px;box-shadow:var(--shadow);}
-.rec-card .date-block{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--amber);font-weight:600;}
-.rec-card h4{margin:2px 0 4px;font-size:14.5px;font-weight:600;}
-.rec-card .kks{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--ink-soft);margin-bottom:6px;}
-.rec-card p{margin:0;font-size:12.5px;color:var(--ink-soft);line-height:1.5;}
-.rec-meta{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;}
-.rec-actions{display:flex;gap:8px;margin-top:10px;}
-.chip{display:inline-flex;align-items:center;gap:6px;padding:8px 12px;border-radius:20px;border:1.5px solid var(--line);background:#fff;font-size:12.5px;font-weight:600;cursor:pointer;margin:0 6px 6px 0;}
-.chip.active{background:var(--ink);color:#fff;border-color:var(--ink);}
-.chip-add{border-style:dashed;color:var(--amber);}
-.chipwrap{display:flex;flex-wrap:wrap;margin-bottom:4px;}
-.login-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;}
-.login-card{width:100%;max-width:380px;background:#fff;border-radius:20px;padding:32px 26px;box-shadow:0 10px 40px rgba(15,46,44,.15);border:1px solid var(--line);}
-.login-logo{width:56px;height:56px;border-radius:14px;background:linear-gradient(135deg,var(--amber),var(--rust));display:flex;align-items:center;justify-content:center;color:#fff;font-family:'Space Grotesk';font-weight:700;font-size:20px;margin:0 auto 16px;}
-.spin{width:34px;height:34px;border:3px solid var(--paper-2);border-top-color:var(--amber);border-radius:50%;margin:0 auto 16px;animation:spin .8s linear infinite;}
-@keyframes spin{to{transform:rotate(360deg);}}
-@keyframes pulse{0%,100%{opacity:1;}50%{opacity:.4;}}
-.empty{text-align:center;padding:48px 20px;color:var(--ink-soft);}
-.empty .ei{font-size:38px;margin-bottom:10px;opacity:.5;}
-.empty p{font-size:13.5px;margin:4px 0;}
-#toast{position:fixed;bottom:96px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--ink);color:var(--paper);padding:11px 20px;border-radius:30px;font-size:13px;font-weight:600;box-shadow:0 6px 20px rgba(0,0,0,.25);z-index:100;opacity:0;pointer-events:none;transition:all .25s ease;max-width:88%;text-align:center;}
-#toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
-#toast.err{background:var(--rust);}
-.modal-bg{position:fixed;inset:0;background:rgba(15,46,44,.45);z-index:200;display:flex;align-items:flex-end;justify-content:center;}
-.modal-bg.center{align-items:center;padding:20px;}
-.modal-box{background:#fff;width:100%;max-width:560px;border-radius:20px 20px 0 0;padding:20px 18px calc(20px + env(safe-area-inset-bottom));max-height:88vh;overflow-y:auto;box-shadow:0 -8px 30px rgba(0,0,0,.2);animation:slideup .22s ease;}
-.modal-bg.center .modal-box{border-radius:18px;max-width:400px;animation:popin .18s ease;}
-@keyframes slideup{from{transform:translateY(30px);opacity:0;}to{transform:translateY(0);opacity:1;}}
-@keyframes popin{from{transform:scale(.94);opacity:0;}to{transform:scale(1);opacity:1;}}
-.modal-handle{width:36px;height:4px;background:var(--line);border-radius:3px;margin:0 auto 14px;}
-.modal-title{font-size:16px;font-weight:700;margin:0 0 4px;}
-.modal-sub{font-size:12px;color:var(--ink-soft);margin:0 0 16px;}
-.section-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
-.section-head h2{font-size:18px;font-weight:700;margin:0;font-family:'Space Grotesk',sans-serif;}
-.section-head .sub{font-size:11.5px;color:var(--ink-soft);margin-top:2px;}
-.divider{height:1px;background:var(--line);margin:14px 0;}
-.stat-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;}
-.stat-box{background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px 14px;}
-.stat-box .sn{font-family:'Space Grotesk';font-size:22px;font-weight:700;color:var(--ink);}
-.stat-box .sl{font-size:10.5px;color:var(--ink-soft);font-weight:600;margin-top:2px;}
-.userstat-row{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--paper-2);}
-.userstat-row:last-child{border-bottom:none;}
-.userstat-name{flex:1;font-size:13.5px;font-weight:600;}
-.userstat-bar{height:8px;border-radius:6px;background:var(--paper-2);flex:2;overflow:hidden;}
-.userstat-bar-fill{height:100%;background:linear-gradient(90deg,var(--amber),var(--rust));}
-.userstat-count{font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:700;width:26px;text-align:right;}
-.img-thumb{width:100%;border-radius:10px;margin-top:8px;border:1px solid var(--line);display:block;}
-.thumbgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:8px;}
-.thumbgrid .th-wrap{position:relative;}
-.thumbgrid img{width:100%;height:80px;object-fit:cover;border-radius:8px;border:1px solid var(--line);}
-.thumbgrid .th-del{position:absolute;top:-6px;right:-6px;background:var(--rust);color:#fff;width:20px;height:20px;border-radius:50%;font-size:11px;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 2px 6px rgba(0,0,0,.3);}
-.upload-box{border:1.5px dashed var(--line);border-radius:12px;padding:18px;text-align:center;cursor:pointer;background:var(--paper);font-size:12.5px;color:var(--ink-soft);}
-.search-box{position:relative;margin-bottom:14px;}
-.search-box input{padding-left:36px;}
-.search-box::before{content:'⌕';position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--ink-soft);font-size:16px;}
-.pill-scroll{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;margin-bottom:14px;}
-.pill{flex-shrink:0;padding:7px 14px;border-radius:20px;background:#fff;border:1.5px solid var(--line);font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;}
-.pill.active{background:var(--ink);color:#fff;border-color:var(--ink);}
-::-webkit-scrollbar{height:5px;width:5px;}
-::-webkit-scrollbar-thumb{background:var(--line);border-radius:10px;}
-.warn-box{background:rgba(176,72,59,.08);border:1px solid rgba(176,72,59,.25);color:var(--rust);border-radius:10px;padding:10px 12px;font-size:12.5px;margin-bottom:12px;font-weight:500;}
-.info-box{background:rgba(75,122,90,.08);border:1px solid rgba(75,122,90,.25);color:var(--moss);border-radius:10px;padding:10px 12px;font-size:12.5px;margin-bottom:12px;}
-.sync-dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px;}
-.sync-dot.on{background:var(--moss);box-shadow:0 0 0 3px rgba(75,122,90,.15);}
-.sync-dot.off{background:#C7C2B4;}
-.sync-dot.busy{background:var(--amber);animation:pulse 1s infinite;}
-.topbar-sync{display:flex;align-items:center;font-size:10px;color:#9FC2B8;}
-.desc-wrap{display:flex;gap:8px;align-items:flex-start;}
-.desc-wrap textarea{flex:1;}
-.mic-status{font-size:11.5px;color:var(--rust);font-weight:600;margin-top:6px;}
-</style>
-</head>
-<body>
-<div id="root"></div>
-<div id="toast"></div>
+/*******************************************************************
+ * OT_Record — Secure Backend API (Google Apps Script)
+ *
+ * Architecture:
+ *   GitHub Pages (static HTML/JS)
+ *        │  HTTPS POST (JSON body, text/plain content-type to avoid CORS preflight)
+ *        ▼
+ *   THIS Apps Script Web App  (deployed: Execute as "Me", Access "Anyone")
+ *        │  Utilities / SpreadsheetApp / DriveApp — runs as the script owner,
+ *        │  so end users never touch Google OAuth, Client IDs, or API keys.
+ *        ▼
+ *   Google Sheets (database)  +  Google Drive (image storage)
+ *
+ * The frontend only ever knows this Web App's /exec URL. Nothing else
+ * about Google is exposed to the browser.
+ *
+ * AUTH MODEL
+ *   - Users are stored in the "Users" sheet as: username, password_hash,
+ *     salt, role.  Plaintext passwords are never stored.
+ *   - Login verifies a salted SHA-256 hash and issues a random session
+ *     token, stored server-side in CacheService (shared across all
+ *     requests/devices) with a sliding expiry.
+ *   - Every action except "login" requires a valid, non-expired token.
+ *   - Role (admin/employee) is resolved from the *server-side* session,
+ *     never trusted from the client — so permission checks here are
+ *     real enforcement, not just UI hints.
+ *******************************************************************/
 
-<script>
-/* =========================================================
-   Maint_Record — GitHub Pages frontend
-   Talks ONLY to a Google Apps Script Web App (JSON API) over
-   HTTPS. No Google OAuth, Client ID, API key, or Spreadsheet ID
-   ever appears in this file or the browser. Login is plain
-   username + password; the Apps Script backend hashes and
-   verifies passwords and issues session tokens server-side.
-   ========================================================= */
+/* ================================================================
+ * CONFIG
+ * ================================================================ */
+const SESSION_TTL_SECONDS = 60 * 60;      // 60 minutes sliding inactivity timeout
+const MAX_FAILED_LOGINS   = 5;            // lockout threshold
+const LOGIN_LOCKOUT_SECONDS = 15 * 60;    // 15 minute lockout window
 
-const T = {
-  appName:'Maint_Record', appSub:'দৈনিক রক্ষণাবেক্ষণ কার্যক্রম',
-  username:'ইউজারনেম', password:'পাসওয়ার্ড', signin:'প্রবেশ করুন',
-  loginErr:'ইউজারনেম বা পাসওয়ার্ড সঠিক নয়', lockedOut:'অনেকবার ভুল চেষ্টার কারণে সাময়িকভাবে বন্ধ, ১৫ মিনিট পর আবার চেষ্টা করুন',
-  navNew:'নতুন রেকর্ড', navRecords:'রেকর্ডস', navStats:'পরিসংখ্যান', navSettings:'সেটিংস', navLogout:'লগআউট',
-  newTitle:'নতুন রক্ষণাবেক্ষণ রেকর্ড', editTitle:'রেকর্ড সম্পাদনা',
-  date:'তারিখ', equipName:'যন্ত্রের নাম', kks:'কেকেএস (KKS)', workDesc:'রক্ষণাবেক্ষণ কাজের বিবরণ',
-  toolsUsed:'ব্যবহৃত টুলস', addNewTool:'+ নতুন টুল যোগ', addNewEquip:'+ নতুন যন্ত্র যোগ করুন',
-  photos:'ছবি (ঐচ্ছিক)', tapUpload:'ছবি আপলোড করতে ট্যাপ করুন', uploading:'আপলোড হচ্ছে...',
-  save:'সংরক্ষণ করুন', cancel:'বাতিল', update:'আপডেট করুন',
-  recordsTitle:'রক্ষণাবেক্ষণ রেকর্ডস', recordsSub:'তারিখ অনুযায়ী প্রদর্শিত',
-  noRecords:'কোনো রেকর্ড পাওয়া যায়নি', createFirst:'নতুন রেকর্ড তৈরি করুন',
-  edit:'সম্পাদনা', del:'মুছুন', view:'দেখুন',
-  confirmDelete:'আপনি কি নিশ্চিতভাবে এই রেকর্ডটি মুছে ফেলতে চান?', yesDelete:'হ্যাঁ, মুছুন',
-  statsTitle:'ব্যবহারকারী অনুযায়ী রেকর্ড সংখ্যা', totalRecords:'মোট রেকর্ড', totalToday:'আজকের রেকর্ড',
-  month:'মাস', settingsTitle:'সেটিংস', equipMgmt:'যন্ত্রপাতি তালিকা', toolMgmt:'টুলস তালিকা',
-  addEquip:'+ যন্ত্র যোগ করুন', addTool:'+ টুল যোগ করুন', active:'সক্রিয়', account:'অ্যাকাউন্ট',
-  loggedInAs:'লগইন করা হয়েছে', changePw:'পাসওয়ার্ড পরিবর্তন', newPw:'নতুন পাসওয়ার্ড', pwChanged:'পাসওয়ার্ড পরিবর্তিত হয়েছে',
-  fillRequired:'অনুগ্রহ করে সব আবশ্যক তথ্য পূরণ করুন', savedOk:'সফলভাবে সংরক্ষিত হয়েছে', deletedOk:'মুছে ফেলা হয়েছে',
-  updatedOk:'আপডেট হয়েছে', na:'নেই', close:'বন্ধ করুন', noData:'কোনো তথ্য নেই', search:'খুঁজুন...',
-  setupApiTitle:'সার্ভার সংযোগ সেটআপ', apiUrlLabel:'Apps Script Web App URL',
-  apiUrlHelp:'আপনার প্রকাশিত (deployed) Google Apps Script Web App-এর URL এখানে বসান। এই URL গোপন তথ্য নয় — শুধু আপনার সার্ভারের ঠিকানা।',
-  saveContinue:'সংরক্ষণ করে এগিয়ে যান', connecting:'সংযোগ হচ্ছে...',
-  networkErr:'সার্ভারের সাথে সংযোগ করা যায়নি, ইন্টারনেট ও URL যাচাই করুন', editApiUrl:'সার্ভার ঠিকানা পরিবর্তন করুন',
-  sessionExpired:'সেশনের মেয়াদ শেষ, আবার লগইন করুন', selectEquip:'যন্ত্র নির্বাচন করুন',
-  micStart:'মাইক্রোফোনে চাপুন এবং বাংলায় বলুন', micRecording:'শুনছি... আবার চাপলে থামবে',
-  micUnsupported:'এই ব্রাউজারে ভয়েস টাইপিং সমর্থিত নয়, Chrome ব্যবহার করুন',
-  micDenied:'মাইক্রোফোন অনুমতি দেওয়া হয়নি', addedOk:'যোগ করা হয়েছে', users:'জন', saveBtn:'সংরক্ষণ',
-  nameLbl:'নাম', kksLbl:'KKS কোড', toolNameLbl:'টুলের নাম'
-};
-function t(k){ return T[k] || k; }
-
-const LS = {
-  get(k,f){ try{ const v=localStorage.getItem(k); return v? JSON.parse(v): f; }catch(e){ return f; } },
-  set(k,v){ localStorage.setItem(k, JSON.stringify(v)); }
-};
-function uid(p){ return (p||'id')+'_'+Date.now().toString(36)+Math.random().toString(36).slice(2,7); }
-function esc(s){ return String(s ?? '').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
-const BN_DIGITS = ['০','১','২','৩','৪','৫','৬','৭','৮','৯'];
-function bnum(input){ if(input===null||input===undefined) return ''; return String(input).replace(/[0-9]/g, d=>BN_DIGITS[+d]); }
-
-const STATE = {
-  session:null, screen:'boot', editingRecId:null, toastTimer:null,
-  equipment:[], tools:[], records:[], users:[],
-  loaded:false
+const TAB = {
+  users:      'Users',
+  employees:  'Employees',
+  divisions:  'Divisions',
+  otsheets:   'OTSheets',
+  orgconfig:  'OrgConfig'
 };
 
-const API = {
-  baseUrl: localStorage.getItem('mr_api_url') || '',
-  token: localStorage.getItem('mr_token') || '',
-  status:'off',
-  setStatus(s){ this.status=s; const el=document.getElementById('syncStatusDot'); if(el){ el.className='sync-dot '+(s==='on'?'on':(s==='busy'?'busy':'off')); } },
-  async call(action, payload={}){
-    this.setStatus('busy');
-    try{
-      const body = JSON.stringify(Object.assign({action, token:this.token}, payload));
-      const res = await fetch(this.baseUrl, {method:'POST', body});
-      if(!res.ok) throw new Error('http_'+res.status);
-      const data = await res.json();
-      this.setStatus('on');
-      return data;
-    }catch(err){ this.setStatus('error'); throw err; }
-  },
-  async login(username, password){
-    const res = await this.call('login', {username, password});
-    if(res.ok){ this.token = res.token; localStorage.setItem('mr_token', res.token); }
-    return res;
-  },
-  async logout(){ try{ await this.call('logout'); }catch(e){} this.token=''; localStorage.removeItem('mr_token'); },
-  setBaseUrl(url){ this.baseUrl = url.trim(); localStorage.setItem('mr_api_url', this.baseUrl); },
-  changeServer(){
-    localStorage.removeItem('mr_api_url'); localStorage.removeItem('mr_token');
-    this.baseUrl=''; this.token=''; STATE.session=null; STATE.screen='setup'; render();
+function getSS_() { return SpreadsheetApp.getActiveSpreadsheet(); }
+
+/* ================================================================
+ * HTTP ENTRY POINTS
+ * ================================================================ */
+
+/* GET is only used to sanity-check the deployment URL in a browser. */
+function doGet(e) {
+  return jsonOut_({ ok: true, message: 'OT_Record API is running.' });
+}
+
+/* All real traffic goes through POST as a single JSON envelope:
+   { action: "...", token: "...", ...actionSpecificFields }
+   Content-Type is left as the fetch() default (text/plain) on the
+   client side specifically so the browser treats it as a "simple
+   request" and skips the CORS preflight — Apps Script web apps
+   deployed with "Anyone" access already return
+   Access-Control-Allow-Origin: * for such simple requests. */
+function doPost(e) {
+  let payload;
+  try {
+    payload = JSON.parse(e.postData.contents);
+  } catch (err) {
+    return jsonOut_({ ok: false, error: 'bad_request' });
   }
-};
 
-function toast(msg, isErr){
-  const el = document.getElementById('toast');
-  el.textContent = msg; el.className = isErr? 'show err':'show';
-  clearTimeout(STATE.toastTimer);
-  STATE.toastTimer = setTimeout(()=>{ el.className=''; }, 2600);
-}
-
-function render(){
-  const root = document.getElementById('root');
-  document.documentElement.lang = 'bn';
-  if(STATE.screen==='boot'){ root.innerHTML = renderBootScreen(); return; }
-  if(STATE.screen==='setup'){ root.innerHTML = renderSetupScreen(); bindSetupScreen(); return; }
-  if(!STATE.session){ root.innerHTML = renderLogin(); bindLogin(); return; }
-
-  let body = '';
-  if(STATE.screen==='new') body = renderNewRecord();
-  else if(STATE.screen==='records') body = renderRecords();
-  else if(STATE.screen==='stats') body = renderStats();
-  else if(STATE.screen==='settings') body = renderSettings();
-  else body = renderNewRecord();
-
-  root.innerHTML = `${renderTopbar()}<main>${body}</main>${renderBottomNav()}`;
-  bindGlobal();
-}
-
-function renderBootScreen(){
-  return `<div class="login-wrap"><div class="login-card" style="text-align:center;">
-    <div class="login-logo">MR</div><div class="spin"></div>
-    <div class="disp" style="font-size:16px;font-weight:700;">${t('connecting')}</div>
-  </div></div>`;
-}
-function renderSetupScreen(){
-  return `<div class="login-wrap"><div class="login-card">
-    <div class="login-logo">MR</div>
-    <div style="text-align:center;margin-bottom:18px;">
-      <div class="disp" style="font-size:18px;font-weight:700;">${t('setupApiTitle')}</div>
-      <div style="font-size:12px;color:var(--ink-soft);margin-top:4px;">${t('appSub')}</div>
-    </div>
-    <div class="field"><label>${t('apiUrlLabel')}</label>
-      <input type="text" id="setApiUrl" placeholder="https://script.google.com/macros/s/.../exec" value="${esc(API.baseUrl)}">
-    </div>
-    <div class="info-box">${t('apiUrlHelp')}</div>
-    <div id="setupErrBox"></div>
-    <button class="btn btn-amber btn-block" id="btnSetupSave">${t('saveContinue')}</button>
-  </div></div>`;
-}
-function bindSetupScreen(){
-  document.getElementById('btnSetupSave').onclick = async ()=>{
-    const url = document.getElementById('setApiUrl').value.trim();
-    if(!url){ document.getElementById('setupErrBox').innerHTML = `<div class="warn-box">${t('fillRequired')}</div>`; return; }
-    API.setBaseUrl(url);
-    STATE.screen='boot'; render();
-    try{ await API.call('getBootstrap'); }catch(e){ toast(t('networkErr'), true); }
-    STATE.screen = STATE.session ? 'new' : 'login';
-    render();
-  };
-}
-
-function renderTopbar(){
-  return `<div class="topbar">
-    <div class="brand"><div class="brand-mark">MR</div>
-      <div><div class="brand-title">${t('appName')}</div><div class="brand-sub">${t('appSub')}</div></div>
-    </div>
-    <div class="topbar-actions">
-      <div class="topbar-sync"><span class="sync-dot ${API.status==='on'?'on':(API.status==='busy'?'busy':'off')}" id="syncStatusDot"></span></div>
-      <div class="icon-btn" id="btnLogout" title="logout">⏻</div>
-    </div>
-  </div>`;
-}
-function renderBottomNav(){
-  const items = [
-    {id:'new', ico:'✎', label:t('navNew')},
-    {id:'records', ico:'▤', label:t('navRecords')},
-    {id:'stats', ico:'◱', label:t('navStats')},
-    {id:'settings', ico:'⚙', label:t('navSettings')}
-  ];
-  return `<div class="bottomnav">${items.map(i=>`
-    <div class="navitem ${STATE.screen===i.id?'active':''}" data-nav="${i.id}">
-      <div class="ni-ico">${i.ico}</div><div>${i.label}</div>
-    </div>`).join('')}</div>`;
-}
-function bindGlobal(){
-  document.getElementById('btnLogout').onclick = async ()=>{
-    await API.logout(); STATE.session=null; STATE.screen='login'; render();
-  };
-  document.querySelectorAll('[data-nav]').forEach(el=>{
-    el.onclick = ()=>{ STATE.screen = el.getAttribute('data-nav'); STATE.editingRecId=null; render(); };
-  });
-  bindScreenSpecific();
-}
-
-/* ---------- LOGIN ---------- */
-function renderLogin(){
-  return `<div class="login-wrap"><div class="login-card">
-    <div class="login-logo">MR</div>
-    <div style="text-align:center;margin-bottom:20px;">
-      <div class="disp" style="font-size:19px;font-weight:700;">${t('appName')}</div>
-      <div style="font-size:12px;color:var(--ink-soft);margin-top:2px;">${t('appSub')}</div>
-    </div>
-    <div class="field"><label>${t('username')}</label><input type="text" id="loginUser" placeholder="rezaul" autocomplete="username"></div>
-    <div class="field"><label>${t('password')}</label><input type="password" id="loginPass" placeholder="••••" autocomplete="current-password"></div>
-    <div id="loginErrBox"></div>
-    <button class="btn btn-primary btn-block" id="btnSignIn">${t('signin')}</button>
-    <button class="btn btn-ghost btn-block" id="btnEditApiUrl" style="margin-top:14px;font-size:12px;">${t('editApiUrl')}</button>
-  </div></div>`;
-}
-function bindLogin(){
-  document.getElementById('btnSignIn').onclick = doLogin;
-  document.getElementById('loginPass').addEventListener('keydown', e=>{ if(e.key==='Enter') doLogin(); });
-  document.getElementById('btnEditApiUrl').onclick = ()=> API.changeServer();
-}
-async function doLogin(){
-  const u = document.getElementById('loginUser').value.trim();
-  const p = document.getElementById('loginPass').value;
-  const btn = document.getElementById('btnSignIn');
-  btn.disabled = true;
-  document.getElementById('loginErrBox').innerHTML = '';
-  try{
-    const res = await API.login(u, p);
-    if(!res.ok){
-      const msg = res.error==='locked_out' ? t('lockedOut') : t('loginErr');
-      document.getElementById('loginErrBox').innerHTML = `<div class="warn-box">${msg}</div>`;
-      btn.disabled=false; return;
-    }
-    STATE.session = {username: res.username};
-    await loadBootstrap();
-    STATE.screen='new'; render();
-  }catch(e){
-    document.getElementById('loginErrBox').innerHTML = `<div class="warn-box">${t('networkErr')}</div>`;
-    btn.disabled=false;
-  }
-}
-async function loadBootstrap(){
-  const res = await API.call('getBootstrap');
-  if(res.ok){
-    STATE.equipment = res.equipment || [];
-    STATE.tools = res.tools || [];
-    STATE.records = res.records || [];
-    STATE.users = res.users || [];
-    STATE.loaded = true;
-  }
-  return res;
-}
-
-/* =========================================================
-   NEW / EDIT RECORD
-   ========================================================= */
-let recDraft = null;
-let recognizer = null;
-let recognizing = false;
-
-function freshDraft(){
-  return {
-    id:null, date:new Date().toISOString().slice(0,10),
-    equipment_id:'', equipment_name:'', kks:'', description:'',
-    tools:[], photos:[], submitted_by: STATE.session? STATE.session.username:'',
-    created_at:new Date().toISOString()
-  };
-}
-function loadDraftForEdit(id){
-  const r = STATE.records.find(x=>x.id===id);
-  recDraft = JSON.parse(JSON.stringify(r));
-}
-
-function renderNewRecord(){
-  if(!recDraft || (STATE.editingRecId && recDraft.id!==STATE.editingRecId)){
-    if(STATE.editingRecId) loadDraftForEdit(STATE.editingRecId);
-    else recDraft = freshDraft();
-  }
-  const isEdit = !!recDraft.id;
-  const activeEquip = STATE.equipment.filter(e=>e.active!==false);
-  const activeTools = STATE.tools.filter(x=>x.active!==false);
-
-  return `
-  <div class="section-head"><div><h2>${isEdit? t('editTitle') : t('newTitle')}</h2><div class="sub">${bnum(recDraft.date)}</div></div></div>
-
-  <div class="card">
-    <div class="card-title"><span class="tag">01</span> ${t('date')}</div>
-    <div class="field" style="margin-bottom:0;">
-      <input type="date" id="fDate" value="${recDraft.date}">
-    </div>
-  </div>
-
-  <div class="card">
-    <div class="card-title"><span class="tag">02</span> ${t('equipName')} / ${t('kks')}</div>
-    <div class="field">
-      <label>${t('equipName')}</label>
-      <select id="fEquip">
-        <option value="">— ${t('selectEquip')} —</option>
-        ${activeEquip.map(e=>`<option value="${e.id}" data-kks="${esc(e.kks)}" ${e.id===recDraft.equipment_id?'selected':''}>${esc(e.name)}</option>`).join('')}
-        <option value="__new__">${t('addNewEquip')}</option>
-      </select>
-    </div>
-    <div class="field" style="margin-bottom:0;">
-      <label>${t('kks')}</label>
-      <input type="text" id="fKks" placeholder="e.g. 10MAA01" value="${esc(recDraft.kks||'')}">
-    </div>
-  </div>
-
-  <div class="card">
-    <div class="card-title"><span class="tag">03</span> ${t('workDesc')}</div>
-    <div class="desc-wrap">
-      <textarea id="fDesc" placeholder="${t('workDesc')}">${esc(recDraft.description||'')}</textarea>
-      <button class="btn-mic" id="btnMic" type="button" title="voice">🎤</button>
-    </div>
-    <div class="mic-status" id="micStatus"></div>
-  </div>
-
-  <div class="card">
-    <div class="card-title"><span class="tag">04</span> ${t('toolsUsed')}</div>
-    <div class="chipwrap" id="toolChips">
-      ${activeTools.map(tl=>`<div class="chip ${recDraft.tools.includes(tl.name)?'active':''}" data-tool="${esc(tl.name)}">${esc(tl.name)}</div>`).join('')}
-      <div class="chip chip-add" id="btnAddToolChip">${t('addNewTool')}</div>
-    </div>
-  </div>
-
-  <div class="card">
-    <div class="card-title"><span class="tag">05</span> ${t('photos')}</div>
-    <div class="upload-box" id="uploadBox">📷 ${t('tapUpload')}</div>
-    <input type="file" id="fileImg" accept="image/*" multiple style="display:none;">
-    <div id="uploadStatus"></div>
-    ${recDraft.photos.length? `<div class="thumbgrid">
-      ${recDraft.photos.map((p,i)=>`<div class="th-wrap"><img src="${p}"><div class="th-del" data-photo-del="${i}">✕</div></div>`).join('')}
-    </div>` : ''}
-  </div>
-
-  <div id="formErrBox"></div>
-  <button class="btn btn-primary btn-block" id="btnSaveRec" style="margin-top:6px;">${isEdit? t('update') : t('save')}</button>
-  ${isEdit? `<button class="btn btn-outline btn-block" id="btnCancelEdit" style="margin-top:8px;">${t('cancel')}</button>`:''}
-  `;
-}
-
-function bindScreenSpecific(){
-  if(STATE.screen==='new') bindNewRecord();
-  else if(STATE.screen==='records') bindRecords();
-  else if(STATE.screen==='stats') bindStats();
-  else if(STATE.screen==='settings') bindSettings();
-}
-
-function bindNewRecord(){
-  const byId = id=>document.getElementById(id);
-  if(byId('fDate')) byId('fDate').onchange = e=>{ recDraft.date = e.target.value; };
-
-  const equipSel = byId('fEquip');
-  if(equipSel) equipSel.onchange = e=>{
-    if(e.target.value==='__new__'){
-      openNewEquipModal(newEq=>{
-        recDraft.equipment_id = newEq.id; recDraft.equipment_name = newEq.name; recDraft.kks = newEq.kks;
-        render();
-      });
-      e.target.value = recDraft.equipment_id || '';
-      return;
-    }
-    recDraft.equipment_id = e.target.value;
-    const opt = e.target.selectedOptions[0];
-    recDraft.equipment_name = opt ? opt.textContent : '';
-    recDraft.kks = opt ? (opt.getAttribute('data-kks')||'') : '';
-    render();
-  };
-  if(byId('fKks')) byId('fKks').oninput = e=>{ recDraft.kks = e.target.value; };
-  if(byId('fDesc')) byId('fDesc').oninput = e=>{ recDraft.description = e.target.value; };
-
-  document.querySelectorAll('[data-tool]').forEach(el=>{
-    el.onclick = ()=>{
-      const name = el.getAttribute('data-tool');
-      const idx = recDraft.tools.indexOf(name);
-      if(idx>=0) recDraft.tools.splice(idx,1); else recDraft.tools.push(name);
-      render();
-    };
-  });
-  const addToolChip = byId('btnAddToolChip');
-  if(addToolChip) addToolChip.onclick = ()=>{
-    openNewToolModal(newTool=>{
-      recDraft.tools.push(newTool.name);
-      render();
-    });
-  };
-
-  const uploadBox = byId('uploadBox');
-  const fileInput = byId('fileImg');
-  if(uploadBox) uploadBox.onclick = ()=> fileInput.click();
-  if(fileInput) fileInput.onchange = e=>{
-    const files = Array.from(e.target.files||[]);
-    if(!files.length) return;
-    byId('uploadStatus').innerHTML = `<div class="info-box">${t('uploading')}</div>`;
-    let remaining = files.length;
-    files.forEach(file=>{
-      const reader = new FileReader();
-      reader.onload = async ev=>{
-        try{
-          const res = await API.call('uploadImage', {
-            base64: ev.target.result,
-            filename: `MR_${recDraft.date}_${Date.now()}.jpg`,
-            mimeType: file.type || 'image/jpeg'
-          });
-          if(res.ok){ recDraft.photos.push(res.url); }
-          else { toast(t('networkErr'), true); }
-        }catch(err){ toast(t('networkErr'), true); }
-        remaining--;
-        if(remaining===0) render();
-      };
-      reader.readAsDataURL(file);
-    });
-  };
-  document.querySelectorAll('[data-photo-del]').forEach(el=>{
-    el.onclick = ()=>{
-      const i = Number(el.getAttribute('data-photo-del'));
-      recDraft.photos.splice(i,1);
-      render();
-    };
-  });
-
-  const micBtn = byId('btnMic');
-  if(micBtn) micBtn.onclick = ()=> toggleVoiceInput();
-
-  const saveBtn = byId('btnSaveRec');
-  if(saveBtn) saveBtn.onclick = doSaveRecord;
-  const cancelBtn = byId('btnCancelEdit');
-  if(cancelBtn) cancelBtn.onclick = ()=>{ STATE.editingRecId=null; recDraft=null; STATE.screen='records'; render(); };
-}
-
-/* ---------- Voice input (free, browser-native Web Speech API, Bangla) ---------- */
-function toggleVoiceInput(){
-  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-  const statusEl = document.getElementById('micStatus');
-  const micBtn = document.getElementById('btnMic');
-  if(!SR){ if(statusEl) statusEl.textContent = t('micUnsupported'); return; }
-
-  if(recognizing){
-    if(recognizer) recognizer.stop();
-    return;
-  }
-  recognizer = new SR();
-  recognizer.lang = 'bn-BD';
-  recognizer.interimResults = true;
-  recognizer.continuous = true;
-
-  let baseText = recDraft.description || '';
-  if(baseText && !baseText.endsWith(' ')) baseText += ' ';
-
-  recognizer.onstart = ()=>{
-    recognizing = true;
-    if(micBtn) micBtn.classList.add('rec');
-    if(statusEl) statusEl.textContent = t('micRecording');
-  };
-  recognizer.onresult = (ev)=>{
-    let finalTxt = '', interimTxt = '';
-    for(let i=0;i<ev.results.length;i++){
-      const res = ev.results[i];
-      if(res.isFinal) finalTxt += res[0].transcript;
-      else interimTxt += res[0].transcript;
-    }
-    const ta = document.getElementById('fDesc');
-    const combined = baseText + finalTxt + interimTxt;
-    if(ta) ta.value = combined;
-    recDraft.description = baseText + finalTxt;
-  };
-  recognizer.onerror = (ev)=>{
-    if(statusEl) statusEl.textContent = ev.error==='not-allowed' ? t('micDenied') : '';
-  };
-  recognizer.onend = ()=>{
-    recognizing = false;
-    if(micBtn) micBtn.classList.remove('rec');
-    if(statusEl) statusEl.textContent = '';
-    const ta = document.getElementById('fDesc');
-    if(ta) recDraft.description = ta.value;
-  };
-  try{ recognizer.start(); }catch(e){ /* already started */ }
-}
-
-async function doSaveRecord(){
-  document.getElementById('formErrBox').innerHTML = '';
-  if(!recDraft.date || (!recDraft.equipment_name && !recDraft.equipment_id) || !recDraft.description.trim()){
-    document.getElementById('formErrBox').innerHTML = `<div class="warn-box">${t('fillRequired')}</div>`;
-    return;
-  }
-  const saveBtn = document.getElementById('btnSaveRec');
-  if(saveBtn) saveBtn.disabled = true;
-  try{
-    const res = await API.call('saveRecord', {record: recDraft});
-    if(!res.ok){
-      if(res.error==='unauthorized'){ toast(t('sessionExpired'), true); STATE.session=null; render(); }
-      else document.getElementById('formErrBox').innerHTML = `<div class="warn-box">${t('networkErr')}</div>`;
-      if(saveBtn) saveBtn.disabled = false;
-      return;
-    }
-    const idx = STATE.records.findIndex(r=>r.id===res.record.id);
-    if(idx>=0) STATE.records[idx] = res.record; else STATE.records.push(res.record);
-    toast(recDraft.id ? t('updatedOk') : t('savedOk'));
-    STATE.editingRecId = null; recDraft = null;
-    STATE.screen = 'records'; render();
-  }catch(e){
-    document.getElementById('formErrBox').innerHTML = `<div class="warn-box">${t('networkErr')}</div>`;
-    if(saveBtn) saveBtn.disabled = false;
-  }
-}
-
-function openNewEquipModal(onDone){
-  const modal = document.createElement('div');
-  modal.className = 'modal-bg center';
-  modal.innerHTML = `<div class="modal-box">
-    <div class="modal-title">${t('addNewEquip')}</div>
-    <div class="field"><label>${t('nameLbl')}</label><input type="text" id="mEqName"></div>
-    <div class="field"><label>${t('kksLbl')}</label><input type="text" id="mEqKks" placeholder="e.g. 10MAA01"></div>
-    <div style="display:flex;gap:8px;">
-      <button class="btn btn-outline btn-block" id="mCancel">${t('cancel')}</button>
-      <button class="btn btn-primary btn-block" id="mSave">${t('saveBtn')}</button>
-    </div>
-  </div>`;
-  document.body.appendChild(modal);
-  modal.querySelector('#mCancel').onclick = ()=> modal.remove();
-  modal.querySelector('#mSave').onclick = async ()=>{
-    const name = document.getElementById('mEqName').value.trim();
-    const kks = document.getElementById('mEqKks').value.trim();
-    if(!name){ toast(t('fillRequired'), true); return; }
-    try{
-      const res = await API.call('saveEquipment', {equipment:{name, kks, active:true}});
-      if(res.ok){ STATE.equipment.push(res.equipment); toast(t('addedOk')); modal.remove(); onDone(res.equipment); }
-      else { toast(t('networkErr'), true); }
-    }catch(e){ toast(t('networkErr'), true); }
-  };
-}
-function openNewToolModal(onDone){
-  const modal = document.createElement('div');
-  modal.className = 'modal-bg center';
-  modal.innerHTML = `<div class="modal-box">
-    <div class="modal-title">${t('addNewTool')}</div>
-    <div class="field"><label>${t('toolNameLbl')}</label><input type="text" id="mToolName"></div>
-    <div style="display:flex;gap:8px;">
-      <button class="btn btn-outline btn-block" id="mCancel">${t('cancel')}</button>
-      <button class="btn btn-primary btn-block" id="mSave">${t('saveBtn')}</button>
-    </div>
-  </div>`;
-  document.body.appendChild(modal);
-  modal.querySelector('#mCancel').onclick = ()=> modal.remove();
-  modal.querySelector('#mSave').onclick = async ()=>{
-    const name = document.getElementById('mToolName').value.trim();
-    if(!name){ toast(t('fillRequired'), true); return; }
-    try{
-      const res = await API.call('saveTool', {tool:{name, active:true}});
-      if(res.ok){ STATE.tools.push(res.tool); toast(t('addedOk')); modal.remove(); onDone(res.tool); }
-      else { toast(t('networkErr'), true); }
-    }catch(e){ toast(t('networkErr'), true); }
-  };
-}
-
-/* =========================================================
-   RECORDS  (with date filter — selecting a date shows all
-   records submitted that day)
-   ========================================================= */
-let recordsDateFilter = '';
-let recordsSearch = '';
-
-function renderRecords(){
-  let list = STATE.records.slice().sort((a,b)=> b.date.localeCompare(a.date) || String(b.created_at).localeCompare(String(a.created_at)));
-  if(recordsDateFilter) list = list.filter(r=> r.date === recordsDateFilter);
-  if(recordsSearch){
-    const q = recordsSearch;
-    list = list.filter(r=> (r.equipment_name||'').includes(q) || (r.kks||'').includes(q) || (r.description||'').includes(q) || (r.submitted_by||'').includes(q));
-  }
-  return `
-  <div class="section-head"><div><h2>${t('recordsTitle')}</h2><div class="sub">${t('recordsSub')} · ${bnum(list.length)}</div></div></div>
-  <div class="card">
-    <div class="row2" style="align-items:end;">
-      <div class="field" style="margin-bottom:0;">
-        <label>${t('date')}</label>
-        <input type="date" id="dateFilter" value="${recordsDateFilter}">
-      </div>
-      ${recordsDateFilter? `<button class="btn btn-outline" id="btnClearDate">${t('close')}</button>`:''}
-    </div>
-  </div>
-  <div class="search-box"><input type="text" id="recSearch" placeholder="${t('search')}" value="${esc(recordsSearch)}"></div>
-  ${list.length===0? `<div class="empty"><div class="ei">🗂️</div><p>${t('noRecords')}</p>
-    <button class="btn btn-amber" id="btnGoNew" style="margin-top:10px;">${t('createFirst')}</button></div>` :
-    list.map(r=>renderRecCard(r)).join('')
-  }`;
-}
-function renderRecCard(r){
-  return `<div class="rec-card">
-    <div class="date-block">${bnum(r.date)}</div>
-    <h4>${esc(r.equipment_name || t('na'))}</h4>
-    <div class="kks">${r.kks? 'KKS: '+esc(r.kks) : ''}</div>
-    <p>${esc((r.description||'').slice(0,140))}</p>
-    <div class="rec-meta">
-      <span class="badge badge-amber">👤 ${esc(r.submitted_by)}</span>
-      ${r.tools && r.tools.length? `<span class="badge badge-moss">🛠 ${bnum(r.tools.length)}</span>`:''}
-      ${r.photos && r.photos.length? `<span class="badge badge-gray">📷 ${bnum(r.photos.length)}</span>`:''}
-    </div>
-    <div class="rec-actions">
-      <button class="btn btn-outline btn-sm" data-view="${r.id}">${t('view')}</button>
-      <button class="btn btn-ghost btn-sm" data-edit="${r.id}">${t('edit')}</button>
-      <button class="btn btn-danger btn-sm" data-del="${r.id}">${t('del')}</button>
-    </div>
-  </div>`;
-}
-function bindRecords(){
-  const df = document.getElementById('dateFilter');
-  if(df) df.onchange = e=>{ recordsDateFilter = e.target.value; render(); };
-  const clearDate = document.getElementById('btnClearDate');
-  if(clearDate) clearDate.onclick = ()=>{ recordsDateFilter=''; render(); };
-  const search = document.getElementById('recSearch');
-  if(search) search.oninput = e=>{ recordsSearch = e.target.value; render(); };
-  const goNew = document.getElementById('btnGoNew');
-  if(goNew) goNew.onclick = ()=>{ STATE.screen='new'; recDraft=null; render(); };
-  document.querySelectorAll('[data-view]').forEach(el=>{ el.onclick = ()=> openViewModal(el.getAttribute('data-view')); });
-  document.querySelectorAll('[data-edit]').forEach(el=>{
-    el.onclick = ()=>{ STATE.editingRecId = el.getAttribute('data-edit'); recDraft=null; STATE.screen='new'; render(); };
-  });
-  document.querySelectorAll('[data-del]').forEach(el=>{ el.onclick = ()=> openDeleteConfirm(el.getAttribute('data-del')); });
-}
-function openViewModal(id){
-  const r = STATE.records.find(x=>x.id===id);
-  const modal = document.createElement('div');
-  modal.className = 'modal-bg';
-  modal.innerHTML = `<div class="modal-box">
-    <div class="modal-handle"></div>
-    <div class="modal-title">${bnum(r.date)} — ${esc(r.equipment_name)}</div>
-    <div class="modal-sub">${r.kks? 'KKS: '+esc(r.kks):''}</div>
-    <div class="info-box">${esc(r.description)}</div>
-    ${r.tools && r.tools.length? `<div class="chipwrap">${r.tools.map(tl=>`<span class="chip active">${esc(tl)}</span>`).join('')}</div>`:''}
-    <div class="divider"></div>
-    <div class="emp-row"><div style="flex:1;">👤 ${esc(r.submitted_by)}</div></div>
-    ${r.photos && r.photos.length? `<div class="thumbgrid">${r.photos.map(p=>`<a href="${p}" target="_blank"><img src="${p}"></a>`).join('')}</div>`:''}
-    <button class="btn btn-primary btn-block" id="btnCloseModal" style="margin-top:14px;">${t('close')}</button>
-  </div>`;
-  document.body.appendChild(modal);
-  modal.onclick = e=>{ if(e.target===modal) modal.remove(); };
-  modal.querySelector('#btnCloseModal').onclick = ()=> modal.remove();
-}
-function openDeleteConfirm(id){
-  const modal = document.createElement('div');
-  modal.className = 'modal-bg center';
-  modal.innerHTML = `<div class="modal-box" style="border-radius:18px;">
-    <div class="modal-title">${t('del')}?</div>
-    <div class="modal-sub">${t('confirmDelete')}</div>
-    <div style="display:flex;gap:8px;margin-top:16px;">
-      <button class="btn btn-outline btn-block" id="btnNo">${t('cancel')}</button>
-      <button class="btn btn-danger btn-block" style="background:var(--rust);color:#fff;" id="btnYes">${t('yesDelete')}</button>
-    </div>
-  </div>`;
-  document.body.appendChild(modal);
-  modal.querySelector('#btnNo').onclick = ()=> modal.remove();
-  modal.querySelector('#btnYes').onclick = async ()=>{
-    try{
-      const res = await API.call('deleteRecord', {id});
-      if(res.ok){ STATE.records = STATE.records.filter(r=>r.id!==id); toast(t('deletedOk')); }
-      else toast(t('networkErr'), true);
-    }catch(e){ toast(t('networkErr'), true); }
-    modal.remove(); render();
-  };
-}
-
-/* =========================================================
-   STATS — records per user
-   ========================================================= */
-function renderStats(){
-  const today = new Date().toISOString().slice(0,10);
-  const counts = {};
-  STATE.records.forEach(r=>{ counts[r.submitted_by] = (counts[r.submitted_by]||0)+1; });
-  const maxCount = Math.max(1, ...Object.values(counts));
-  const knownUsers = STATE.users.length? STATE.users.map(u=>u.username) : Object.keys(counts);
-  const rows = knownUsers.map(u=>({user:u, count:counts[u]||0})).sort((a,b)=>b.count-a.count);
-  const totalToday = STATE.records.filter(r=>r.date===today).length;
-
-  return `
-  <div class="section-head"><div><h2>${t('statsTitle')}</h2></div></div>
-  <div class="stat-row">
-    <div class="stat-box"><div class="sn mono">${bnum(STATE.records.length)}</div><div class="sl">${t('totalRecords')}</div></div>
-    <div class="stat-box"><div class="sn mono">${bnum(totalToday)}</div><div class="sl">${t('totalToday')}</div></div>
-  </div>
-  <div class="card">
-    <div class="card-title">${t('statsTitle')}</div>
-    ${rows.length===0? `<div class="empty" style="padding:20px;"><p>${t('noData')}</p></div>` :
-      rows.map(row=>`
-      <div class="userstat-row">
-        <div class="userstat-name">${esc(row.user)}</div>
-        <div class="userstat-bar"><div class="userstat-bar-fill" style="width:${(row.count/maxCount*100).toFixed(0)}%"></div></div>
-        <div class="userstat-count mono">${bnum(row.count)}</div>
-      </div>`).join('')
-    }
-  </div>`;
-}
-function bindStats(){}
-
-/* =========================================================
-   SETTINGS — equipment list, tools list, account
-   ========================================================= */
-let settingsTab = 'equipment';
-function renderSettings(){
-  const tabs = [
-    {id:'equipment', label:t('equipMgmt')},
-    {id:'tools', label:t('toolMgmt')},
-    {id:'account', label:t('account')}
-  ];
-  return `
-  <div class="section-head"><div><h2>${t('settingsTitle')}</h2></div></div>
-  <div class="pill-scroll">${tabs.map(tb=>`<div class="pill ${settingsTab===tb.id?'active':''}" data-stab="${tb.id}">${tb.label}</div>`).join('')}</div>
-  ${settingsTab==='equipment'? renderEquipSettings() : ''}
-  ${settingsTab==='tools'? renderToolSettings() : ''}
-  ${settingsTab==='account'? renderAccountSettings() : ''}
-  `;
-}
-function renderEquipSettings(){
-  return `<div class="card">
-    <div class="card-title">${t('equipMgmt')}</div>
-    ${STATE.equipment.map(e=>`
-      <div class="emp-row" style="display:flex;align-items:center;gap:10px;padding:10px 4px;border-bottom:1px solid var(--paper-2);">
-        <div style="flex:1;">
-          <div style="font-weight:600;font-size:14px;">${esc(e.name)}</div>
-          <div style="font-size:11px;color:var(--ink-soft);">${e.kks? 'KKS: '+esc(e.kks):''}</div>
-        </div>
-      </div>`).join('')}
-    <button class="btn btn-amber btn-block" id="btnAddEquipSettings" style="margin-top:10px;">${t('addEquip')}</button>
-  </div>`;
-}
-function renderToolSettings(){
-  return `<div class="card">
-    <div class="card-title">${t('toolMgmt')}</div>
-    <div class="chipwrap">${STATE.tools.map(tl=>`<span class="chip">${esc(tl.name)}</span>`).join('')}</div>
-    <button class="btn btn-amber btn-block" id="btnAddToolSettings" style="margin-top:10px;">${t('addTool')}</button>
-  </div>`;
-}
-function renderAccountSettings(){
-  return `<div class="card">
-    <div class="card-title">${t('account')}</div>
-    <p style="font-size:13px;color:var(--ink-soft);margin:0 0 12px;">${t('loggedInAs')}: <b>${esc(STATE.session.username)}</b></p>
-    <div class="field"><label>${t('newPw')}</label><input type="password" id="pwNew"></div>
-    <button class="btn btn-primary btn-block" id="btnSavePw">${t('saveBtn')}</button>
-  </div>
-  <div class="card">
-    <div class="card-title">Server</div>
-    <button class="btn btn-outline btn-block" id="btnChangeServer">${t('editApiUrl')}</button>
-  </div>`;
-}
-function bindSettings(){
-  document.querySelectorAll('[data-stab]').forEach(el=>{ el.onclick = ()=>{ settingsTab = el.getAttribute('data-stab'); render(); }; });
-  const addEquipBtn = document.getElementById('btnAddEquipSettings');
-  if(addEquipBtn) addEquipBtn.onclick = ()=> openNewEquipModal(()=> render());
-  const addToolBtn = document.getElementById('btnAddToolSettings');
-  if(addToolBtn) addToolBtn.onclick = ()=> openNewToolModal(()=> render());
-  const savePwBtn = document.getElementById('btnSavePw');
-  if(savePwBtn) savePwBtn.onclick = async ()=>{
-    const pw = document.getElementById('pwNew').value.trim();
-    if(!pw) return;
-    try{
-      const res = await API.call('changePassword', {newPassword: pw});
-      if(res.ok) toast(t('pwChanged')); else toast(t('networkErr'), true);
-    }catch(e){ toast(t('networkErr'), true); }
-  };
-  const changeServerBtn = document.getElementById('btnChangeServer');
-  if(changeServerBtn) changeServerBtn.onclick = ()=> API.changeServer();
-}
-
-/* ---------- boot sequence ---------- */
-(async function boot(){
-  STATE.screen = 'boot'; render();
-  if(!API.baseUrl){ STATE.screen='setup'; render(); return; }
-  if(API.token){
-    try{
-      const res = await API.call('verifySession');
-      if(res.ok){
-        STATE.session = {username: res.username};
-        await loadBootstrap();
-        STATE.screen='new'; render();
-        return;
+  const action = payload.action;
+  let result;
+  try {
+    if (action === 'login') {
+      result = actionLogin_(payload);
+    } else {
+      const sess = validateSession_(payload.token);
+      if (!sess) {
+        result = { ok: false, error: 'unauthorized' };
+      } else {
+        result = dispatchAuthed_(action, payload, sess);
       }
-    }catch(e){ /* fall through */ }
+    }
+  } catch (err) {
+    result = { ok: false, error: 'server_error', detail: String(err) };
   }
-  STATE.screen = 'login'; render();
-})();
-</script>
-</body>
-</html>
+  return jsonOut_(result);
+}
+
+function jsonOut_(obj) {
+  return ContentService.createTextOutput(JSON.stringify(obj))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
+function dispatchAuthed_(action, payload, sess) {
+  switch (action) {
+    case 'logout':          return actionLogout_(payload);
+    case 'verifySession':   return { ok: true, username: sess.username, role: sess.role };
+    case 'getBootstrap':    return actionGetBootstrap_();
+    case 'saveEmployee':    return actionSaveEmployee_(payload, sess);
+    case 'deleteEmployee':  return actionDeleteEmployee_(payload, sess);
+    case 'saveDivision':    return actionSaveDivision_(payload, sess);
+    case 'deleteDivision':  return actionDeleteDivision_(payload, sess);
+    case 'saveSheet':       return actionSaveSheet_(payload, sess);
+    case 'deleteSheet':     return actionDeleteSheet_(payload, sess);
+    case 'uploadImage':     return actionUploadImage_(payload, sess);
+    case 'changePassword':  return actionChangePassword_(payload, sess);
+    case 'getOrgConfig':    return { ok: true, orgConfig: sheetKVToObj_(TAB.orgconfig) };
+    case 'saveOrgConfig':   return actionSaveOrgConfig_(payload, sess);
+    case 'generateReport':  return actionGenerateReport_(payload, sess);
+    default:                return { ok: false, error: 'unknown_action' };
+  }
+}
+
+/* ================================================================
+ * FIRST-RUN SETUP / SEED DATA
+ * (called lazily by every action so a brand-new spreadsheet
+ *  self-initializes on first API call)
+ * ================================================================ */
+function ensureSetup_() {
+  const ss = getSS_();
+
+  if (!ss.getSheetByName(TAB.users)) {
+    const sh = ss.insertSheet(TAB.users);
+    sh.appendRow(['username', 'password_hash', 'salt', 'role']);
+    seedUser_(sh, 'admin', '123', 'admin');
+    seedUser_(sh, 'user', '123', 'employee');
+    sh.setFrozenRows(1);
+  }
+
+  if (!ss.getSheetByName(TAB.employees)) {
+    const sh = ss.insertSheet(TAB.employees);
+    sh.appendRow(['id', 'name', 'designation', 'active', 'employee_code', 'basic_salary']);
+    const seed = [
+      ['emp1', 'জনাব মোঃ রেজাউল করিম', 'সিনিঃ ফোরম্যান', true, '', ''],
+      ['emp2', 'জনাব মোঃ ওমর ফারুক', 'সিনিঃ ফোরম্যান', true, '', ''],
+      ['emp3', 'জনাব মোঃ আলাল উদ্দিন', 'সিনিঃ টেকনিশিয়ান', true, '', ''],
+      ['emp4', 'জনাব মাসুদ রানা খান', 'জুনিঃ টেকনিশিয়ান', true, '', ''],
+      ['emp5', 'জনাব মমিন খন্দকার', 'জুনিঃ টেকনিশিয়ান', true, '', ''],
+      ['emp6', 'সুমন হোসেন', 'জুনিঃ টেকনিশিয়ান', true, '', '']
+    ];
+    seed.forEach(r => sh.appendRow(r));
+    sh.setFrozenRows(1);
+  }
+
+  if (!ss.getSheetByName(TAB.divisions)) {
+    const sh = ss.insertSheet(TAB.divisions);
+    sh.appendRow(['id', 'name_bn', 'name_en', 'is_default', 'active']);
+    sh.appendRow(['div1', 'যান্ত্রিক, জিটি, নর্থ', 'Mechanical, GT, North', true, true]);
+    sh.appendRow(['div2', 'যান্ত্রিক, এসটি, নর্থ', 'Mechanical, ST, North', true, true]);
+    sh.setFrozenRows(1);
+  }
+
+  if (!ss.getSheetByName(TAB.otsheets)) {
+    const sh = ss.insertSheet(TAB.otsheets);
+    sh.appendRow(['id', 'date', 'division_id', 'work_description', 'remarks',
+      'image_url', 'slots_json', 'employees_json',
+      'created_by', 'created_at', 'updated_by', 'updated_at']);
+    sh.setFrozenRows(1);
+  }
+
+  if (!ss.getSheetByName(TAB.orgconfig)) {
+    const sh = ss.insertSheet(TAB.orgconfig);
+    sh.appendRow(['key', 'value']);
+    const seed = [
+      ['header_text', 'আশুগঞ্জ ৪৫০ মে.ও. সিসিপিপি (নর্থ) প্লান্টের তত্ত্বাবধায়ক প্রকৌশলী (যান্ত্রিক সংরক্ষণ) জোন-বি দপ্তরের অধীনে যান্ত্রিক (জিটি, এইচআরএসজি ও অক্সিলারি) সংরক্ষন, নর্থ জোন-বি বিভাগে কর্মরত কর্মচারীদের অধীকাল কর্মঘন্টার বিবরণী।'],
+      ['weekly_header_line1', 'আশুগঞ্জ পাওয়ার স্টেশন কোম্পানী লিঃ (এপিএসসিএল)'],
+      ['weekly_header_line2', 'আশুগঞ্জ, ব্রাহ্মণবাড়িয়া।'],
+      ['weekly_header_line3', 'যান্ত্রিক (জিটি, এইচআরএসজি ও অক্সিলারিজ), নর্থ, জোন-বি'],
+      ['sig1', 'সহকারী/উপ-বিভাগীয় প্রকৌশলী (যান্ত্রিক)\nআশুগঞ্জ ৪৫০মেঃওঃ সিসিপিপি (নর্থ)\nএপিএসসিএল'],
+      ['sig2', 'নির্বাহী প্রকৌশলী (যান্ত্রিক)\nআশুগঞ্জ ৪৫০মেঃওঃ সিসিপিপি (নর্থ)\nএপিএসসিএল'],
+      ['sig3', 'তত্ত্বাবধায়ক প্রকৌশলী (যান্ত্রিক)\nআশুগঞ্জ ৪৫০মেঃওঃ সিসিপিপি (নর্থ)\nএপিএসসিএল'],
+      ['sig4', 'প্রধান প্রকৌশলী\nআশুগঞ্জ ৪৫০মেঃওঃ সিসিপিপি (নর্থ)\nএপিএসসিএল'],
+      ['sig5', 'নির্বাহী পরিচালক (প্রকৌশল)\nএপিএসসিএল']
+    ];
+    seed.forEach(r => sh.appendRow(r));
+    sh.setFrozenRows(1);
+  }
+}
+
+function seedUser_(sheet, username, plainPassword, role) {
+  const salt = makeSalt_();
+  const hash = hashPassword_(plainPassword, salt);
+  sheet.appendRow([username, hash, salt, role]);
+}
+
+/* ================================================================
+ * PASSWORD HASHING (salted SHA-256; no plaintext ever stored)
+ * ================================================================ */
+function makeSalt_() {
+  return Utilities.getUuid().replace(/-/g, '');
+}
+function hashPassword_(password, salt) {
+  const bytes = Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, password + ':' + salt, Utilities.Charset.UTF_8);
+  return bytes.map(b => (b < 0 ? b + 256 : b).toString(16).padStart(2, '0')).join('');
+}
+
+/* ================================================================
+ * SESSIONS  (CacheService — shared across all users/devices,
+ * sliding expiry refreshed on every valid request)
+ * ================================================================ */
+function newToken_() {
+  return Utilities.getUuid() + Utilities.getUuid();
+}
+function validateSession_(token) {
+  if (!token) return null;
+  const cache = CacheService.getScriptCache();
+  const raw = cache.get('sess_' + token);
+  if (!raw) return null;
+  const sess = JSON.parse(raw);
+  cache.put('sess_' + token, raw, SESSION_TTL_SECONDS); // refresh sliding TTL
+  return sess;
+}
+
+/* ================================================================
+ * BRUTE-FORCE PROTECTION
+ * ================================================================ */
+function loginAllowed_(username) {
+  const cache = CacheService.getScriptCache();
+  const raw = cache.get('fail_' + username);
+  const count = raw ? parseInt(raw, 10) : 0;
+  return count < MAX_FAILED_LOGINS;
+}
+function recordFailedLogin_(username) {
+  const cache = CacheService.getScriptCache();
+  const raw = cache.get('fail_' + username);
+  const count = raw ? parseInt(raw, 10) : 0;
+  cache.put('fail_' + username, String(count + 1), LOGIN_LOCKOUT_SECONDS);
+}
+function clearFailedLogin_(username) {
+  CacheService.getScriptCache().remove('fail_' + username);
+}
+
+/* ================================================================
+ * AUTH ACTIONS
+ * ================================================================ */
+function actionLogin_(payload) {
+  ensureSetup_();
+  const username = String(payload.username || '').trim();
+  const password = String(payload.password || '');
+  if (!username || !password) return { ok: false, error: 'missing_credentials' };
+
+  if (!loginAllowed_(username)) {
+    return { ok: false, error: 'locked_out' };
+  }
+
+  const users = sheetToObjects_(TAB.users);
+  const user = users.find(u => String(u.username).trim() === username);
+  if (!user) { recordFailedLogin_(username); return { ok: false, error: 'invalid' }; }
+
+  const computed = hashPassword_(password, user.salt);
+  if (computed !== user.password_hash) {
+    recordFailedLogin_(username);
+    return { ok: false, error: 'invalid' };
+  }
+
+  clearFailedLogin_(username);
+  const token = newToken_();
+  const cache = CacheService.getScriptCache();
+  cache.put('sess_' + token, JSON.stringify({ username: user.username, role: user.role }), SESSION_TTL_SECONDS);
+
+  return { ok: true, token: token, username: user.username, role: user.role };
+}
+
+function actionLogout_(payload) {
+  if (payload.token) CacheService.getScriptCache().remove('sess_' + payload.token);
+  return { ok: true };
+}
+
+function actionChangePassword_(payload, sess) {
+  // Admin can change either account's password; an employee may only change their own.
+  const targetRole = payload.role;
+  if (sess.role !== 'admin' && targetRole !== sess.role) {
+    return { ok: false, error: 'forbidden' };
+  }
+  const sh = getSS_().getSheetByName(TAB.users);
+  const data = sh.getDataRange().getValues();
+  for (let i = 1; i < data.length; i++) {
+    if (data[i][3] === targetRole) {
+      const salt = makeSalt_();
+      const hash = hashPassword_(payload.newPassword, salt);
+      sh.getRange(i + 1, 2).setValue(hash); // password_hash
+      sh.getRange(i + 1, 3).setValue(salt); // salt
+      return { ok: true };
+    }
+  }
+  return { ok: false, error: 'not_found' };
+}
+
+/* ================================================================
+ * GENERIC SHEET <-> OBJECT HELPERS
+ * ================================================================ */
+function headersOf_(sh) { return sh.getRange(1, 1, 1, sh.getLastColumn()).getValues()[0]; }
+
+function sheetToObjects_(tabName) {
+  const sh = getSS_().getSheetByName(tabName);
+  const values = sh.getDataRange().getValues();
+  const headers = values.shift();
+  return values
+    .filter(row => row.some(c => c !== '' && c !== null))
+    .map(row => {
+      const obj = {};
+      headers.forEach((h, i) => { obj[h] = row[i]; });
+      return obj;
+    });
+}
+function sheetKVToObj_(tabName) {
+  const sh = getSS_().getSheetByName(tabName);
+  if (!sh) return {};
+  const data = sh.getDataRange().getValues();
+  const out = {};
+  for (let i = 1; i < data.length; i++) {
+    if (data[i][0] !== '') out[data[i][0]] = data[i][1];
+  }
+  return out;
+}
+function findRowIndexById_(sh, headers, id) {
+  const idCol = headers.indexOf('id');
+  const data = sh.getDataRange().getValues();
+  for (let i = 1; i < data.length; i++) {
+    if (String(data[i][idCol]) === String(id)) return i + 1;
+  }
+  return -1;
+}
+function safeParse_(str, fallback) {
+  try { return str ? JSON.parse(str) : fallback; } catch (e) { return fallback; }
+}
+function formatDateVal_(v) {
+  if (Object.prototype.toString.call(v) === '[object Date]') {
+    return Utilities.formatDate(v, Session.getScriptTimeZone(), 'yyyy-MM-dd');
+  }
+  return v;
+}
+function newId_(prefix) { return prefix + '_' + Utilities.getUuid().slice(0, 8); }
+function isTruthyCell_(v) {
+  if (v === true) return true;
+  if (typeof v === 'string') return ['true', 'TRUE', '1', 'yes'].includes(v.trim());
+  if (typeof v === 'number') return v === 1;
+  return false;
+}
+
+/* ================================================================
+ * BOOTSTRAP (everything the app needs after login)
+ * ================================================================ */
+function actionGetBootstrap_() {
+  ensureSetup_();
+  const employees = sheetToObjects_(TAB.employees).map(e => ({
+    id: e.id, name: e.name, designation: e.designation,
+    active: isTruthyCell_(e.active), employee_code: e.employee_code || '', basic_salary: e.basic_salary || ''
+  }));
+  const divisions = sheetToObjects_(TAB.divisions).map(d => ({
+    id: d.id, name_bn: d.name_bn, name_en: d.name_en,
+    is_default: isTruthyCell_(d.is_default), active: isTruthyCell_(d.active)
+  }));
+  const rawSheets = sheetToObjects_(TAB.otsheets);
+  const sheets = rawSheets.map(r => ({
+    id: r.id, date: formatDateVal_(r.date), division_id: r.division_id,
+    work_description: r.work_description, remarks: r.remarks, image: r.image_url || '',
+    slots: safeParse_(r.slots_json, []), employees: safeParse_(r.employees_json, []),
+    created_by: r.created_by, created_at: r.created_at, updated_by: r.updated_by, updated_at: r.updated_at
+  }));
+  const orgConfig = sheetKVToObj_(TAB.orgconfig);
+  return { ok: true, employees, divisions, sheets, orgConfig };
+}
+
+/* ================================================================
+ * EMPLOYEES  (add = admin only; edit/delete = any logged-in user)
+ * ================================================================ */
+function actionSaveEmployee_(payload, sess) {
+  const emp = payload.employee || {};
+  const isNew = !emp.id;
+  if (isNew && sess.role !== 'admin') return { ok: false, error: 'forbidden' };
+
+  const sh = getSS_().getSheetByName(TAB.employees);
+  const headers = headersOf_(sh);
+  if (isNew) emp.id = newId_('emp');
+  const rowVals = headers.map(h => (emp[h] !== undefined ? emp[h] : ''));
+  const rowIdx = findRowIndexById_(sh, headers, emp.id);
+
+  if (isNew) {
+    // insert new employees at the top (row 2), just under the header
+    sh.insertRowAfter(1);
+    sh.getRange(2, 1, 1, headers.length).setValues([rowVals]);
+  } else if (rowIdx > 0) {
+    sh.getRange(rowIdx, 1, 1, headers.length).setValues([rowVals]);
+  } else {
+    sh.appendRow(rowVals);
+  }
+  return { ok: true, employee: emp };
+}
+
+function actionDeleteEmployee_(payload, sess) {
+  const sh = getSS_().getSheetByName(TAB.employees);
+  const headers = headersOf_(sh);
+  const rowIdx = findRowIndexById_(sh, headers, payload.id);
+  if (rowIdx > 0) sh.deleteRow(rowIdx);
+  return { ok: true };
+}
+
+/* ================================================================
+ * DIVISIONS  (add/delete = any logged-in user; default undeletable)
+ * ================================================================ */
+function actionSaveDivision_(payload, sess) {
+  const div = payload.division || {};
+  const sh = getSS_().getSheetByName(TAB.divisions);
+  const headers = headersOf_(sh);
+  if (!div.id) div.id = newId_('div');
+  if (div.is_default === undefined) div.is_default = false;
+  if (div.active === undefined) div.active = true;
+  const rowVals = headers.map(h => (div[h] !== undefined ? div[h] : ''));
+  const rowIdx = findRowIndexById_(sh, headers, div.id);
+  if (rowIdx > 0) sh.getRange(rowIdx, 1, 1, headers.length).setValues([rowVals]);
+  else sh.appendRow(rowVals);
+  return { ok: true, division: div };
+}
+
+function actionDeleteDivision_(payload, sess) {
+  const sh = getSS_().getSheetByName(TAB.divisions);
+  const headers = headersOf_(sh);
+  const rowIdx = findRowIndexById_(sh, headers, payload.id);
+  if (rowIdx < 1) return { ok: false, error: 'not_found' };
+  const isDefaultCol = headers.indexOf('is_default');
+  if (sh.getRange(rowIdx, isDefaultCol + 1).getValue() === true) {
+    return { ok: false, error: 'default' };
+  }
+  sh.deleteRow(rowIdx);
+  return { ok: true };
+}
+
+/* ================================================================
+ * OT SHEETS  (add/edit/delete = any logged-in user)
+ * ================================================================ */
+function toMin_(hhmm) {
+  if (!hhmm) return null;
+  const p = String(hhmm).split(':').map(Number);
+  return p[0] * 60 + p[1];
+}
+function overlaps_(aS, aE, bS, bE) {
+  let as = toMin_(aS), ae = toMin_(aE), bs = toMin_(bS), be = toMin_(bE);
+  if (as === null || ae === null || bs === null || be === null) return false;
+  if (ae <= as) ae += 1440;
+  if (be <= bs) be += 1440;
+  return as < be && bs < ae;
+}
+function checkOverlap_(payload) {
+  const rows = sheetToObjects_(TAB.otsheets);
+  for (const r of rows) {
+    if (String(r.id) === String(payload.id)) continue;
+    if (formatDateVal_(r.date) !== payload.date) continue;
+    const existingEmps = safeParse_(r.employees_json, []);
+    for (const pe of (payload.employees || [])) {
+      const existing = existingEmps.find(e => e.employee_id === pe.employee_id);
+      if (!existing) continue;
+      for (const pa of (pe.adjustments || [])) {
+        for (const ea of (existing.adjustments || [])) {
+          if (overlaps_(pa.actual_start, pa.actual_end, ea.actual_start, ea.actual_end)) {
+            return pe.employee_id;
+          }
+        }
+      }
+    }
+  }
+  return null;
+}
+
+function actionSaveSheet_(payload, sess) {
+  const sheetData = payload.sheet || {};
+  ensureSetup_();
+  const sh = getSS_().getSheetByName(TAB.otsheets);
+  const headers = headersOf_(sh);
+
+  if (!sheetData.id) sheetData.id = newId_('sheet');
+
+  const conflictEmpId = checkOverlap_(sheetData);
+  if (conflictEmpId) return { ok: false, error: 'overlap', employee_id: conflictEmpId };
+
+  const now = new Date().toISOString();
+  const row = {
+    id: sheetData.id, date: sheetData.date, division_id: sheetData.division_id,
+    work_description: sheetData.work_description || '', remarks: sheetData.remarks || '',
+    image_url: sheetData.image || '',
+    slots_json: JSON.stringify(sheetData.slots || []),
+    employees_json: JSON.stringify(sheetData.employees || []),
+    created_by: sheetData.created_by || sess.username,
+    created_at: sheetData.created_at || now,
+    updated_by: sess.username, updated_at: now
+  };
+  const rowVals = headers.map(h => (row[h] !== undefined ? row[h] : ''));
+  const rowIdx = findRowIndexById_(sh, headers, sheetData.id);
+  if (rowIdx > 0) sh.getRange(rowIdx, 1, 1, headers.length).setValues([rowVals]);
+  else sh.appendRow(rowVals);
+
+  return {
+    ok: true,
+    sheet: {
+      id: row.id, date: row.date, division_id: row.division_id,
+      work_description: row.work_description, remarks: row.remarks, image: row.image_url,
+      slots: sheetData.slots || [], employees: sheetData.employees || [],
+      created_by: row.created_by, created_at: row.created_at,
+      updated_by: row.updated_by, updated_at: row.updated_at
+    }
+  };
+}
+
+function actionDeleteSheet_(payload, sess) {
+  const sh = getSS_().getSheetByName(TAB.otsheets);
+  const headers = headersOf_(sh);
+  const rowIdx = findRowIndexById_(sh, headers, payload.id);
+  if (rowIdx > 0) sh.deleteRow(rowIdx);
+  return { ok: true };
+}
+
+/* ================================================================
+ * ORG CONFIG (report letterhead / signatures — admin only to edit)
+ * ================================================================ */
+function actionSaveOrgConfig_(payload, sess) {
+  if (sess.role !== 'admin') return { ok: false, error: 'forbidden' };
+  const cfg = payload.orgConfig || {};
+  const sh = getSS_().getSheetByName(TAB.orgconfig);
+  const rows = Object.keys(cfg).map(k => [k, cfg[k] || '']);
+  sh.getRange(2, 1, Math.max(sh.getLastRow() - 1, 1), 2).clearContent();
+  if (rows.length) sh.getRange(2, 1, rows.length, 2).setValues(rows);
+  return { ok: true };
+}
+
+/* ================================================================
+ * IMAGE UPLOAD  (Drive access happens only here, server-side)
+ * ================================================================ */
+function getOrCreateFolder_(name) {
+  const it = DriveApp.getFoldersByName(name);
+  if (it.hasNext()) return it.next();
+  return DriveApp.createFolder(name);
+}
+function actionUploadImage_(payload, sess) {
+  const folder = getOrCreateFolder_('OT_Record_Images');
+  const base64Data = payload.base64 || '';
+  const pureBase64 = base64Data.indexOf(',') >= 0 ? base64Data.split(',').pop() : base64Data;
+  const bytes = Utilities.base64Decode(pureBase64);
+  const blob = Utilities.newBlob(bytes, payload.mimeType || 'image/jpeg', payload.filename || ('ot_' + Date.now() + '.jpg'));
+  const file = folder.createFile(blob);
+  file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+  return { ok: true, url: 'https://drive.google.com/uc?export=view&id=' + file.getId() };
+}
+
+/* ================================================================
+ * FORMAL REPORT GENERATOR (4 sheets, matches the uploaded template
+ * including native Excel conditional formatting).
+ *
+ * Built server-side (not in the browser) because:
+ *  - Only Apps Script/Google Sheets has a real conditional-formatting
+ *    API; free client-side libraries can't write it reliably.
+ *  - A fresh temp Spreadsheet is built, exported to true .xlsx via
+ *    Drive's export endpoint (which preserves the CF rules as native
+ *    Excel conditional formatting), then the temp file is trashed.
+ * ================================================================ */
+const BN_DIGITS_ = ['০','১','২','৩','৪','৫','৬','৭','৮','৯'];
+const BN_MONTHS_ = ['জানুয়ারি','ফেব্রুয়ারি','মার্চ','এপ্রিল','মে','জুন','জুলাই','আগস্ট','সেপ্টেম্বর','অক্টোবর','নভেম্বর','ডিসেম্বর'];
+const ORD_WEEK_ = ['১ম সপ্তাহ', '২য় সপ্তাহ', '৩য় সপ্তাহ', '৪র্থ সপ্তাহ', '৫ম সপ্তাহ'];
+const CF_FILL = '#FFC7CE';
+const CF_FONT = '#9C0006';
+
+function bnForce_(input) {
+  if (input === null || input === undefined) return '';
+  return String(input).replace(/[0-9]/g, d => BN_DIGITS_[+d]);
+}
+function ymLabel_(ym) {
+  const p = ym.split('-'); const y = parseInt(p[0], 10), m = parseInt(p[1], 10);
+  return BN_MONTHS_[m - 1] + ' ' + bnForce_(y) + 'ইং';
+}
+function bnDateDMY_(iso) {
+  const p = iso.split('-');
+  return bnForce_(parseInt(p[2], 10)) + '/' + bnForce_(parseInt(p[1], 10)) + '/' + bnForce_(parseInt(p[0], 10));
+}
+function trimNum_(n) { return Math.round(n * 100) / 100; }
+function toMin2_(hhmm) {
+  if (!hhmm) return null;
+  const p = String(hhmm).split(':');
+  return parseInt(p[0], 10) * 60 + parseInt(p[1], 10);
+}
+function durationHours2_(s, e) {
+  let a = toMin2_(s), b = toMin2_(e);
+  if (a === null || b === null) return 0;
+  if (b <= a) b += 1440;
+  return Math.round(((b - a) / 60) * 100) / 100;
+}
+function daysInMonth_(ym) {
+  const p = ym.split('-');
+  return new Date(parseInt(p[0], 10), parseInt(p[1], 10), 0).getDate();
+}
+function weekRangesFor_(dim) {
+  return [[1, 7], [8, 14], [15, 21], [22, 28], [29, dim]].filter(r => r[0] <= dim);
+}
+function colToLetter_(col) {
+  let letter = '';
+  while (col > 0) {
+    const rem = (col - 1) % 26;
+    letter = String.fromCharCode(65 + rem) + letter;
+    col = Math.floor((col - 1) / 26);
+  }
+  return letter;
+}
+function a1_(row, col) { return colToLetter_(col) + row; }
+
+function computeMonthlyData_(ym) {
+  const employees = sheetToObjects_(TAB.employees).map(e => ({
+    id: e.id, name: e.name, designation: e.designation,
+    employee_code: e.employee_code || '', basic_salary: e.basic_salary || ''
+  }));
+  const dim = daysInMonth_(ym);
+  const data = employees.map(e => ({ emp: e, sheetsCount: 0, totalHours: 0, days: new Array(dim + 1).fill(0) }));
+  const rawSheets = sheetToObjects_(TAB.otsheets);
+  rawSheets.forEach(r => {
+    const date = formatDateVal_(r.date);
+    if (!date || String(date).indexOf(ym) !== 0) return;
+    const day = parseInt(String(date).split('-')[2], 10);
+    const emps = safeParse_(r.employees_json, []);
+    emps.forEach(se => {
+      const rec = data.find(d => d.emp.id === se.employee_id);
+      if (!rec) return;
+      let hrs = 0;
+      (se.adjustments || []).forEach(a => { hrs += durationHours2_(a.actual_start, a.actual_end); });
+      rec.sheetsCount += 1; rec.totalHours += hrs; rec.days[day] += hrs;
+    });
+  });
+  return { dim: dim, data: data };
+}
+function sheetsInMonth_(ym) {
+  const rawSheets = sheetToObjects_(TAB.otsheets);
+  return rawSheets
+    .map(r => ({
+      date: formatDateVal_(r.date), work_description: r.work_description || '', remarks: r.remarks || '',
+      employees: safeParse_(r.employees_json, [])
+    }))
+    .filter(s => s.date && String(s.date).indexOf(ym) === 0)
+    .sort((a, b) => (a.date < b.date ? -1 : 1));
+}
+
+/* ================================================================
+ * TEMPLATE STYLE FIDELITY
+ * Values below (font, column widths, row heights, borders) were
+ * extracted directly from the uploaded OT_June.xltx template's XML
+ * (fonts, <cols> width table, row heights, alignment, border style).
+ * ================================================================ */
+const TEMPLATE_FONT = 'NikoshBAN'; // exact font name used throughout the uploaded template; Excel will render it correctly on machines that have it installed (as the original file already required)
+
+function excelColWidthToPx_(w) { return Math.round(w * 7 + 5); }
+function excelRowHeightToPx_(pts) { return Math.round(pts * 4 / 3); }
+
+function setColWidthRange_(sh, fromCol, toCol, excelWidth) {
+  const px = excelColWidthToPx_(excelWidth);
+  for (let c = fromCol; c <= toCol; c++) sh.setColumnWidth(c, px);
+}
+
+/* thin box border + center/wrap, matching the template's table cells */
+function styleTableRange_(range, opts) {
+  opts = opts || {};
+  range.setFontFamily(TEMPLATE_FONT);
+  if (opts.size) range.setFontSize(opts.size);
+  if (opts.bold !== undefined) range.setFontWeight(opts.bold ? 'bold' : 'normal');
+  range.setHorizontalAlignment(opts.hAlign || 'center');
+  range.setVerticalAlignment(opts.vAlign || 'middle');
+  if (opts.wrap) range.setWrap(true);
+  if (opts.border !== false) range.setBorder(true, true, true, true, true, true, '#000000', SpreadsheetApp.BorderStyle.SOLID);
+  return range;
+}
+function styleFreeText_(range, opts) {
+  opts = opts || {};
+  range.setFontFamily(TEMPLATE_FONT);
+  if (opts.size) range.setFontSize(opts.size);
+  if (opts.bold !== undefined) range.setFontWeight(opts.bold ? 'bold' : 'normal');
+  range.setHorizontalAlignment(opts.hAlign || 'center');
+  range.setVerticalAlignment(opts.vAlign || 'top');
+  if (opts.wrap !== false) range.setWrap(true);
+  return range;
+}
+
+function buildEntryFormSheet_(ss, ym) {
+  const sh = ss.insertSheet('Entry Form');
+  const employees = sheetToObjects_(TAB.employees);
+  const empById = {}; employees.forEach(e => { empById[e.id] = e; });
+  const headers = ['তারিখ', 'অতিরিক্ত কাজের বিবরণী', 'ক্রঃ', 'কর্মচারীদের নাম', 'পদবী', 'সময়কাল', 'মোট ঘন্টা', 'মন্তব্য'];
+  sh.getRange(1, 1, 1, headers.length).setValues([headers]);
+  styleTableRange_(sh.getRange(1, 1, 1, headers.length), { size: 12, bold: true, wrap: true });
+  sh.getRange(1, 1, 1, headers.length).setBackground('#EDEAE1');
+  sh.setRowHeight(1, excelRowHeightToPx_(60.75));
+
+  const sheets = sheetsInMonth_(ym);
+  let row = 2;
+  if (sheets.length === 0) {
+    sh.getRange(row, 1, 1, 8).setValues([['', '', '', 'এই মাসে কোনো ওটি শিট পাওয়া যায়নি', '', '', '', '']]);
+    row++;
+  }
+  sheets.forEach(s => {
+    const empList = s.employees.map(se => {
+      const emp = empById[se.employee_id] || { name: '?', designation: '' };
+      let hrs = 0; const times = [];
+      (se.adjustments || []).forEach(a => { hrs += durationHours2_(a.actual_start, a.actual_end); times.push(a.actual_start + '-' + a.actual_end); });
+      return { name: emp.name, designation: emp.designation, hrs: hrs, timeStr: times.join('\n') };
+    });
+    const startRow = row;
+    empList.forEach((e, i) => {
+      sh.getRange(row, 1, 1, 8).setValues([[
+        i === 0 ? bnDateDMY_(s.date) : '',
+        i === 0 ? s.work_description : '',
+        bnForce_(i + 1) + '।',
+        e.name, e.designation, e.timeStr || 'X',
+        e.hrs > 0 ? e.hrs : 'X',
+        i === 0 ? s.remarks : ''
+      ]]);
+      sh.setRowHeight(row, excelRowHeightToPx_(16.5));
+      row++;
+    });
+    if (empList.length > 1) {
+      sh.getRange(startRow, 1, empList.length, 1).merge();
+      sh.getRange(startRow, 2, empList.length, 1).merge();
+      sh.getRange(startRow, 8, empList.length, 1).merge();
+    }
+  });
+  const lastRow = row - 1;
+  if (lastRow >= 2) {
+    styleTableRange_(sh.getRange(2, 1, lastRow - 1, 8), { size: 10, bold: false, wrap: true });
+    sh.getRange(2, 2, lastRow - 1, 1).setHorizontalAlignment('left'); // work description reads left-aligned
+    sh.getRange(2, 8, lastRow - 1, 1).setHorizontalAlignment('left'); // remarks reads left-aligned
+  }
+
+  setColWidthRange_(sh, 1, 1, 10);   // তারিখ
+  setColWidthRange_(sh, 2, 2, 40);   // অতিরিক্ত কাজের বিবরণী
+  setColWidthRange_(sh, 3, 3, 6);    // ক্রঃ
+  setColWidthRange_(sh, 4, 4, 26);   // কর্মচারীদের নাম
+  setColWidthRange_(sh, 5, 5, 18);   // পদবী
+  setColWidthRange_(sh, 6, 6, 15);   // সময়কাল
+  setColWidthRange_(sh, 7, 7, 9);    // মোট ঘন্টা
+  setColWidthRange_(sh, 8, 8, 30);   // মন্তব্য
+
+  sh.setFrozenRows(1);
+  return sh;
+}
+
+function buildWeeklySheet_(ss, ym) {
+  const sh = ss.insertSheet('weekly');
+  const monthly = computeMonthlyData_(ym);
+  const dim = monthly.dim, data = monthly.data;
+  const weekRanges = weekRangesFor_(dim);
+  const orgCfg = sheetKVToObj_(TAB.orgconfig);
+  const monthLabel = ymLabel_(ym);
+  let row = 1;
+  const cfRanges = [];
+
+  // exact template widths: A=5, B=20.14, C=16.43, D..(day cols)=6.57 each, total col=7.71
+  setColWidthRange_(sh, 1, 1, 5);
+  setColWidthRange_(sh, 2, 2, 20.140625);
+  setColWidthRange_(sh, 3, 3, 16.42578125);
+  setColWidthRange_(sh, 4, 10, 6.5703125);
+  setColWidthRange_(sh, 11, 11, 7.7109375);
+
+  weekRanges.forEach((range, wi) => {
+    const startDay = range[0], endDay = Math.min(range[1], dim);
+    const dayCols = []; for (let d = startDay; d <= endDay; d++) dayCols.push(d);
+    const lastCol = 3 + dayCols.length + 1;
+
+    const titleRow = row;
+    sh.getRange(row, 1, 1, lastCol).merge()
+      .setValue((orgCfg.weekly_header_line1 || '') + '\n' + (orgCfg.weekly_header_line2 || '') + '\n' + (orgCfg.weekly_header_line3 || ''));
+    styleFreeText_(sh.getRange(row, 1), { size: 14, bold: false, vAlign: 'middle' });
+    sh.setRowHeight(row, excelRowHeightToPx_(57.75));
+    row++;
+
+    sh.getRange(row, 1, 1, lastCol).merge()
+      .setValue('অধিকাল ভাতা সম্পর্কিত ' + monthLabel + ' মাসের ' + ORD_WEEK_[wi] + ' প্রতিবেদনঃ');
+    styleTableRange_(sh.getRange(row, 1), { size: 11, bold: false });
+    row++;
+
+    const headRow = row;
+    sh.getRange(row, 1).setValue('ক্রঃ নং');
+    sh.getRange(row, 2).setValue('কর্মচারীদের নাম');
+    sh.getRange(row, 3).setValue('পদবী');
+    sh.getRange(row, 4, 1, dayCols.length).merge().setValue('তারিখ');
+    sh.getRange(row, 4 + dayCols.length).setValue('মোট ঘন্টা');
+    styleTableRange_(sh.getRange(row, 1, 1, lastCol), { size: 9, bold: false, wrap: true });
+    row++;
+
+    dayCols.forEach((d, i) => sh.getRange(row, 4 + i).setValue(d));
+    styleTableRange_(sh.getRange(row, 4, 1, dayCols.length), { size: 9, bold: false });
+    row++;
+
+    const dataStartRow = row;
+    data.forEach((d, idx) => {
+      const rowVals = [idx + 1, d.emp.name, d.emp.designation];
+      let weekTotal = 0;
+      dayCols.forEach(dayNum => { const h = d.days[dayNum] || 0; weekTotal += h; rowVals.push(h); });
+      rowVals.push(trimNum_(weekTotal));
+      sh.getRange(row, 1, 1, rowVals.length).setValues([rowVals]);
+      row++;
+    });
+    if (data.length > 0) {
+      styleTableRange_(sh.getRange(dataStartRow, 1, data.length, lastCol), { size: 10, bold: false });
+      sh.getRange(dataStartRow, 2, data.length, 1).setHorizontalAlignment('left'); // employee name
+      if (dayCols.length > 0) cfRanges.push(sh.getRange(dataStartRow, 4, data.length, dayCols.length));
+    }
+    row++; // spacer
+  });
+
+  if (cfRanges.length) applyGreaterThanZeroCF_(sh, cfRanges);
+  sh.setFrozenRows(0);
+  return sh;
+}
+
+function buildMonthlySheet_(ss, ym) {
+  const sh = ss.insertSheet('monthly');
+  const monthly = computeMonthlyData_(ym);
+  const dim = monthly.dim, data = monthly.data;
+  const monthLabel = ymLabel_(ym);
+  const orgCfg = sheetKVToObj_(TAB.orgconfig);
+  const lastCol = 3 + dim + 1;
+
+  // exact template widths (template has a leading spacer col A we don't use;
+  // mapping is by semantic column, not position): serial=4.14, name=16.71,
+  // designation=15.86, day cols=3.43 each, total=9.0
+  setColWidthRange_(sh, 1, 1, 4.140625);
+  setColWidthRange_(sh, 2, 2, 16.7109375);
+  setColWidthRange_(sh, 3, 3, 15.85546875);
+  setColWidthRange_(sh, 4, 3 + dim, 3.42578125);
+  setColWidthRange_(sh, 4 + dim, 4 + dim, 9);
+
+  sh.getRange(1, 1, 1, lastCol).merge()
+    .setValue((orgCfg.header_text || '') + ' ' + monthLabel + ' মাসের অধিকাল কর্মঘন্টার বিবরণী।');
+  styleFreeText_(sh.getRange(1, 1), { size: 12, bold: true, vAlign: 'top' });
+  sh.setRowHeight(1, excelRowHeightToPx_(36.75));
+
+  let row = 3;
+  const headRow = row;
+  sh.getRange(row, 1).setValue('ক্রঃ নং');
+  sh.getRange(row, 2).setValue('কর্মচারীদের নাম');
+  sh.getRange(row, 3).setValue('পদবী');
+  sh.getRange(row, 4, 1, dim).merge().setValue('মাসের নামঃ ' + monthLabel);
+  sh.getRange(row, 4 + dim).setValue('মোট ঘন্টা');
+  styleTableRange_(sh.getRange(row, 1, 1, lastCol), { size: 12, bold: false, wrap: true });
+  sh.setRowHeight(row, excelRowHeightToPx_(18));
+  row++;
+
+  const weekRanges = weekRangesFor_(dim);
+  let colCursor = 4;
+  weekRanges.forEach((r, i) => {
+    const span = Math.min(r[1], dim) - r[0] + 1;
+    sh.getRange(row, colCursor, 1, span).merge().setValue(ORD_WEEK_[i]);
+    colCursor += span;
+  });
+  styleTableRange_(sh.getRange(row, 4, 1, dim), { size: 13, bold: false });
+  row++;
+
+  const dayNumRow = [];
+  for (let d = 1; d <= dim; d++) dayNumRow.push(d);
+  sh.getRange(row, 4, 1, dim).setValues([dayNumRow]);
+  styleTableRange_(sh.getRange(row, 4, 1, dim), { size: 12, bold: false });
+  row++;
+
+  const dataStartRow = row;
+  data.forEach((d, idx) => {
+    const rowVals = [idx + 1, d.emp.name, d.emp.designation];
+    for (let dd = 1; dd <= dim; dd++) rowVals.push(d.days[dd] || 0);
+    rowVals.push(trimNum_(d.totalHours));
+    sh.getRange(row, 1, 1, rowVals.length).setValues([rowVals]);
+    sh.setRowHeight(row, excelRowHeightToPx_(15.75));
+    row++;
+  });
+  if (data.length > 0) {
+    styleTableRange_(sh.getRange(dataStartRow, 1, data.length, lastCol), { size: 11, bold: false });
+    sh.getRange(dataStartRow, 2, data.length, 1).setHorizontalAlignment('left');
+    applyGreaterThanZeroCF_(sh, [sh.getRange(dataStartRow, 4, data.length, dim)]);
+  }
+
+  const grandTotal = data.reduce((s, d) => s + d.totalHours, 0);
+  sh.getRange(row, 1).setValue(monthLabel + ' মাসের মোট অধিকাল মোট কর্মঘন্টার পরিমান');
+  sh.getRange(row, 4 + dim).setValue(trimNum_(grandTotal));
+  styleFreeText_(sh.getRange(row, 1), { size: 11, bold: true, hAlign: 'left', wrap: false });
+  row += 3;
+  sh.getRange(row, 1).setValue(orgCfg.sig1 || '');
+  sh.getRange(row, 7).setValue(orgCfg.sig2 || '');
+  sh.getRange(row, Math.min(14, lastCol)).setValue(orgCfg.sig3 || '');
+  styleFreeText_(sh.getRange(row, 1, 1, lastCol), { size: 10, bold: false, hAlign: 'center' });
+  row += 3;
+  sh.getRange(row, 1).setValue(orgCfg.sig4 || '');
+  sh.getRange(row, 7).setValue(orgCfg.sig5 || '');
+  styleFreeText_(sh.getRange(row, 1, 1, lastCol), { size: 10, bold: false, hAlign: 'center' });
+
+  sh.setFrozenRows(3);
+  return sh;
+}
+
+function buildMonthlyAsPerWeekSheet_(ss, ym) {
+  const sh = ss.insertSheet('monthly_as_per_Week');
+  const monthly = computeMonthlyData_(ym);
+  const dim = monthly.dim, data = monthly.data;
+  const weekRanges = weekRangesFor_(dim);
+  const monthLabel = ymLabel_(ym);
+  const orgCfg = sheetKVToObj_(TAB.orgconfig);
+  const lastCol = 4 + weekRanges.length + 2; // serial+name+desig+empid + weeks + total + basic salary
+  const salaryCol = lastCol;
+
+  // exact template widths: serial=4.14, name=23.14, designation=18.57,
+  // employeeID=14.43, week cols=17.14 each, total=5.29, salary=8.29
+  setColWidthRange_(sh, 1, 1, 4.140625);
+  setColWidthRange_(sh, 2, 2, 23.140625);
+  setColWidthRange_(sh, 3, 3, 18.5703125);
+  setColWidthRange_(sh, 4, 4, 14.42578125);
+  setColWidthRange_(sh, 5, 4 + weekRanges.length, 17.140625);
+  setColWidthRange_(sh, 5 + weekRanges.length, 5 + weekRanges.length, 5.28515625);
+  setColWidthRange_(sh, salaryCol, salaryCol, 8.28515625);
+
+  sh.getRange(1, 1, 1, lastCol).merge()
+    .setValue((orgCfg.header_text || '') + ' ' + monthLabel + ' মাসের অধিকাল কর্মঘন্টার বিবরণী (সাপ্তাহিক ভিত্তিতে)।');
+  styleFreeText_(sh.getRange(1, 1), { size: 11, bold: true, vAlign: 'top' });
+  sh.setRowHeight(1, excelRowHeightToPx_(41.25));
+
+  let row = 3;
+  const headRow = row;
+  const headers = ['ক্রঃ নং', 'কর্মচারীদের নাম', 'পদবী', 'Employee ID']
+    .concat(ORD_WEEK_.slice(0, weekRanges.length))
+    .concat(['মোট ঘন্টা', 'মূল বেতন']);
+  sh.getRange(row, 1, 1, headers.length).setValues([headers]);
+  styleTableRange_(sh.getRange(row, 1, 1, lastCol), { size: 9, bold: true, wrap: true });
+  row++;
+
+  const dataStartRow = row;
+  data.forEach((d, idx) => {
+    const rowVals = [idx + 1, d.emp.name, d.emp.designation, d.emp.employee_code || ''];
+    weekRanges.forEach(r => {
+      const end = Math.min(r[1], dim); let sum = 0;
+      for (let day = r[0]; day <= end; day++) sum += d.days[day] || 0;
+      rowVals.push(trimNum_(sum));
+    });
+    rowVals.push(trimNum_(d.totalHours));
+    rowVals.push(d.emp.basic_salary || '');
+    sh.getRange(row, 1, 1, rowVals.length).setValues([rowVals]);
+    sh.setRowHeight(row, excelRowHeightToPx_(15.75));
+    row++;
+  });
+  if (data.length > 0) {
+    styleTableRange_(sh.getRange(dataStartRow, 1, data.length, lastCol), { size: 10, bold: false });
+    sh.getRange(dataStartRow, 2, data.length, 1).setHorizontalAlignment('left');
+    if (weekRanges.length > 0) applyGreaterThanZeroCF_(sh, [sh.getRange(dataStartRow, 5, data.length, weekRanges.length)]);
+  }
+
+  const grandTotal = data.reduce((s, d) => s + d.totalHours, 0);
+  sh.getRange(row, 1).setValue(monthLabel + ' মাসের মোট অধিকাল মোট কর্মঘন্টার পরিমান');
+  sh.getRange(row, 5 + weekRanges.length).setValue(trimNum_(grandTotal));
+  styleFreeText_(sh.getRange(row, 1), { size: 10, bold: true, hAlign: 'left', wrap: false });
+  row += 2;
+  sh.getRange(row, 1).setValue(orgCfg.sig1 || '');
+  styleFreeText_(sh.getRange(row, 1), { size: 10, bold: false, hAlign: 'center' });
+
+  // template keeps the salary column hidden (it's reference data, not primary
+  // display); kept visible here for transparency — uncomment to hide instead:
+  // sh.hideColumns(salaryCol);
+
+  sh.setFrozenRows(3);
+  return sh;
+}
+
+/* Native Excel-compatible conditional formatting: "greater than 0" ->
+   light red fill + dark red text, matching the uploaded template's
+   own rule exactly. Because values here are real numbers (not
+   Bengali-digit text), this rule evaluates and exports correctly. */
+function applyGreaterThanZeroCF_(sh, ranges) {
+  if (!ranges || ranges.length === 0) return;
+  const rule = SpreadsheetApp.newConditionalFormatRule()
+    .whenNumberGreaterThan(0)
+    .setBackground(CF_FILL)
+    .setFontColor(CF_FONT)
+    .setRanges(ranges)
+    .build();
+  const existing = sh.getConditionalFormatRules();
+  existing.push(rule);
+  sh.setConditionalFormatRules(existing);
+}
+
+function actionGenerateReport_(payload, sess) {
+  ensureSetup_();
+  const ym = payload.ym;
+  if (!ym) return { ok: false, error: 'missing_month' };
+
+  const tempSS = SpreadsheetApp.create('OT_Report_TEMP_' + Utilities.getUuid());
+  try {
+    buildEntryFormSheet_(tempSS, ym);
+    buildWeeklySheet_(tempSS, ym);
+    buildMonthlySheet_(tempSS, ym);
+    buildMonthlyAsPerWeekSheet_(tempSS, ym);
+    const defaultSheet = tempSS.getSheetByName('Sheet1');
+    if (defaultSheet) tempSS.deleteSheet(defaultSheet);
+    SpreadsheetApp.flush();
+
+    const exportUrl = 'https://docs.google.com/spreadsheets/d/' + tempSS.getId() + '/export?format=xlsx';
+    const resp = UrlFetchApp.fetch(exportUrl, {
+      headers: { Authorization: 'Bearer ' + ScriptApp.getOAuthToken() },
+      muteHttpExceptions: true
+    });
+    if (resp.getResponseCode() !== 200) {
+      return { ok: false, error: 'export_failed', detail: resp.getContentText().slice(0, 300) };
+    }
+    const base64 = Utilities.base64Encode(resp.getContent());
+    return { ok: true, filename: 'OT_Report_' + ym + '.xlsx', base64: base64 };
+  } finally {
+    try { DriveApp.getFileById(tempSS.getId()).setTrashed(true); } catch (e) {}
+  }
+}
