@@ -334,6 +334,12 @@ const T = {
     xlsxNotLoaded:'রিপোর্ট লাইব্রেরি লোড হয়নি, ইন্টারনেট সংযোগ যাচাই করুন',
     generatingReport:'রিপোর্ট তৈরি হচ্ছে...', timeHrs:'সময়কাল (ঘন্টা)',
     networkErr:'সার্ভারের সাথে সংযোগ করা যায়নি, ইন্টারনেট ও URL যাচাই করুন',
+    errNoUrl:'প্রথমে Apps Script Web App URL সেট করুন',
+    errNetwork:'সার্ভারে পৌঁছানো যায়নি। ইন্টারনেট সংযোগ, URL বানান, এবং আপনি সঠিকভাবে ফাইলটি হোস্ট করেছেন কিনা যাচাই করুন (file:// দিয়ে খুললে কাজ নাও করতে পারে)।',
+    errBadResponse:'সার্ভার থেকে সঠিক উত্তর পাওয়া যায়নি। সাধারণত এর মানে: (১) Apps Script ডিপ্লয়মেন্টের "Who has access" সেটিং "Anyone" করা হয়নি, (২) URL-টি /exec দিয়ে শেষ হচ্ছে না, অথবা (৩) কোড পরিবর্তনের পর নতুন ডিপ্লয়মেন্ট তৈরি করা হয়নি।',
+    errHttp:'সার্ভার একটি ত্রুটি বার্তা পাঠিয়েছে',
+    errNotHttps:'URL অবশ্যই https:// দিয়ে শুরু হতে হবে',
+    testConnection:'সংযোগ পরীক্ষা করুন', connectionOk:'সংযোগ সফল হয়েছে ✓',
     editApiUrl:'সার্ভার ঠিকানা পরিবর্তন করুন', sessionExpired:'সেশনের মেয়াদ শেষ, আবার লগইন করুন',
     orgTab:'প্রতিষ্ঠান', orgHeaderText:'রিপোর্ট শিরোনাম', orgWeekLine1:'সাপ্তাহিক হেডার লাইন ১',
     orgWeekLine2:'সাপ্তাহিক হেডার লাইন ২', orgWeekLine3:'সাপ্তাহিক হেডার লাইন ৩',
@@ -383,6 +389,12 @@ const T = {
     xlsxNotLoaded:'Report library failed to load — check your internet connection',
     generatingReport:'Generating report...', timeHrs:'Time (Hrs)',
     networkErr:'Could not reach the server — check your internet connection and URL',
+    errNoUrl:'Set your Apps Script Web App URL first',
+    errNetwork:"Couldn't reach the server. Check your internet connection, the URL spelling, and that you're opening this file properly hosted (opening via file:// may not work).",
+    errBadResponse:"The server didn't return a valid response. This usually means: (1) the Apps Script deployment's \"Who has access\" isn't set to \"Anyone\", (2) the URL doesn't end in /exec, or (3) you edited the code but haven't created a new deployment version.",
+    errHttp:'The server returned an error',
+    errNotHttps:'The URL must start with https://',
+    testConnection:'Test Connection', connectionOk:'Connection successful ✓',
     editApiUrl:'Change Server Address', sessionExpired:'Session expired — please log in again',
     orgTab:'Organization', orgHeaderText:'Report Title', orgWeekLine1:'Weekly Header Line 1',
     orgWeekLine2:'Weekly Header Line 2', orgWeekLine3:'Weekly Header Line 3',
@@ -434,17 +446,35 @@ const API = {
 
   async call(action, payload={}){
     this.setStatus('busy');
+    if(!this.baseUrl){
+      this.setStatus('error');
+      const e = new Error('no_url'); throw e;
+    }
+    let res;
     try{
       const body = JSON.stringify(Object.assign({action, token:this.token}, payload));
-      const res = await fetch(this.baseUrl, { method:'POST', body });
-      if(!res.ok) throw new Error('http_'+res.status);
-      const data = await res.json();
-      this.setStatus('on');
-      return data;
-    }catch(err){
+      res = await fetch(this.baseUrl, { method:'POST', body });
+    }catch(networkErr){
       this.setStatus('error');
-      throw err;
+      const e = new Error('network_fail'); throw e;
     }
+    if(!res.ok){
+      this.setStatus('error');
+      const e = new Error('http_'+res.status); throw e;
+    }
+    let text;
+    try{ text = await res.text(); }
+    catch(readErr){ this.setStatus('error'); throw new Error('network_fail'); }
+    let data;
+    try{ data = JSON.parse(text); }
+    catch(parseErr){
+      this.setStatus('error');
+      // Apps Script returns HTML (a Google login/consent page) instead of JSON
+      // when the deployment's access isn't set to "Anyone", or the URL is wrong/undeployed.
+      const e = new Error('bad_response'); throw e;
+    }
+    this.setStatus('on');
+    return data;
   },
 
   async login(username, password){
@@ -473,6 +503,15 @@ const API = {
     render();
   }
 };
+
+function diagnoseErr(e){
+  const code = e && e.message;
+  if(code==='no_url') return t('errNoUrl');
+  if(code==='network_fail') return t('errNetwork');
+  if(code==='bad_response') return t('errBadResponse');
+  if(code && code.indexOf('http_')===0) return t('errHttp') + ' (' + code.replace('http_','') + ')';
+  return t('networkErr');
+}
 
 /* ---------- toast ---------- */
 function toast(msg, isErr){
@@ -588,6 +627,7 @@ function renderSetupScreen(){
       <div class="info-box">${t('apiUrlHelp')}</div>
       <div id="setupErrBox"></div>
       <button class="btn btn-amber btn-block" id="btnSetupSave">${t('saveContinue')}</button>
+      ${API.baseUrl? `<button class="btn btn-outline btn-block" id="btnTestConn" style="margin-top:8px;">${t('testConnection')}</button>` : ''}
       <div style="text-align:center;margin-top:16px;">
         <span class="lang-toggle">
           <button data-l="bn" class="${STATE.lang==='bn'?'active':''}">বাংলা</button>
@@ -603,18 +643,36 @@ function bindSetupScreen(){
   });
   document.getElementById('btnSetupSave').onclick = async ()=>{
     const url = document.getElementById('setApiUrl').value.trim();
+    document.getElementById('setupErrBox').innerHTML = '';
     if(!url){ document.getElementById('setupErrBox').innerHTML = `<div class="warn-box">${t('fillRequired')}</div>`; return; }
-    API.setBaseUrl(url);
-    STATE.screen = 'boot';
-    render();
-    try{
-      await API.call('getBootstrap'); // harmless probe; will return unauthorized without a token, which is fine — just confirms the URL responds
-    }catch(e){
-      toast(t('networkErr'), true);
+    if(!/^https:\/\//i.test(url)){
+      document.getElementById('setupErrBox').innerHTML = `<div class="warn-box">${t('errNotHttps')}</div>`;
+      return;
     }
+    API.setBaseUrl(url);
+    await testConnectionAndProceed();
+  };
+  const testBtn = document.getElementById('btnTestConn');
+  if(testBtn) testBtn.onclick = async ()=>{
+    const url = document.getElementById('setApiUrl').value.trim();
+    if(url) API.setBaseUrl(url);
+    await testConnectionAndProceed();
+  };
+}
+
+async function testConnectionAndProceed(){
+  STATE.screen = 'boot';
+  render();
+  try{
+    const res = await API.call('getBootstrap'); // with no token this correctly returns {ok:false,error:'unauthorized'} — that response alone proves the server is reachable and speaking our API
+    if(!res || typeof res.ok !== 'boolean'){ throw new Error('bad_response'); }
     STATE.screen = STATE.session ? 'new' : 'login';
     render();
-  };
+  }catch(e){
+    STATE.screen = 'setup';
+    render();
+    document.getElementById('setupErrBox').innerHTML = `<div class="warn-box">${diagnoseErr(e)}</div>`;
+  }
 }
 
 /* ---------- topbar ---------- */
@@ -734,7 +792,7 @@ async function doLogin(){
     STATE.screen = 'new';
     render();
   }catch(e){
-    document.getElementById('loginErrBox').innerHTML = `<div class="warn-box">${t('networkErr')}</div>`;
+    document.getElementById('loginErrBox').innerHTML = `<div class="warn-box">${diagnoseErr(e)}</div>`;
     btn.disabled = false;
   }
 }
@@ -1656,14 +1714,36 @@ function openDivModal(){
   if(API.token){
     try{
       const res = await API.call('verifySession');
-      if(res.ok){
+      if(res && res.ok){
         STATE.session = {username: res.username, role: res.role};
         await loadBootstrap();
         STATE.screen = 'new';
         render();
         return;
       }
-    }catch(e){ /* fall through to login */ }
+      // reachable but session invalid/expired — fall through to a normal login
+      STATE.screen = 'login';
+      render();
+      return;
+    }catch(e){
+      // server unreachable/misconfigured — don't show a login screen that will
+      // just fail again; go to setup with a clear, specific diagnosis instead
+      STATE.screen = 'setup';
+      render();
+      document.getElementById('setupErrBox').innerHTML = `<div class="warn-box">${diagnoseErr(e)}</div>`;
+      return;
+    }
+  }
+
+  // no saved token yet: confirm the server actually responds before showing login
+  try{
+    const res = await API.call('getBootstrap');
+    if(!res || typeof res.ok !== 'boolean') throw new Error('bad_response');
+  }catch(e){
+    STATE.screen = 'setup';
+    render();
+    document.getElementById('setupErrBox').innerHTML = `<div class="warn-box">${diagnoseErr(e)}</div>`;
+    return;
   }
 
   STATE.screen = 'login';
