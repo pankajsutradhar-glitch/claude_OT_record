@@ -340,6 +340,15 @@ const T = {
     errHttp:'সার্ভার একটি ত্রুটি বার্তা পাঠিয়েছে',
     errNotHttps:'URL অবশ্যই https:// দিয়ে শুরু হতে হবে',
     testConnection:'সংযোগ পরীক্ষা করুন', connectionOk:'সংযোগ সফল হয়েছে ✓',
+    authRequiredTitle:'একবারের জন্য অনুমতি প্রয়োজন',
+    authRequiredBody:'রিপোর্ট তৈরির ফিচারটি নতুন — এর জন্য গুগলের অতিরিক্ত অনুমতি (Drive ফাইল তৈরি ও এক্সপোর্ট) প্রয়োজন, যা এখনো Apps Script প্রজেক্টে অনুমোদিত হয়নি।',
+    authRequiredSteps: `
+      <b>১.</b> Google Apps Script এডিটর খুলুন (script.google.com)।<br>
+      <b>২.</b> উপরের ফাংশন তালিকা থেকে <b>authorizeReportFeature</b> নির্বাচন করুন।<br>
+      <b>৩.</b> ▶ Run বাটনে ক্লিক করুন।<br>
+      <b>৪.</b> "Authorization required" ডায়ালগ এলে → Review permissions → নিজের একাউন্ট নির্বাচন করুন → Advanced → "Go to (project) (unsafe)" → Allow।<br>
+      <b>৫.</b> এরপর Deploy → Manage deployments → ✏️ Edit → Version: "New version" → Deploy করুন (URL অপরিবর্তিত থাকবে)।<br>
+      <b>৬.</b> এই অ্যাপে ফিরে এসে আবার রিপোর্ট এক্সপোর্ট করার চেষ্টা করুন।`,
     editApiUrl:'সার্ভার ঠিকানা পরিবর্তন করুন', sessionExpired:'সেশনের মেয়াদ শেষ, আবার লগইন করুন',
     orgTab:'প্রতিষ্ঠান', orgHeaderText:'রিপোর্ট শিরোনাম', orgWeekLine1:'সাপ্তাহিক হেডার লাইন ১',
     orgWeekLine2:'সাপ্তাহিক হেডার লাইন ২', orgWeekLine3:'সাপ্তাহিক হেডার লাইন ৩',
@@ -395,6 +404,15 @@ const T = {
     errHttp:'The server returned an error',
     errNotHttps:'The URL must start with https://',
     testConnection:'Test Connection', connectionOk:'Connection successful ✓',
+    authRequiredTitle:'One-Time Permission Needed',
+    authRequiredBody:"The report-generation feature is new — it needs additional Google permissions (creating/exporting a Drive file) that haven't been authorized in your Apps Script project yet.",
+    authRequiredSteps: `
+      <b>1.</b> Open the Google Apps Script editor (script.google.com).<br>
+      <b>2.</b> In the function dropdown at the top, select <b>authorizeReportFeature</b>.<br>
+      <b>3.</b> Click the ▶ Run button.<br>
+      <b>4.</b> When the "Authorization required" dialog appears → Review permissions → choose your account → Advanced → "Go to (project name) (unsafe)" → Allow.<br>
+      <b>5.</b> Then go to Deploy → Manage deployments → ✏️ Edit → Version: "New version" → Deploy (the URL stays the same).<br>
+      <b>6.</b> Come back here and try exporting the report again.`,
     editApiUrl:'Change Server Address', sessionExpired:'Session expired — please log in again',
     orgTab:'Organization', orgHeaderText:'Report Title', orgWeekLine1:'Weekly Header Line 1',
     orgWeekLine2:'Weekly Header Line 2', orgWeekLine3:'Weekly Header Line 3',
@@ -1394,7 +1412,11 @@ function generateFullReport(ym){
   API.call('generateReport', {ym})
     .then(res=>{
       if(!res.ok){
-        toast(t('networkErr'), true);
+        if(res.error==='auth_required'){
+          openReportAuthHelpModal();
+        } else {
+          toast(t('networkErr') + (res.detail? ' — '+String(res.detail).slice(0,160) : ''), true);
+        }
         return;
       }
       const byteChars = atob(res.base64);
@@ -1408,7 +1430,22 @@ function generateFullReport(ym){
       URL.revokeObjectURL(url);
       toast(t('savedOk'));
     })
-    .catch(()=>{ toast(t('networkErr'), true); });
+    .catch((e)=>{ toast(diagnoseErr(e), true); });
+}
+
+function openReportAuthHelpModal(){
+  const modal = document.createElement('div');
+  modal.className = 'modal-bg center';
+  modal.innerHTML = `
+    <div class="modal-box">
+      <div class="modal-title">${t('authRequiredTitle')}</div>
+      <div class="modal-sub">${t('authRequiredBody')}</div>
+      <div class="steps-box">${t('authRequiredSteps')}</div>
+      <button class="btn btn-primary btn-block" id="btnAuthClose" style="margin-top:14px;">${t('close')}</button>
+    </div>`;
+  document.body.appendChild(modal);
+  modal.onclick = e=>{ if(e.target===modal) modal.remove(); };
+  modal.querySelector('#btnAuthClose').onclick = ()=> modal.remove();
 }
 
 /* =========================================================
