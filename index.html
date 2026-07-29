@@ -307,7 +307,7 @@ const T = {
     employees:'জন কর্মচারী', edit:'সম্পাদনা', del:'মুছুন', view:'দেখুন',
     confirmDelete:'আপনি কি নিশ্চিতভাবে এই ওটি শিটটি মুছে ফেলতে চান?', yesDelete:'হ্যাঁ, মুছুন',
     summaryTitle:'মাসিক সারাংশ', totalOtHours:'মোট ওভারটাইম ঘন্টা',
-    month:'মাস', exportCsv:'রিপোর্ট এক্সপোর্ট (Excel)', name:'নাম', designation:'পদবী',
+    month:'মাস', name:'নাম', designation:'পদবী',
     noOfSheets:'শিট সংখ্যা', totalHours:'মোট ঘন্টা', total:'মোট',
     settingsTitle:'সেটিংস', empMgmt:'কর্মচারী তালিকা', divMgmt:'বিভাগ তালিকা', langSet:'ভাষা',
     addEmployee:'+ কর্মচারী যোগ করুন', addDivision:'+ বিভাগ যোগ করুন',
@@ -331,8 +331,7 @@ const T = {
     setupApiTitle:'সার্ভার সংযোগ সেটআপ', apiUrlLabel:'Apps Script Web App URL',
     apiUrlHelp:'আপনার প্রকাশিত (deployed) Google Apps Script Web App-এর URL এখানে বসান। এই URL গোপন তথ্য নয় — শুধু আপনার সার্ভারের ঠিকানা।',
     saveContinue:'সংরক্ষণ করে এগিয়ে যান', connecting:'সংযোগ হচ্ছে...',
-    xlsxNotLoaded:'রিপোর্ট লাইব্রেরি লোড হয়নি, ইন্টারনেট সংযোগ যাচাই করুন',
-    generatingReport:'রিপোর্ট তৈরি হচ্ছে...', timeHrs:'সময়কাল (ঘন্টা)',
+    timeHrs:'সময়কাল (ঘন্টা)',
     networkErr:'সার্ভারের সাথে সংযোগ করা যায়নি, ইন্টারনেট ও URL যাচাই করুন',
     errNoUrl:'প্রথমে Apps Script Web App URL সেট করুন',
     errNetwork:'সার্ভারে পৌঁছানো যায়নি। ইন্টারনেট সংযোগ, URL বানান, এবং আপনি সঠিকভাবে ফাইলটি হোস্ট করেছেন কিনা যাচাই করুন (file:// দিয়ে খুললে কাজ নাও করতে পারে)।',
@@ -340,19 +339,7 @@ const T = {
     errHttp:'সার্ভার একটি ত্রুটি বার্তা পাঠিয়েছে',
     errNotHttps:'URL অবশ্যই https:// দিয়ে শুরু হতে হবে',
     testConnection:'সংযোগ পরীক্ষা করুন', connectionOk:'সংযোগ সফল হয়েছে ✓',
-    authRequiredTitle:'একবারের জন্য অনুমতি প্রয়োজন',
-    authRequiredBody:'রিপোর্ট তৈরির ফিচারটি নতুন — এর জন্য গুগলের অতিরিক্ত অনুমতি (Drive ফাইল তৈরি ও এক্সপোর্ট) প্রয়োজন, যা এখনো Apps Script প্রজেক্টে অনুমোদিত হয়নি।',
-    authRequiredSteps: `
-      <b>১.</b> Google Apps Script এডিটর খুলুন (script.google.com)।<br>
-      <b>২.</b> উপরের ফাংশন তালিকা থেকে <b>authorizeReportFeature</b> নির্বাচন করুন।<br>
-      <b>৩.</b> ▶ Run বাটনে ক্লিক করুন।<br>
-      <b>৪.</b> "Authorization required" ডায়ালগ এলে → Review permissions → নিজের একাউন্ট নির্বাচন করুন → Advanced → "Go to (project) (unsafe)" → Allow।<br>
-      <b>৫.</b> এরপর Deploy → Manage deployments → ✏️ Edit → Version: "New version" → Deploy করুন (URL অপরিবর্তিত থাকবে)।<br>
-      <b>৬.</b> এই অ্যাপে ফিরে এসে আবার রিপোর্ট এক্সপোর্ট করার চেষ্টা করুন।`,
     editApiUrl:'সার্ভার ঠিকানা পরিবর্তন করুন', sessionExpired:'সেশনের মেয়াদ শেষ, আবার লগইন করুন',
-    orgTab:'প্রতিষ্ঠান', orgHeaderText:'রিপোর্ট শিরোনাম', orgWeekLine1:'সাপ্তাহিক হেডার লাইন ১',
-    orgWeekLine2:'সাপ্তাহিক হেডার লাইন ২', orgWeekLine3:'সাপ্তাহিক হেডার লাইন ৩',
-    orgSig1:'স্বাক্ষর ১', orgSig2:'স্বাক্ষর ২', orgSig3:'স্বাক্ষর ৩', orgSig4:'স্বাক্ষর ৪', orgSig5:'স্বাক্ষর ৫',
   },
   en:{
     appName:'OT_Record', appSub:'Employee Overtime Manager',
@@ -371,7 +358,7 @@ const T = {
     employees:'employees', edit:'Edit', del:'Delete', view:'View',
     confirmDelete:'Are you sure you want to delete this OT sheet?', yesDelete:'Yes, Delete',
     summaryTitle:'Monthly Summary', totalOtHours:'Total Overtime Hours',
-    month:'Month', exportCsv:'Export Report (Excel)', name:'Name', designation:'Designation',
+    month:'Month', name:'Name', designation:'Designation',
     noOfSheets:'No. of Sheets', totalHours:'Total Hours', total:'Total',
     settingsTitle:'Settings', empMgmt:'Employees', divMgmt:'Divisions', langSet:'Language',
     addEmployee:'+ Add Employee', addDivision:'+ Add Division',
@@ -395,8 +382,7 @@ const T = {
     setupApiTitle:'Server Connection Setup', apiUrlLabel:'Apps Script Web App URL',
     apiUrlHelp:"Paste your deployed Google Apps Script Web App URL here. This URL isn't secret — it's just your server's address.",
     saveContinue:'Save & Continue', connecting:'Connecting...',
-    xlsxNotLoaded:'Report library failed to load — check your internet connection',
-    generatingReport:'Generating report...', timeHrs:'Time (Hrs)',
+    timeHrs:'Time (Hrs)',
     networkErr:'Could not reach the server — check your internet connection and URL',
     errNoUrl:'Set your Apps Script Web App URL first',
     errNetwork:"Couldn't reach the server. Check your internet connection, the URL spelling, and that you're opening this file properly hosted (opening via file:// may not work).",
@@ -404,19 +390,7 @@ const T = {
     errHttp:'The server returned an error',
     errNotHttps:'The URL must start with https://',
     testConnection:'Test Connection', connectionOk:'Connection successful ✓',
-    authRequiredTitle:'One-Time Permission Needed',
-    authRequiredBody:"The report-generation feature is new — it needs additional Google permissions (creating/exporting a Drive file) that haven't been authorized in your Apps Script project yet.",
-    authRequiredSteps: `
-      <b>1.</b> Open the Google Apps Script editor (script.google.com).<br>
-      <b>2.</b> In the function dropdown at the top, select <b>authorizeReportFeature</b>.<br>
-      <b>3.</b> Click the ▶ Run button.<br>
-      <b>4.</b> When the "Authorization required" dialog appears → Review permissions → choose your account → Advanced → "Go to (project name) (unsafe)" → Allow.<br>
-      <b>5.</b> Then go to Deploy → Manage deployments → ✏️ Edit → Version: "New version" → Deploy (the URL stays the same).<br>
-      <b>6.</b> Come back here and try exporting the report again.`,
     editApiUrl:'Change Server Address', sessionExpired:'Session expired — please log in again',
-    orgTab:'Organization', orgHeaderText:'Report Title', orgWeekLine1:'Weekly Header Line 1',
-    orgWeekLine2:'Weekly Header Line 2', orgWeekLine3:'Weekly Header Line 3',
-    orgSig1:'Signature 1', orgSig2:'Signature 2', orgSig3:'Signature 3', orgSig4:'Signature 4', orgSig5:'Signature 5',
   }
 };
 function t(key){ return (T[STATE.lang] && T[STATE.lang][key]) || key; }
@@ -439,12 +413,10 @@ const STATE = {
   editingSheetId: null,
   toastTimer: null,
   employees: [], divisions: [], sheets: [],
-  orgConfig: {},
   loaded: false
 };
 
 function isAdmin(){ return STATE.session && STATE.session.role === 'admin'; }
-function canExport(){ return isAdmin(); }
 function canAddEmployee(){ return isAdmin(); }
 
 /* =========================================================
@@ -821,7 +793,6 @@ async function loadBootstrap(){
     STATE.employees = res.employees || [];
     STATE.divisions = res.divisions || [];
     STATE.sheets = res.sheets || [];
-    STATE.orgConfig = res.orgConfig || {};
     STATE.loaded = true;
   }
   return res;
@@ -1341,12 +1312,9 @@ function renderSummary(){
     <div><h2>${t('totalOtHours')}</h2><div class="sub">${t('summaryTitle')}</div></div>
   </div>
   <div class="card">
-    <div class="row2" style="align-items:end;">
-      <div class="field" style="margin-bottom:0;">
-        <label>${t('month')}</label>
-        <input type="month" id="monthPicker" value="${summaryMonth}">
-      </div>
-      ${canExport()? `<button class="btn btn-amber" id="btnExportCsv">${t('exportCsv')}</button>` : ''}
+    <div class="field" style="margin-bottom:0;">
+      <label>${t('month')}</label>
+      <input type="month" id="monthPicker" value="${summaryMonth}">
     </div>
   </div>
 
@@ -1400,52 +1368,6 @@ function trimNum(n){ return (Math.round(n*100)/100).toString(); }
 function bindSummary(){
   const mp = document.getElementById('monthPicker');
   if(mp) mp.onchange = e=>{ summaryMonth = e.target.value; render(); };
-  const exp = document.getElementById('btnExportCsv');
-  if(exp) exp.onclick = ()=>{
-    if(!canExport()){ return; }
-    generateFullReport(summaryMonth);
-  };
-}
-
-function generateFullReport(ym){
-  toast(t('generatingReport'));
-  API.call('generateReport', {ym})
-    .then(res=>{
-      if(!res.ok){
-        if(res.error==='auth_required'){
-          openReportAuthHelpModal();
-        } else {
-          toast(t('networkErr') + (res.detail? ' — '+String(res.detail).slice(0,160) : ''), true);
-        }
-        return;
-      }
-      const byteChars = atob(res.base64);
-      const bytes = new Uint8Array(byteChars.length);
-      for(let i=0;i<byteChars.length;i++) bytes[i] = byteChars.charCodeAt(i);
-      const blob = new Blob([bytes], {type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url; a.download = res.filename || ('OT_Report_'+ym+'.xlsx');
-      document.body.appendChild(a); a.click(); document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-      toast(t('savedOk'));
-    })
-    .catch((e)=>{ toast(diagnoseErr(e), true); });
-}
-
-function openReportAuthHelpModal(){
-  const modal = document.createElement('div');
-  modal.className = 'modal-bg center';
-  modal.innerHTML = `
-    <div class="modal-box">
-      <div class="modal-title">${t('authRequiredTitle')}</div>
-      <div class="modal-sub">${t('authRequiredBody')}</div>
-      <div class="steps-box">${t('authRequiredSteps')}</div>
-      <button class="btn btn-primary btn-block" id="btnAuthClose" style="margin-top:14px;">${t('close')}</button>
-    </div>`;
-  document.body.appendChild(modal);
-  modal.onclick = e=>{ if(e.target===modal) modal.remove(); };
-  modal.querySelector('#btnAuthClose').onclick = ()=> modal.remove();
 }
 
 /* =========================================================
@@ -1462,8 +1384,7 @@ function renderSettings(){
     {id:'divisions', label:t('divMgmt')}
   ];
   if(isAdmin()) tabs.push({id:'account', label:t('account')});
-  if(isAdmin()) tabs.push({id:'org', label:t('orgTab')});
-  if(!isAdmin() && (settingsTab==='account' || settingsTab==='org')) settingsTab = 'employees';
+  if(!isAdmin() && settingsTab==='account') settingsTab = 'employees';
 
   return `
   <div class="section-head"><div><h2>${t('settingsTitle')}</h2></div></div>
@@ -1475,7 +1396,6 @@ function renderSettings(){
   ${settingsTab==='employees'? renderEmpSettings() : ''}
   ${settingsTab==='divisions'? renderDivSettings() : ''}
   ${settingsTab==='account' && isAdmin()? renderAccountSettings() : ''}
-  ${settingsTab==='org' && isAdmin()? renderOrgSettings() : ''}
   `;
 }
 
@@ -1548,24 +1468,6 @@ function renderAccountSettings(){
   </div>`;
 }
 
-function renderOrgSettings(){
-  const oc = STATE.orgConfig;
-  return `
-  <div class="card">
-    <div class="card-title">${t('orgTab')}</div>
-    <div class="field"><label>${t('orgHeaderText')}</label><textarea id="orgHeaderText">${esc(oc.header_text||'')}</textarea></div>
-    <div class="field"><label>${t('orgWeekLine1')}</label><input type="text" id="orgWeekLine1" value="${esc(oc.weekly_header_line1||'')}"></div>
-    <div class="field"><label>${t('orgWeekLine2')}</label><input type="text" id="orgWeekLine2" value="${esc(oc.weekly_header_line2||'')}"></div>
-    <div class="field"><label>${t('orgWeekLine3')}</label><input type="text" id="orgWeekLine3" value="${esc(oc.weekly_header_line3||'')}"></div>
-    <div class="field"><label>${t('orgSig1')}</label><textarea id="orgSig1">${esc(oc.sig1||'')}</textarea></div>
-    <div class="field"><label>${t('orgSig2')}</label><textarea id="orgSig2">${esc(oc.sig2||'')}</textarea></div>
-    <div class="field"><label>${t('orgSig3')}</label><textarea id="orgSig3">${esc(oc.sig3||'')}</textarea></div>
-    <div class="field"><label>${t('orgSig4')}</label><textarea id="orgSig4">${esc(oc.sig4||'')}</textarea></div>
-    <div class="field"><label>${t('orgSig5')}</label><textarea id="orgSig5">${esc(oc.sig5||'')}</textarea></div>
-    <button class="btn btn-primary btn-block" id="btnSaveOrg">${t('saveBtn')}</button>
-  </div>`;
-}
-
 function bindSettings(){
   document.querySelectorAll('[data-stab]').forEach(el=>{
     el.onclick = ()=>{ settingsTab = el.getAttribute('data-stab'); render(); };
@@ -1618,26 +1520,6 @@ function bindSettings(){
   };
   const changeServerBtn = document.getElementById('btnChangeServer');
   if(changeServerBtn) changeServerBtn.onclick = ()=> API.changeServer();
-
-  const saveOrgBtn = document.getElementById('btnSaveOrg');
-  if(saveOrgBtn) saveOrgBtn.onclick = async ()=>{
-    const cfg = {
-      header_text: document.getElementById('orgHeaderText').value,
-      weekly_header_line1: document.getElementById('orgWeekLine1').value,
-      weekly_header_line2: document.getElementById('orgWeekLine2').value,
-      weekly_header_line3: document.getElementById('orgWeekLine3').value,
-      sig1: document.getElementById('orgSig1').value,
-      sig2: document.getElementById('orgSig2').value,
-      sig3: document.getElementById('orgSig3').value,
-      sig4: document.getElementById('orgSig4').value,
-      sig5: document.getElementById('orgSig5').value
-    };
-    try{
-      const res = await API.call('saveOrgConfig', {orgConfig: cfg});
-      if(res.ok){ STATE.orgConfig = cfg; toast(t('savedOk')); }
-      else toast(t('networkErr'), true);
-    }catch(e){ toast(t('networkErr'), true); }
-  };
 }
 
 async function restoreDefaultEmployees(){
