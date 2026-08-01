@@ -341,6 +341,7 @@ const T = {
     testConnection:'সংযোগ পরীক্ষা করুন', connectionOk:'সংযোগ সফল হয়েছে ✓',
     editApiUrl:'সার্ভার ঠিকানা পরিবর্তন করুন', sessionExpired:'সেশনের মেয়াদ শেষ, আবার লগইন করুন',
     generatingReport:'রিপোর্ট তৈরি হচ্ছে...',
+    reportGenFailed:'রিপোর্ট তৈরিতে সমস্যা হয়েছে (সার্ভার চালু আছে, কিন্তু রিপোর্ট তৈরির সময় একটি ত্রুটি ঘটেছে)',
     authRequiredTitle:'একবারের জন্য অনুমতি প্রয়োজন',
     authRequiredBody:'রিপোর্ট তৈরির ফিচারটি নতুন — এর জন্য গুগলের অতিরিক্ত অনুমতি (Drive ফাইল তৈরি ও এক্সপোর্ট) প্রয়োজন, যা এখনো Apps Script প্রজেক্টে অনুমোদিত হয়নি।',
     authRequiredSteps: `
@@ -402,6 +403,7 @@ const T = {
     testConnection:'Test Connection', connectionOk:'Connection successful ✓',
     editApiUrl:'Change Server Address', sessionExpired:'Session expired — please log in again',
     generatingReport:'Generating report...',
+    reportGenFailed:'Report generation failed (the server responded, but hit an error while building the report)',
     authRequiredTitle:'One-Time Permission Needed',
     authRequiredBody:"The report-generation feature is new — it needs additional Google permissions (creating/exporting a Drive file) that haven't been authorized in your Apps Script project yet.",
     authRequiredSteps: `
@@ -1407,7 +1409,7 @@ function generateFullReport(ym){
         if(res.error==='auth_required'){
           openReportAuthHelpModal();
         } else {
-          toast(t('networkErr') + (res.detail? ' — '+String(res.detail).slice(0,160) : ''), true);
+          toast(t('reportGenFailed') + (res.detail? ' — '+String(res.detail).slice(0,160) : ''), true);
         }
         return;
       }
