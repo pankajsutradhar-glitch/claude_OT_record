@@ -351,6 +351,10 @@ const T = {
       <b>৪.</b> "Authorization required" ডায়ালগ এলে → Review permissions → নিজের একাউন্ট নির্বাচন করুন → Advanced → "Go to (project) (unsafe)" → Allow।<br>
       <b>৫.</b> এরপর Deploy → Manage deployments → ✏️ Edit → Version: "New version" → Deploy করুন (URL অপরিবর্তিত থাকবে)।<br>
       <b>৬.</b> এই অ্যাপে ফিরে এসে আবার রিপোর্ট এক্সপোর্ট করার চেষ্টা করুন।`,
+    reportSettingsTab:'রিপোর্ট সেটিংস',
+    reportSettingsHelp:'এখানে পরিবর্তিত তথ্য এক্সপোর্ট করা রিপোর্টের শিরোনাম ও স্বাক্ষর অংশে ব্যবহৃত হবে।',
+    rsHeaderText:'রিপোর্ট শিরোনাম', rsWeekLine1:'সাপ্তাহিক হেডার লাইন ১', rsWeekLine2:'সাপ্তাহিক হেডার লাইন ২', rsWeekLine3:'সাপ্তাহিক হেডার লাইন ৩',
+    rsOfficers:'কর্মকর্তাদের স্বাক্ষর', rsSig1:'স্বাক্ষর ১', rsSig2:'স্বাক্ষর ২', rsSig3:'স্বাক্ষর ৩', rsSig4:'স্বাক্ষর ৪', rsSig5:'স্বাক্ষর ৫', rsSig6:'স্বাক্ষর ৬',
   },
   en:{
     appName:'OT_Record', appSub:'Employee Overtime Manager',
@@ -413,6 +417,10 @@ const T = {
       <b>4.</b> When the "Authorization required" dialog appears → Review permissions → choose your account → Advanced → "Go to (project name) (unsafe)" → Allow.<br>
       <b>5.</b> Then go to Deploy → Manage deployments → ✏️ Edit → Version: "New version" → Deploy (the URL stays the same).<br>
       <b>6.</b> Come back here and try exporting the report again.`,
+    reportSettingsTab:'Report Settings',
+    reportSettingsHelp:'Changes here are used in the title and signature sections of the exported report.',
+    rsHeaderText:'Report Title', rsWeekLine1:'Weekly Header Line 1', rsWeekLine2:'Weekly Header Line 2', rsWeekLine3:'Weekly Header Line 3',
+    rsOfficers:'Officer Signatures', rsSig1:'Signature 1', rsSig2:'Signature 2', rsSig3:'Signature 3', rsSig4:'Signature 4', rsSig5:'Signature 5', rsSig6:'Signature 6',
   }
 };
 function t(key){ return (T[STATE.lang] && T[STATE.lang][key]) || key; }
@@ -435,6 +443,7 @@ const STATE = {
   editingSheetId: null,
   toastTimer: null,
   employees: [], divisions: [], sheets: [],
+  orgConfig: {},
   loaded: false
 };
 
@@ -816,6 +825,7 @@ async function loadBootstrap(){
     STATE.employees = res.employees || [];
     STATE.divisions = res.divisions || [];
     STATE.sheets = res.sheets || [];
+    STATE.orgConfig = res.orgConfig || {};
     STATE.loaded = true;
   }
   return res;
@@ -1456,7 +1466,8 @@ function renderSettings(){
     {id:'divisions', label:t('divMgmt')}
   ];
   if(isAdmin()) tabs.push({id:'account', label:t('account')});
-  if(!isAdmin() && settingsTab==='account') settingsTab = 'employees';
+  if(isAdmin()) tabs.push({id:'reportSettings', label:t('reportSettingsTab')});
+  if(!isAdmin() && (settingsTab==='account' || settingsTab==='reportSettings')) settingsTab = 'employees';
 
   return `
   <div class="section-head"><div><h2>${t('settingsTitle')}</h2></div></div>
@@ -1468,7 +1479,31 @@ function renderSettings(){
   ${settingsTab==='employees'? renderEmpSettings() : ''}
   ${settingsTab==='divisions'? renderDivSettings() : ''}
   ${settingsTab==='account' && isAdmin()? renderAccountSettings() : ''}
+  ${settingsTab==='reportSettings' && isAdmin()? renderReportSettings() : ''}
   `;
+}
+
+function renderReportSettings(){
+  const oc = STATE.orgConfig || {};
+  return `
+  <div class="card">
+    <div class="card-title">${t('reportSettingsTab')}</div>
+    <p style="font-size:12px;color:var(--ink-soft);margin:0 0 12px;">${t('reportSettingsHelp')}</p>
+    <div class="field"><label>${t('rsHeaderText')}</label><textarea id="rsHeaderText" style="min-height:90px;">${esc(oc.header_text||'')}</textarea></div>
+    <div class="field"><label>${t('rsWeekLine1')}</label><input type="text" id="rsWeekLine1" value="${esc(oc.weekly_header_line1||'')}"></div>
+    <div class="field"><label>${t('rsWeekLine2')}</label><input type="text" id="rsWeekLine2" value="${esc(oc.weekly_header_line2||'')}"></div>
+    <div class="field"><label>${t('rsWeekLine3')}</label><input type="text" id="rsWeekLine3" value="${esc(oc.weekly_header_line3||'')}"></div>
+  </div>
+  <div class="card">
+    <div class="card-title">${t('rsOfficers')}</div>
+    <div class="field"><label>${t('rsSig1')}</label><textarea id="rsSig1">${esc(oc.sig1||'')}</textarea></div>
+    <div class="field"><label>${t('rsSig2')}</label><textarea id="rsSig2">${esc(oc.sig2||'')}</textarea></div>
+    <div class="field"><label>${t('rsSig3')}</label><textarea id="rsSig3">${esc(oc.sig3||'')}</textarea></div>
+    <div class="field"><label>${t('rsSig4')}</label><textarea id="rsSig4">${esc(oc.sig4||'')}</textarea></div>
+    <div class="field"><label>${t('rsSig5')}</label><textarea id="rsSig5">${esc(oc.sig5||'')}</textarea></div>
+    <div class="field"><label>${t('rsSig6')}</label><textarea id="rsSig6">${esc(oc.sig6||'')}</textarea></div>
+    <button class="btn btn-primary btn-block" id="btnSaveReportSettings">${t('saveBtn')}</button>
+  </div>`;
 }
 
 function renderEmpSettings(){
@@ -1592,6 +1627,27 @@ function bindSettings(){
   };
   const changeServerBtn = document.getElementById('btnChangeServer');
   if(changeServerBtn) changeServerBtn.onclick = ()=> API.changeServer();
+
+  const saveRSBtn = document.getElementById('btnSaveReportSettings');
+  if(saveRSBtn) saveRSBtn.onclick = async ()=>{
+    const cfg = {
+      header_text: document.getElementById('rsHeaderText').value,
+      weekly_header_line1: document.getElementById('rsWeekLine1').value,
+      weekly_header_line2: document.getElementById('rsWeekLine2').value,
+      weekly_header_line3: document.getElementById('rsWeekLine3').value,
+      sig1: document.getElementById('rsSig1').value,
+      sig2: document.getElementById('rsSig2').value,
+      sig3: document.getElementById('rsSig3').value,
+      sig4: document.getElementById('rsSig4').value,
+      sig5: document.getElementById('rsSig5').value,
+      sig6: document.getElementById('rsSig6').value
+    };
+    try{
+      const res = await API.call('saveOrgConfig', {orgConfig: cfg});
+      if(res.ok){ STATE.orgConfig = cfg; toast(t('savedOk')); }
+      else toast(diagnoseErr(new Error(res.error||'bad_response')), true);
+    }catch(e){ toast(diagnoseErr(e), true); }
+  };
 }
 
 async function restoreDefaultEmployees(){
