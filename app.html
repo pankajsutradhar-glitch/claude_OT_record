@@ -1,0 +1,1334 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#0F2E2C">
+<title>OT_Record — অতিরিক্ত কর্মঘন্টা ব্যবস্থাপনা</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#0F2E2C;
+  --ink-2:#163F3B;
+  --paper:#F6F4EE;
+  --paper-2:#EDEAE1;
+  --line:#D9D4C6;
+  --amber:#C77C2C;
+  --amber-2:#E0954A;
+  --rust:#B0483B;
+  --moss:#4B7A5A;
+  --white:#FFFFFF;
+  --ink-soft:#5B6A66;
+  --shadow: 0 1px 2px rgba(15,46,44,.06), 0 4px 14px rgba(15,46,44,.07);
+  --radius: 14px;
+}
+*{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+html,body{margin:0;padding:0;height:100%;}
+body{
+  font-family:'Hind Siliguri','Space Grotesk',system-ui,sans-serif;
+  background:
+    radial-gradient(1200px 500px at 100% -10%, rgba(199,124,44,.08), transparent 60%),
+    var(--paper);
+  color:var(--ink);
+  min-height:100vh;
+  overflow-x:hidden;
+}
+.mono{font-family:'JetBrains Mono',monospace;}
+.disp{font-family:'Space Grotesk',sans-serif;}
+#root{max-width:560px;margin:0 auto;min-height:100vh;position:relative;padding-bottom:82px;}
+
+.topbar{
+  position:sticky;top:0;z-index:30;
+  background:var(--ink);
+  color:var(--paper);
+  padding:14px 18px;
+  display:flex;align-items:center;justify-content:space-between;
+  box-shadow:var(--shadow);
+}
+.topbar .brand{display:flex;align-items:center;gap:10px;}
+.brand-mark{
+  width:34px;height:34px;border-radius:9px;
+  background:linear-gradient(135deg,var(--amber),var(--rust));
+  display:flex;align-items:center;justify-content:center;
+  font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:14px;color:#fff;
+  flex-shrink:0;
+}
+.brand-title{font-size:15px;font-weight:600;line-height:1.15;}
+.brand-sub{font-size:10.5px;color:#9FC2B8;letter-spacing:.04em;}
+.topbar-actions{display:flex;gap:8px;align-items:center;}
+.icon-btn{
+  background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.14);
+  color:var(--paper);width:34px;height:34px;border-radius:9px;
+  display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:15px;
+}
+.icon-btn:active{background:rgba(255,255,255,.18);}
+
+main{padding:16px 16px 24px;}
+
+.card{
+  background:var(--white);
+  border:1px solid var(--line);
+  border-radius:var(--radius);
+  padding:16px;
+  margin-bottom:14px;
+  box-shadow:var(--shadow);
+}
+.card-title{font-size:13px;font-weight:600;color:var(--ink);margin:0 0 12px;display:flex;align-items:center;gap:8px;}
+.card-title .tag{
+  font-family:'JetBrains Mono',monospace;font-size:9.5px;color:var(--amber);
+  background:rgba(199,124,44,.1);border:1px solid rgba(199,124,44,.25);
+  padding:2px 6px;border-radius:5px;letter-spacing:.05em;
+}
+
+label{display:block;font-size:12px;font-weight:600;color:var(--ink-soft);margin:0 0 6px;letter-spacing:.01em;}
+input[type=text],input[type=password],input[type=date],input[type=time],input[type=number],textarea,select{
+  width:100%;padding:11px 12px;border:1.5px solid var(--line);border-radius:10px;
+  font-family:inherit;font-size:14.5px;background:var(--paper);color:var(--ink);
+  outline:none;transition:border-color .15s;
+}
+input:focus,textarea:focus,select:focus{border-color:var(--amber);background:#fff;}
+textarea{resize:vertical;min-height:64px;}
+.field{margin-bottom:14px;}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:7px;
+  padding:11px 18px;border-radius:10px;border:none;font-weight:600;font-size:14px;
+  cursor:pointer;font-family:inherit;transition:transform .06s, opacity .15s;
+}
+.btn:active{transform:scale(.97);}
+.btn-primary{background:var(--ink);color:var(--paper);}
+.btn-primary:disabled{opacity:.35;cursor:not-allowed;}
+.btn-amber{background:var(--amber);color:#fff;}
+.btn-outline{background:transparent;color:var(--ink);border:1.5px solid var(--line);}
+.btn-danger{background:transparent;color:var(--rust);border:1.5px solid rgba(176,72,59,.3);}
+.btn-ghost{background:rgba(15,46,44,.05);color:var(--ink);}
+.btn-block{width:100%;}
+.btn-sm{padding:7px 12px;font-size:12.5px;border-radius:8px;}
+
+.bottomnav{
+  position:fixed;bottom:0;left:50%;transform:translateX(-50%);
+  width:100%;max-width:560px;
+  background:var(--ink);
+  display:flex;justify-content:space-around;align-items:center;
+  padding:8px 4px calc(8px + env(safe-area-inset-bottom));
+  z-index:40;box-shadow:0 -4px 16px rgba(0,0,0,.15);
+}
+.navitem{
+  flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;
+  padding:6px 2px;border-radius:10px;color:#7FA79C;cursor:pointer;
+  font-size:10px;font-weight:600;letter-spacing:.01em;
+}
+.navitem .ni-ico{font-size:18px;line-height:1;}
+.navitem.active{color:var(--amber-2);}
+
+.badge{display:inline-block;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:600;}
+.badge-amber{background:rgba(199,124,44,.12);color:var(--amber);}
+.badge-moss{background:rgba(75,122,90,.12);color:var(--moss);}
+.badge-rust{background:rgba(176,72,59,.12);color:var(--rust);}
+.badge-gray{background:var(--paper-2);color:var(--ink-soft);}
+
+.sheet-card{
+  background:#fff;border:1px solid var(--line);border-radius:var(--radius);
+  padding:14px;margin-bottom:10px;box-shadow:var(--shadow);
+}
+.sheet-card .date-block{
+  font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--amber);font-weight:600;
+}
+.sheet-card h4{margin:2px 0 6px;font-size:14.5px;font-weight:600;}
+.sheet-card p{margin:0;font-size:12.5px;color:var(--ink-soft);line-height:1.5;}
+.sheet-meta{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;}
+.sheet-actions{display:flex;gap:8px;margin-top:10px;}
+.sheet-emp-list{margin:8px 0;border-top:1px dashed var(--line);padding-top:6px;}
+.sheet-emp-line{display:flex;align-items:center;gap:8px;font-size:11.5px;padding:3px 0;color:var(--ink-soft);}
+.sheet-emp-line b{color:var(--ink);font-weight:600;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.sheet-emp-line .t{font-family:'JetBrains Mono',monospace;color:var(--ink);white-space:nowrap;font-size:11px;}
+.hrs-live{font-size:11.5px;color:var(--moss);font-weight:700;margin:-2px 0 8px;text-align:right;}
+.hrs-live-total{font-size:12px;font-weight:700;color:var(--ink);text-align:right;margin-top:4px;padding-top:6px;border-top:1px dashed var(--line);}
+
+.emp-row{
+  display:flex;align-items:center;gap:10px;padding:10px 4px;border-bottom:1px solid var(--paper-2);
+}
+.emp-row:last-child{border-bottom:none;}
+.emp-check{
+  width:22px;height:22px;border-radius:6px;border:2px solid var(--line);flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;cursor:pointer;background:#fff;
+}
+.emp-check.checked{background:var(--ink);border-color:var(--ink);color:var(--paper);font-size:13px;}
+.emp-name{font-size:14px;font-weight:600;flex:1;}
+.emp-desig{font-size:11px;color:var(--ink-soft);}
+
+.slot-adjust{
+  margin-top:8px;padding:10px;background:var(--paper);border-radius:10px;border:1px dashed var(--line);
+}
+.slot-adjust-title{font-size:11px;font-weight:600;color:var(--ink-soft);margin-bottom:6px;}
+
+.slot-item{
+  display:flex;align-items:center;gap:8px;margin-bottom:8px;padding:8px 10px;
+  background:var(--paper);border-radius:10px;
+}
+.slot-item span{font-size:12px;color:var(--ink-soft);}
+
+.selectall-bar{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:9px 10px;background:var(--paper);border-radius:10px;margin-bottom:8px;
+  border:1px dashed var(--line);
+}
+.selectall-bar span{font-size:12.5px;font-weight:600;color:var(--ink-soft);}
+
+.login-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;}
+.login-card{width:100%;max-width:380px;background:#fff;border-radius:20px;padding:32px 26px;box-shadow:0 10px 40px rgba(15,46,44,.15);border:1px solid var(--line);}
+.login-logo{width:56px;height:56px;border-radius:14px;background:linear-gradient(135deg,var(--amber),var(--rust));display:flex;align-items:center;justify-content:center;color:#fff;font-family:'Space Grotesk';font-weight:700;font-size:22px;margin:0 auto 16px;}
+.role-toggle{display:flex;background:var(--paper-2);border-radius:10px;padding:3px;margin-bottom:18px;}
+.role-toggle button{flex:1;padding:9px;border:none;background:transparent;border-radius:8px;font-weight:600;font-size:13px;color:var(--ink-soft);cursor:pointer;font-family:inherit;}
+.role-toggle button.active{background:var(--ink);color:var(--paper);}
+.spin{width:34px;height:34px;border:3px solid var(--paper-2);border-top-color:var(--amber);border-radius:50%;margin:0 auto 16px;animation:spin 0.8s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+
+.tbl-wrap{overflow-x:auto;border-radius:10px;border:1px solid var(--line);}
+table{border-collapse:collapse;width:100%;font-size:12px;}
+th,td{padding:8px 9px;text-align:center;white-space:nowrap;border-bottom:1px solid var(--paper-2);}
+th{background:var(--paper-2);font-weight:600;color:var(--ink-soft);font-size:10.5px;position:sticky;top:0;}
+td:first-child,th:first-child{position:sticky;left:0;background:#fff;text-align:right;font-weight:600;z-index:1;}
+th:first-child{background:var(--paper-2);z-index:2;}
+tr:nth-child(even) td{background:#FBFAF7;}
+tr:nth-child(even) td:first-child{background:#FBFAF7;}
+.cell-x{color:#C7C2B4;}
+.cell-h{color:var(--moss);font-weight:600;}
+
+.empty{text-align:center;padding:48px 20px;color:var(--ink-soft);}
+.empty .ei{font-size:38px;margin-bottom:10px;opacity:.5;}
+.empty p{font-size:13.5px;margin:4px 0;}
+
+#toast{
+  position:fixed;bottom:96px;left:50%;transform:translateX(-50%) translateY(20px);
+  background:var(--ink);color:var(--paper);padding:11px 20px;border-radius:30px;
+  font-size:13px;font-weight:600;box-shadow:0 6px 20px rgba(0,0,0,.25);z-index:100;
+  opacity:0;pointer-events:none;transition:all .25s ease;max-width:88%;text-align:center;
+}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+#toast.err{background:var(--rust);}
+
+.modal-bg{position:fixed;inset:0;background:rgba(15,46,44,.45);z-index:200;display:flex;align-items:flex-end;justify-content:center;}
+.modal-bg.center{align-items:center;padding:20px;}
+.modal-box{
+  background:#fff;width:100%;max-width:560px;border-radius:20px 20px 0 0;
+  padding:20px 18px calc(20px + env(safe-area-inset-bottom));
+  max-height:88vh;overflow-y:auto;box-shadow:0 -8px 30px rgba(0,0,0,.2);
+  animation:slideup .22s ease;
+}
+.modal-bg.center .modal-box{border-radius:18px;max-width:400px;animation:popin .18s ease;}
+@keyframes slideup{from{transform:translateY(30px);opacity:0;}to{transform:translateY(0);opacity:1;}}
+@keyframes popin{from{transform:scale(.94);opacity:0;}to{transform:scale(1);opacity:1;}}
+.modal-handle{width:36px;height:4px;background:var(--line);border-radius:3px;margin:0 auto 14px;}
+.modal-title{font-size:16px;font-weight:700;margin:0 0 4px;}
+.modal-sub{font-size:12px;color:var(--ink-soft);margin:0 0 16px;}
+
+.lang-toggle{display:flex;gap:6px;}
+.lang-toggle button{padding:6px 12px;border-radius:8px;border:1.5px solid var(--line);background:#fff;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;}
+.lang-toggle button.active{background:var(--ink);color:#fff;border-color:var(--ink);}
+
+.section-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
+.section-head h2{font-size:18px;font-weight:700;margin:0;font-family:'Space Grotesk',sans-serif;}
+.section-head .sub{font-size:11.5px;color:var(--ink-soft);margin-top:2px;}
+
+.divider{height:1px;background:var(--line);margin:14px 0;}
+
+.stat-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;}
+.stat-box{background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px 14px;}
+.stat-box .sn{font-family:'Space Grotesk';font-size:22px;font-weight:700;color:var(--ink);}
+.stat-box .sl{font-size:10.5px;color:var(--ink-soft);font-weight:600;margin-top:2px;}
+
+.img-thumb{width:100%;border-radius:10px;margin-top:10px;border:1px solid var(--line);display:block;}
+.upload-box{
+  border:1.5px dashed var(--line);border-radius:12px;padding:18px;text-align:center;
+  cursor:pointer;background:var(--paper);font-size:12.5px;color:var(--ink-soft);
+}
+
+.search-box{position:relative;margin-bottom:14px;}
+.search-box input{padding-left:36px;}
+.search-box::before{content:'⌕';position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--ink-soft);font-size:16px;}
+
+.pill-scroll{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;margin-bottom:14px;}
+.pill{flex-shrink:0;padding:7px 14px;border-radius:20px;background:#fff;border:1.5px solid var(--line);font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;}
+.pill.active{background:var(--ink);color:#fff;border-color:var(--ink);}
+
+::-webkit-scrollbar{height:5px;width:5px;}
+::-webkit-scrollbar-thumb{background:var(--line);border-radius:10px;}
+
+.warn-box{background:rgba(176,72,59,.08);border:1px solid rgba(176,72,59,.25);color:var(--rust);border-radius:10px;padding:10px 12px;font-size:12.5px;margin-bottom:12px;font-weight:500;}
+.info-box{background:rgba(75,122,90,.08);border:1px solid rgba(75,122,90,.25);color:var(--moss);border-radius:10px;padding:10px 12px;font-size:12.5px;margin-bottom:12px;}
+
+.sync-dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px;}
+.sync-dot.on{background:var(--moss);box-shadow:0 0 0 3px rgba(75,122,90,.15);}
+.sync-dot.off{background:#C7C2B4;}
+.sync-dot.busy{background:var(--amber);animation:pulse 1s infinite;}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:.3;}}
+.steps-box{font-size:12px;color:var(--ink-soft);line-height:1.85;background:var(--paper);border-radius:10px;padding:12px 14px;}
+.steps-box b{color:var(--ink);}
+.steps-box a{color:var(--amber);text-decoration:none;font-weight:600;}
+.topbar-sync{display:flex;align-items:center;font-size:10px;color:#9FC2B8;}
+</style>
+</head>
+<body>
+<div id="root"><div id="loadingFallback" style="text-align:center;padding:60px 20px;font-family:sans-serif;color:#5B6A66;">Loading…</div></div>
+<div id="toast"></div>
+
+<script>
+  window.addEventListener('error', function(e){
+    var el = document.getElementById('root');
+    if(el && document.getElementById('loadingFallback')){
+      el.innerHTML = '<div style="max-width:420px;margin:60px auto;padding:20px;font-family:sans-serif;color:#B0483B;background:#FBECEA;border:1px solid #E8B4AE;border-radius:10px;">'
+        + '<b>Something failed to load.</b><br><br>'
+        + 'Message: ' + (e.message || 'unknown error') + '<br>'
+        + (e.filename ? ('File: ' + e.filename + (e.lineno ? (' (line ' + e.lineno + ')') : '') + '<br>') : '')
+        + '<br>Make sure <code>common.js</code> is uploaded in the exact same folder as this file.'
+        + '</div>';
+    }
+  });
+</script>
+<script src="common.js" onerror="document.getElementById('root').innerHTML='<div style=&quot;max-width:420px;margin:60px auto;padding:20px;font-family:sans-serif;color:#B0483B;background:#FBECEA;border:1px solid #E8B4AE;border-radius:10px;&quot;><b>common.js failed to load.</b><br><br>Make sure common.js is uploaded in the exact same folder as this file, with that exact filename.</div>'"></script>
+<script>
+async function loadBootstrap(){
+  const res = await API.call('getBootstrap');
+  if(res.ok){
+    STATE.employees = res.employees || [];
+    STATE.divisions = res.divisions || [];
+    STATE.sheets = res.sheets || [];
+    STATE.orgConfig = res.orgConfig || {};
+    STATE.loaded = true;
+  }
+  return res;
+}
+
+/* =========================================================
+   NEW / EDIT OT SHEET
+   ========================================================= */
+let sheetDraft = null;
+
+function freshDraft(){
+  return {
+    id: null,
+    date: new Date().toISOString().slice(0,10),
+    division_id: (STATE.divisions.find(d=>d.active)||{}).id || '',
+    work_description: '',
+    remarks: '',
+    slots: [ {id:uid('slot'), start:'16:00', end:'18:00'} ],
+    employees: [],
+    image: null,
+    created_by: STATE.session ? STATE.session.username : '',
+    created_at: new Date().toISOString()
+  };
+}
+function loadDraftForEdit(sheetId){
+  const s = STATE.sheets.find(x=>x.id===sheetId);
+  sheetDraft = JSON.parse(JSON.stringify(s));
+}
+
+function renderNewSheet(){
+  if(!sheetDraft || (STATE.editingSheetId && sheetDraft.id!==STATE.editingSheetId)){
+    if(STATE.editingSheetId) loadDraftForEdit(STATE.editingSheetId);
+    else sheetDraft = freshDraft();
+  }
+  const divs = STATE.divisions.filter(d=>d.active);
+  const emps = STATE.employees.filter(e=>e.active);
+  const isEdit = !!sheetDraft.id;
+  const allSelected = emps.length>0 && emps.every(e=> sheetDraft.employees.find(x=>x.employee_id===e.id));
+
+  return `
+  <div class="section-head">
+    <div>
+      <h2>${isEdit? t('editSheetTitle') : t('newSheetTitle')}</h2>
+      <div class="sub">${bnum(sheetDraft.date)}</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title"><span class="tag">01</span> ${t('date')} / ${t('division')}</div>
+    <div class="row2">
+      <div class="field">
+        <label>${t('date')}</label>
+        <input type="date" id="fDate" value="${sheetDraft.date}">
+      </div>
+      <div class="field">
+        <label>${t('division')}</label>
+        <select id="fDivision">
+          ${divs.map(d=>`<option value="${d.id}" ${d.id===sheetDraft.division_id?'selected':''}>${esc(STATE.lang==='bn'?d.name_bn:d.name_en)}</option>`).join('')}
+        </select>
+      </div>
+    </div>
+    <div class="field">
+      <label>${t('workDesc')}</label>
+      <textarea id="fWorkDesc" placeholder="${t('workDesc')}">${esc(sheetDraft.work_description||'')}</textarea>
+    </div>
+    <div class="field" style="margin-bottom:0;">
+      <label>${t('remarks')}</label>
+      <textarea id="fRemarks" placeholder="${t('remarks')}">${esc(sheetDraft.remarks||'')}</textarea>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title"><span class="tag">02</span> ${t('timeSlots')}</div>
+    <div id="slotsList">
+      ${sheetDraft.slots.map((s,i)=>`
+        <div class="slot-item">
+          <span class="mono">${bnum(i+1)}</span>
+          <input type="time" value="${s.start}" data-slot-start="${s.id}" style="flex:1;">
+          <span>→</span>
+          <input type="time" value="${s.end}" data-slot-end="${s.id}" style="flex:1;">
+          ${sheetDraft.slots.length>1?`<button class="btn btn-sm btn-danger" data-slot-del="${s.id}">✕</button>`:''}
+        </div>
+        <div class="hrs-live" id="slothrs-${s.id}" style="margin-top:-6px;">${t('timeHrs')}: ${bnum(trimNum(durationHours(s.start,s.end)))}</div>
+      `).join('')}
+    </div>
+    <button class="btn btn-outline btn-sm" id="btnAddSlot" style="margin-top:4px;">${t('addSlot')}</button>
+  </div>
+
+  <div class="card">
+    <div class="card-title"><span class="tag">03</span> ${t('selectEmployees')}</div>
+    ${emps.length===0? `<div class="empty" style="padding:20px;"><p>${t('noEmployees')}</p></div>` : `
+    <div class="selectall-bar">
+      <span>${bnum(sheetDraft.employees.length)} / ${bnum(emps.length)} ${t('employees')}</span>
+      <button class="btn btn-sm ${allSelected?'btn-outline':'btn-amber'}" id="btnSelectAll">${allSelected? t('deselectAll') : t('selectAll')}</button>
+    </div>
+    <div id="empChecklist">
+      ${emps.map(e=>renderEmpRow(e)).join('')}
+    </div>`}
+  </div>
+
+  <div class="card">
+    <div class="card-title"><span class="tag">04</span> ${t('uploadImage')}</div>
+    <div class="upload-box" id="uploadBox">${sheetDraft.image? '' : '📷 '+t('tapUpload')}</div>
+    <input type="file" id="fileImg" accept="image/*" style="display:none;">
+    <div id="uploadStatus"></div>
+    ${sheetDraft.image? `<img src="${sheetDraft.image}" class="img-thumb" id="imgPreview">` : ''}
+  </div>
+
+  <div id="formErrBox"></div>
+
+  ${sheetDraft.employees.length>0 ? `
+  <button class="btn btn-primary btn-block" id="btnSaveSheet" style="margin-top:6px;">
+    ${isEdit? t('update') : t('save')}
+  </button>` : ''}
+  ${isEdit? `<button class="btn btn-outline btn-block" id="btnCancelEdit" style="margin-top:8px;">${t('cancel')}</button>`:''}
+  `;
+}
+
+function renderEmpRow(e){
+  const inSheet = sheetDraft.employees.find(x=>x.employee_id===e.id);
+  const checked = !!inSheet;
+  return `
+  <div>
+    <div class="emp-row">
+      <div class="emp-check ${checked?'checked':''}" data-emp-toggle="${e.id}">${checked?'✓':''}</div>
+      <div style="flex:1;">
+        <div class="emp-name">${esc(e.name)}</div>
+        <div class="emp-desig">${esc(e.designation)}</div>
+      </div>
+    </div>
+    ${checked? `
+    <div class="slot-adjust">
+      <div class="slot-adjust-title">${t('actualTime')}</div>
+      ${sheetDraft.slots.map((s,i)=>{
+        const adj = inSheet.adjustments.find(a=>a.slot_id===s.id) || {actual_start:s.start, actual_end:s.end};
+        const hrs = durationHours(adj.actual_start, adj.actual_end);
+        return `
+        <div class="row2" style="margin-bottom:6px;">
+          <div>
+            <label style="margin-bottom:3px;">${t('start')} (${bnum(i+1)})</label>
+            <input type="time" value="${adj.actual_start}" data-adj-start="${e.id}|${s.id}">
+          </div>
+          <div>
+            <label style="margin-bottom:3px;">${t('end')} (${bnum(i+1)})</label>
+            <input type="time" value="${adj.actual_end}" data-adj-end="${e.id}|${s.id}">
+          </div>
+        </div>
+        <div class="hrs-live" id="hrs-${e.id}-${s.id}">= ${bnum(trimNum(hrs))} ${t('hours')}</div>`;
+      }).join('')}
+      <div class="hrs-live-total" id="hrstotal-${e.id}">${t('total')}: ${bnum(trimNum(inSheet.adjustments.reduce((sum,a)=>sum+durationHours(a.actual_start,a.actual_end),0)))} ${t('hours')}</div>
+    </div>` : ''}
+  </div>`;
+}
+
+function updateSlotHrsLive(sid){
+  const slot = sheetDraft.slots.find(s=>s.id===sid);
+  if(!slot) return;
+  const hrs = durationHours(slot.start, slot.end);
+  const el = document.getElementById(`slothrs-${sid}`);
+  if(el) el.textContent = `${t('timeHrs')}: ${bnum(trimNum(hrs))}`;
+}
+
+function updateHrsLive(eid, sid){
+  const empEntry = sheetDraft.employees.find(x=>x.employee_id===eid);
+  if(!empEntry) return;
+  const adj = empEntry.adjustments.find(a=>a.slot_id===sid);
+  const hrs = durationHours(adj.actual_start, adj.actual_end);
+  const elS = document.getElementById(`hrs-${eid}-${sid}`);
+  if(elS) elS.textContent = `= ${bnum(trimNum(hrs))} ${t('hours')}`;
+  const total = empEntry.adjustments.reduce((sum,a)=>sum+durationHours(a.actual_start,a.actual_end),0);
+  const elT = document.getElementById(`hrstotal-${eid}`);
+  if(elT) elT.textContent = `${t('total')}: ${bnum(trimNum(total))} ${t('hours')}`;
+}
+
+function bindScreenSpecific(){
+  if(STATE.screen==='new') bindNewSheet();
+  else if(STATE.screen==='records') bindRecords();
+  else if(STATE.screen==='summary') bindSummary();
+  else if(STATE.screen==='settings') bindSettings();
+}
+
+function bindNewSheet(){
+  const byId = id=>document.getElementById(id);
+  if(byId('fDate')) byId('fDate').onchange = e=>{ sheetDraft.date = e.target.value; };
+  if(byId('fDivision')) byId('fDivision').onchange = e=>{ sheetDraft.division_id = e.target.value; };
+  if(byId('fWorkDesc')) byId('fWorkDesc').oninput = e=>{ sheetDraft.work_description = e.target.value; };
+  if(byId('fRemarks')) byId('fRemarks').oninput = e=>{ sheetDraft.remarks = e.target.value; };
+
+  document.querySelectorAll('[data-slot-start]').forEach(el=>{
+    el.onchange = e=>{
+      const sid = el.getAttribute('data-slot-start');
+      sheetDraft.slots.find(s=>s.id===sid).start = e.target.value;
+      updateSlotHrsLive(sid);
+    };
+  });
+  document.querySelectorAll('[data-slot-end]').forEach(el=>{
+    el.onchange = e=>{
+      const sid = el.getAttribute('data-slot-end');
+      sheetDraft.slots.find(s=>s.id===sid).end = e.target.value;
+      updateSlotHrsLive(sid);
+    };
+  });
+  document.querySelectorAll('[data-slot-del]').forEach(el=>{
+    el.onclick = ()=>{
+      const sid = el.getAttribute('data-slot-del');
+      sheetDraft.slots = sheetDraft.slots.filter(s=>s.id!==sid);
+      sheetDraft.employees.forEach(e=>{ e.adjustments = e.adjustments.filter(a=>a.slot_id!==sid); });
+      render();
+    };
+  });
+  const addSlotBtn = byId('btnAddSlot');
+  if(addSlotBtn) addSlotBtn.onclick = ()=>{
+    const newSlot = {id:uid('slot'), start:'16:00', end:'18:00'};
+    sheetDraft.slots.push(newSlot);
+    sheetDraft.employees.forEach(e=>{ e.adjustments.push({slot_id:newSlot.id, actual_start:newSlot.start, actual_end:newSlot.end}); });
+    render();
+  };
+
+  const selectAllBtn = byId('btnSelectAll');
+  if(selectAllBtn) selectAllBtn.onclick = ()=>{
+    const emps = STATE.employees.filter(e=>e.active);
+    const allSelected = emps.every(e=> sheetDraft.employees.find(x=>x.employee_id===e.id));
+    if(allSelected){
+      sheetDraft.employees = [];
+    } else {
+      emps.forEach(e=>{
+        if(!sheetDraft.employees.find(x=>x.employee_id===e.id)){
+          sheetDraft.employees.push({
+            employee_id: e.id,
+            adjustments: sheetDraft.slots.map(s=>({slot_id:s.id, actual_start:s.start, actual_end:s.end}))
+          });
+        }
+      });
+    }
+    render();
+  };
+
+  document.querySelectorAll('[data-emp-toggle]').forEach(el=>{
+    el.onclick = ()=>{
+      const eid = el.getAttribute('data-emp-toggle');
+      const idx = sheetDraft.employees.findIndex(x=>x.employee_id===eid);
+      if(idx>=0){ sheetDraft.employees.splice(idx,1); }
+      else {
+        sheetDraft.employees.push({
+          employee_id: eid,
+          adjustments: sheetDraft.slots.map(s=>({slot_id:s.id, actual_start:s.start, actual_end:s.end}))
+        });
+      }
+      render();
+    };
+  });
+  document.querySelectorAll('[data-adj-start]').forEach(el=>{
+    el.onchange = e=>{
+      const [eid,sid] = el.getAttribute('data-adj-start').split('|');
+      sheetDraft.employees.find(x=>x.employee_id===eid).adjustments.find(a=>a.slot_id===sid).actual_start = e.target.value;
+      updateHrsLive(eid, sid);
+    };
+  });
+  document.querySelectorAll('[data-adj-end]').forEach(el=>{
+    el.onchange = e=>{
+      const [eid,sid] = el.getAttribute('data-adj-end').split('|');
+      sheetDraft.employees.find(x=>x.employee_id===eid).adjustments.find(a=>a.slot_id===sid).actual_end = e.target.value;
+      updateHrsLive(eid, sid);
+    };
+  });
+
+  const uploadBox = byId('uploadBox');
+  const fileInput = byId('fileImg');
+  if(uploadBox) uploadBox.onclick = ()=> fileInput.click();
+  if(fileInput) fileInput.onchange = e=>{
+    const file = e.target.files[0];
+    if(!file) return;
+    const reader = new FileReader();
+    reader.onload = async ev=>{
+      byId('uploadStatus').innerHTML = `<div class="info-box">${t('uploading')}</div>`;
+      try{
+        const res = await API.call('uploadImage', {
+          base64: ev.target.result,
+          filename: `OT_${sheetDraft.date}_${Date.now()}.jpg`,
+          mimeType: file.type || 'image/jpeg'
+        });
+        if(res.ok){ sheetDraft.image = res.url; render(); }
+        else { toast(t('networkErr'), true); byId('uploadStatus').innerHTML=''; }
+      }catch(err){
+        toast(t('networkErr'), true);
+        byId('uploadStatus').innerHTML='';
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const saveBtn = byId('btnSaveSheet');
+  if(saveBtn) saveBtn.onclick = doSaveSheet;
+  const cancelBtn = byId('btnCancelEdit');
+  if(cancelBtn) cancelBtn.onclick = ()=>{ STATE.editingSheetId = null; sheetDraft = null; STATE.screen = 'records'; render(); };
+}
+
+async function doSaveSheet(){
+  document.getElementById('formErrBox').innerHTML = '';
+  if(!sheetDraft.date || !sheetDraft.division_id){
+    document.getElementById('formErrBox').innerHTML = `<div class="warn-box">${t('fillRequired')}</div>`;
+    return;
+  }
+  if(sheetDraft.employees.length===0){
+    document.getElementById('formErrBox').innerHTML = `<div class="warn-box">${t('selectAtLeastOne')}</div>`;
+    return;
+  }
+  const excludeId = sheetDraft.id;
+  for(const emp of sheetDraft.employees){
+    const intervals = emp.adjustments.map(a=>({start:a.actual_start, end:a.actual_end}));
+    const conflicts = findConflicts(emp.employee_id, sheetDraft.date, intervals, excludeId);
+    if(conflicts.length>0){
+      const empObj = STATE.employees.find(x=>x.id===emp.employee_id);
+      document.getElementById('formErrBox').innerHTML = `<div class="warn-box">⚠ ${esc(empObj? empObj.name:'')} — ${t('overlapErr')}</div>`;
+      return;
+    }
+  }
+
+  const saveBtn = document.getElementById('btnSaveSheet');
+  if(saveBtn) saveBtn.disabled = true;
+
+  try{
+    const res = await API.call('saveSheet', {sheet: sheetDraft});
+    if(!res.ok){
+      if(res.error==='overlap'){
+        const empObj = STATE.employees.find(x=>x.id===res.employee_id);
+        document.getElementById('formErrBox').innerHTML = `<div class="warn-box">⚠ ${esc(empObj?empObj.name:'')} — ${t('overlapErr')}</div>`;
+      } else if(res.error==='unauthorized'){
+        toast(t('sessionExpired'), true);
+        STATE.session = null; render();
+      } else {
+        document.getElementById('formErrBox').innerHTML = `<div class="warn-box">${t('networkErr')}</div>`;
+      }
+      if(saveBtn) saveBtn.disabled = false;
+      return;
+    }
+    const idx = STATE.sheets.findIndex(s=>s.id===res.sheet.id);
+    if(idx>=0) STATE.sheets[idx] = res.sheet; else STATE.sheets.push(res.sheet);
+    toast(sheetDraft.id ? t('updatedOk') : t('savedOk'));
+    STATE.editingSheetId = null;
+    sheetDraft = null;
+    STATE.screen = 'records';
+    render();
+  }catch(e){
+    document.getElementById('formErrBox').innerHTML = `<div class="warn-box">${t('networkErr')}</div>`;
+    if(saveBtn) saveBtn.disabled = false;
+  }
+}
+
+/* =========================================================
+   RECORDS
+   ========================================================= */
+let recordsFilter = '';
+function renderRecords(){
+  const all = STATE.sheets.slice().sort((a,b)=> b.date.localeCompare(a.date) || String(b.created_at).localeCompare(String(a.created_at)));
+  const filtered = recordsFilter ? all.filter(s=>{
+    const div = STATE.divisions.find(d=>d.id===s.division_id);
+    const divName = div ? (STATE.lang==='bn'?div.name_bn:div.name_en) : '';
+    return (s.work_description||'').includes(recordsFilter) || (s.remarks||'').includes(recordsFilter) || divName.includes(recordsFilter) || s.date.includes(recordsFilter);
+  }) : all;
+
+  return `
+  <div class="section-head">
+    <div><h2>${t('recordsTitle')}</h2><div class="sub">${t('recordsSub')} · ${bnum(all.length)} ${t('otSheetsCount')}</div></div>
+  </div>
+  <div class="search-box">
+    <input type="text" id="recSearch" placeholder="${t('searchEmp')}" value="${esc(recordsFilter)}">
+  </div>
+  ${filtered.length===0? `
+    <div class="empty">
+      <div class="ei">🗂️</div>
+      <p>${t('noRecords')}</p>
+      <button class="btn btn-amber" id="btnGoNew" style="margin-top:10px;">${t('createFirst')}</button>
+    </div>` :
+    filtered.map(s=>renderSheetCard(s)).join('')
+  }
+  `;
+}
+
+function renderSheetCard(s){
+  const div = STATE.divisions.find(d=>d.id===s.division_id);
+  const divName = div ? (STATE.lang==='bn'?div.name_bn:div.name_en) : t('na');
+  const empCount = s.employees.length;
+  let totalHrs = 0;
+  const empLines = s.employees.map(e=>{
+    const emp = STATE.employees.find(x=>x.id===e.employee_id) || {name:'?'};
+    let hrs = 0;
+    const times = e.adjustments.map(a=>{
+      hrs += durationHours(a.actual_start,a.actual_end);
+      return `${bnum(fmtHM(a.actual_start))}–${bnum(fmtHM(a.actual_end))}`;
+    }).join(', ');
+    totalHrs += hrs;
+    return `<div class="sheet-emp-line"><b>${esc(emp.name)}</b><span class="t">${times}</span><span class="t">${bnum(trimNum(hrs))} ${t('hours')}</span></div>`;
+  }).join('');
+  return `
+  <div class="sheet-card">
+    <div class="date-block">${bnum(s.date)}</div>
+    <h4>${esc(divName)}</h4>
+    <p>${esc((s.work_description||'').slice(0,120)) || t('na')}</p>
+    <div class="sheet-emp-list">${empLines}</div>
+    <div class="sheet-meta">
+      <span class="badge badge-amber">${bnum(empCount)} ${t('employees')}</span>
+      <span class="badge badge-moss">${bnum(totalHrs.toFixed(2))} ${t('hours')}</span>
+      ${s.image? `<span class="badge badge-gray">📷</span>`:''}
+    </div>
+    <div class="sheet-actions">
+      <button class="btn btn-outline btn-sm" data-view="${s.id}">${t('view')}</button>
+      <button class="btn btn-ghost btn-sm" data-edit="${s.id}">${t('edit')}</button>
+      <button class="btn btn-danger btn-sm" data-del="${s.id}">${t('del')}</button>
+    </div>
+  </div>`;
+}
+
+function bindRecords(){
+  const search = document.getElementById('recSearch');
+  if(search) search.oninput = e=>{ recordsFilter = e.target.value; render(); };
+  const goNew = document.getElementById('btnGoNew');
+  if(goNew) goNew.onclick = ()=>{ STATE.screen='new'; sheetDraft=null; render(); };
+  document.querySelectorAll('[data-view]').forEach(el=>{ el.onclick = ()=> openViewModal(el.getAttribute('data-view')); });
+  document.querySelectorAll('[data-edit]').forEach(el=>{
+    el.onclick = ()=>{ STATE.editingSheetId = el.getAttribute('data-edit'); sheetDraft = null; STATE.screen = 'new'; render(); };
+  });
+  document.querySelectorAll('[data-del]').forEach(el=>{ el.onclick = ()=> openDeleteConfirm(el.getAttribute('data-del')); });
+}
+
+function openViewModal(sheetId){
+  const s = STATE.sheets.find(x=>x.id===sheetId);
+  const div = STATE.divisions.find(d=>d.id===s.division_id);
+  const divName = div ? (STATE.lang==='bn'?div.name_bn:div.name_en) : t('na');
+  const empRows = s.employees.map(e=>{
+    const emp = STATE.employees.find(x=>x.id===e.employee_id) || {name:'?',designation:''};
+    const hrs = e.adjustments.reduce((sum,a)=>sum+durationHours(a.actual_start,a.actual_end),0);
+    const times = e.adjustments.map(a=>`${bnum(fmtHM(a.actual_start))}–${bnum(fmtHM(a.actual_end))}`).join(', ');
+    return `<div class="emp-row"><div style="flex:1;">
+      <div class="emp-name">${esc(emp.name)}</div>
+      <div class="emp-desig">${esc(emp.designation)} · ${times}</div>
+    </div><span class="badge badge-moss">${bnum(hrs.toFixed(2))}${t('hours')}</span></div>`;
+  }).join('');
+
+  const modal = document.createElement('div');
+  modal.className = 'modal-bg';
+  modal.innerHTML = `
+    <div class="modal-box">
+      <div class="modal-handle"></div>
+      <div class="modal-title">${bnum(s.date)} — ${esc(divName)}</div>
+      <div class="modal-sub">${esc(s.work_description) || t('na')}</div>
+      ${s.remarks? `<div class="info-box">${esc(s.remarks)}</div>`:''}
+      <div class="divider"></div>
+      ${empRows}
+      ${s.image? `<img src="${s.image}" class="img-thumb">
+        <a href="${s.image}" target="_blank" class="btn btn-outline btn-block btn-sm" style="margin-top:8px;text-decoration:none;">${t('view')}</a>` : ''}
+      <button class="btn btn-primary btn-block" id="btnCloseModal" style="margin-top:14px;">${t('close')}</button>
+    </div>`;
+  document.body.appendChild(modal);
+  modal.onclick = e=>{ if(e.target===modal) modal.remove(); };
+  modal.querySelector('#btnCloseModal').onclick = ()=> modal.remove();
+}
+
+function openDeleteConfirm(sheetId){
+  const modal = document.createElement('div');
+  modal.className = 'modal-bg center';
+  modal.innerHTML = `
+    <div class="modal-box" style="border-radius:18px;">
+      <div class="modal-title">${t('del')}?</div>
+      <div class="modal-sub">${t('confirmDelete')}</div>
+      <div style="display:flex;gap:8px;margin-top:16px;">
+        <button class="btn btn-outline btn-block" id="btnNo">${t('cancel')}</button>
+        <button class="btn btn-danger btn-block" style="background:var(--rust);color:#fff;" id="btnYes">${t('yesDelete')}</button>
+      </div>
+    </div>`;
+  document.body.appendChild(modal);
+  modal.querySelector('#btnNo').onclick = ()=> modal.remove();
+  modal.querySelector('#btnYes').onclick = async ()=>{
+    try{
+      const res = await API.call('deleteSheet', {id: sheetId});
+      if(res.ok){
+        STATE.sheets = STATE.sheets.filter(s=>s.id!==sheetId);
+        toast(t('deletedOk'));
+      } else { toast(t('networkErr'), true); }
+    }catch(e){ toast(t('networkErr'), true); }
+    modal.remove();
+    render();
+  };
+}
+
+/* =========================================================
+   SUMMARY
+   ========================================================= */
+function currentMonthStr(){ const d=new Date(); return d.toISOString().slice(0,7); }
+let summaryMonth = currentMonthStr();
+function daysInMonth(ym){ const [y,m] = ym.split('-').map(Number); return new Date(y, m, 0).getDate(); }
+
+function computeMonthlyData(ym){
+  const dim = daysInMonth(ym);
+  const data = STATE.employees.map(e=>({emp:e, sheetsCount:0, totalHours:0, days:new Array(dim+1).fill(0)}));
+  STATE.sheets.forEach(s=>{
+    if(!s.date.startsWith(ym)) return;
+    const day = Number(s.date.split('-')[2]);
+    s.employees.forEach(se=>{
+      const rec = data.find(d=>d.emp.id===se.employee_id);
+      if(!rec) return;
+      let hrs = 0;
+      se.adjustments.forEach(a=> hrs += durationHours(a.actual_start,a.actual_end));
+      rec.sheetsCount += 1; rec.totalHours += hrs; rec.days[day] += hrs;
+    });
+  });
+  return {dim, data};
+}
+
+function renderSummary(){
+  const {dim, data} = computeMonthlyData(summaryMonth);
+  const grandTotal = data.reduce((s,d)=>s+d.totalHours,0);
+  const totalSheets = STATE.sheets.filter(s=>s.date.startsWith(summaryMonth)).length;
+
+  return `
+  <div class="section-head">
+    <div><h2>${t('totalOtHours')}</h2><div class="sub">${t('summaryTitle')}</div></div>
+  </div>
+  <div class="card">
+    <div class="row2" style="align-items:end;">
+      <div class="field" style="margin-bottom:0;">
+        <label>${t('month')}</label>
+        <input type="month" id="monthPicker" value="${summaryMonth}">
+      </div>
+      ${canExport()? `<button class="btn btn-amber" id="btnExportCsv">${t('exportCsv')}</button>` : ''}
+    </div>
+  </div>
+
+  <div class="stat-row">
+    <div class="stat-box"><div class="sn mono">${bnum(grandTotal.toFixed(1))}</div><div class="sl">${t('totalHours')}</div></div>
+    <div class="stat-box"><div class="sn mono">${bnum(totalSheets)}</div><div class="sl">${t('otSheetsCount')}</div></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title"><span class="tag">Σ</span> ${t('name')} / ${t('totalHours')}</div>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>${t('name')}</th><th>${t('designation')}</th><th>${t('noOfSheets')}</th><th>${t('totalHours')}</th></tr></thead>
+        <tbody>
+        ${data.length===0? `<tr><td colspan="4">${t('noData')}</td></tr>` :
+          data.map(d=>`<tr>
+            <td>${esc(d.emp.name)}</td><td>${esc(d.emp.designation)}</td><td>${bnum(d.sheetsCount)}</td>
+            <td class="mono">${bnum(d.totalHours.toFixed(2))}</td>
+          </tr>`).join('')
+        }
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title"><span class="tag">☷</span> ${t('calendar')}</div>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr>
+          <th>${t('name')}</th>
+          ${Array.from({length:dim},(_,i)=>`<th>${bnum(i+1)}</th>`).join('')}
+          <th>${t('total')}</th>
+        </tr></thead>
+        <tbody>
+        ${data.length===0? `<tr><td colspan="${dim+2}">${t('noData')}</td></tr>` :
+          data.map(d=>`<tr>
+            <td>${esc(d.emp.name)}</td>
+            ${d.days.slice(1).map(h=> h>0? `<td class="cell-h">${bnum(trimNum(h))}</td>` : `<td class="cell-x">X</td>`).join('')}
+            <td class="mono" style="font-weight:700;">${bnum(d.totalHours.toFixed(1))}</td>
+          </tr>`).join('')
+        }
+        </tbody>
+      </table>
+    </div>
+  </div>
+  `;
+}
+function trimNum(n){ return (Math.round(n*100)/100).toString(); }
+
+function bindSummary(){
+  const mp = document.getElementById('monthPicker');
+  if(mp) mp.onchange = e=>{ summaryMonth = e.target.value; render(); };
+  const exp = document.getElementById('btnExportCsv');
+  if(exp) exp.onclick = ()=>{
+    if(!canExport()){ return; }
+    generateFullReport(summaryMonth);
+  };
+}
+
+function generateFullReport(ym){
+  toast(t('generatingReport'));
+  API.call('generateReport', {ym})
+    .then(res=>{
+      if(!res.ok){
+        if(res.error==='auth_required'){
+          openReportAuthHelpModal();
+        } else {
+          toast(t('reportGenFailed') + (res.detail? ' — '+String(res.detail).slice(0,160) : ''), true);
+        }
+        return;
+      }
+      const byteChars = atob(res.base64);
+      const bytes = new Uint8Array(byteChars.length);
+      for(let i=0;i<byteChars.length;i++) bytes[i] = byteChars.charCodeAt(i);
+      const blob = new Blob([bytes], {type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = res.filename || ('OT_Report_'+ym+'.xlsx');
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      toast(t('savedOk'));
+    })
+    .catch((e)=>{ toast(diagnoseErr(e), true); });
+}
+
+function openReportAuthHelpModal(){
+  const modal = document.createElement('div');
+  modal.className = 'modal-bg center';
+  modal.innerHTML = `
+    <div class="modal-box">
+      <div class="modal-title">${t('authRequiredTitle')}</div>
+      <div class="modal-sub">${t('authRequiredBody')}</div>
+      <div class="steps-box">${t('authRequiredSteps')}</div>
+      <button class="btn btn-primary btn-block" id="btnAuthClose" style="margin-top:14px;">${t('close')}</button>
+    </div>`;
+  document.body.appendChild(modal);
+  modal.onclick = e=>{ if(e.target===modal) modal.remove(); };
+  modal.querySelector('#btnAuthClose').onclick = ()=> modal.remove();
+}
+
+/* =========================================================
+   SETTINGS
+   Employees + Divisions available to both roles (add-employee
+   is admin-only). Account and Organization tabs are admin-only.
+   There is no "Google Sync" tab at all — the frontend has no
+   Google integration to configure.
+   ========================================================= */
+let settingsTab = 'employees';
+function renderSettings(){
+  const tabs = [
+    {id:'employees', label:t('empMgmt')},
+    {id:'divisions', label:t('divMgmt')}
+  ];
+  if(isAdmin()) tabs.push({id:'account', label:t('account')});
+  if(isAdmin()) tabs.push({id:'reportSettings', label:t('reportSettingsTab')});
+  if(!isAdmin() && (settingsTab==='account' || settingsTab==='reportSettings')) settingsTab = 'employees';
+
+  return `
+  <div class="section-head"><div><h2>${t('settingsTitle')}</h2></div></div>
+
+  <div class="pill-scroll">
+    ${tabs.map(tb=>`<div class="pill ${settingsTab===tb.id?'active':''}" data-stab="${tb.id}">${tb.label}</div>`).join('')}
+  </div>
+
+  ${settingsTab==='employees'? renderEmpSettings() : ''}
+  ${settingsTab==='divisions'? renderDivSettings() : ''}
+  ${settingsTab==='account' && isAdmin()? renderAccountSettings() : ''}
+  ${settingsTab==='reportSettings' && isAdmin()? renderReportSettings() : ''}
+  `;
+}
+
+function renderReportSettings(){
+  const oc = STATE.orgConfig || {};
+  return `
+  <div class="card">
+    <div class="card-title">${t('reportSettingsTab')}</div>
+    <p style="font-size:12px;color:var(--ink-soft);margin:0 0 12px;">${t('reportSettingsHelp')}</p>
+    <div class="field"><label>${t('rsHeaderText')}</label><textarea id="rsHeaderText" style="min-height:90px;">${esc(oc.header_text||'')}</textarea></div>
+    <div class="field"><label>${t('rsWeekLine1')}</label><input type="text" id="rsWeekLine1" value="${esc(oc.weekly_header_line1||'')}"></div>
+    <div class="field"><label>${t('rsWeekLine2')}</label><input type="text" id="rsWeekLine2" value="${esc(oc.weekly_header_line2||'')}"></div>
+    <div class="field"><label>${t('rsWeekLine3')}</label><input type="text" id="rsWeekLine3" value="${esc(oc.weekly_header_line3||'')}"></div>
+  </div>
+  <div class="card">
+    <div class="card-title">${t('rsOfficers')}</div>
+    <div class="field"><label>${t('rsSig1')}</label><textarea id="rsSig1">${esc(oc.sig1||'')}</textarea></div>
+    <div class="field"><label>${t('rsSig2')}</label><textarea id="rsSig2">${esc(oc.sig2||'')}</textarea></div>
+    <div class="field"><label>${t('rsSig3')}</label><textarea id="rsSig3">${esc(oc.sig3||'')}</textarea></div>
+    <div class="field"><label>${t('rsSig4')}</label><textarea id="rsSig4">${esc(oc.sig4||'')}</textarea></div>
+    <div class="field"><label>${t('rsSig5')}</label><textarea id="rsSig5">${esc(oc.sig5||'')}</textarea></div>
+    <div class="field"><label>${t('rsSig6')}</label><textarea id="rsSig6">${esc(oc.sig6||'')}</textarea></div>
+    <button class="btn btn-primary btn-block" id="btnSaveReportSettings">${t('saveBtn')}</button>
+  </div>`;
+}
+
+function renderEmpSettings(){
+  const emps = STATE.employees;
+  return `
+  <div class="card">
+    <div class="card-title">${t('empMgmt')}</div>
+    ${emps.map(e=>`
+      <div class="emp-row">
+        <div style="flex:1;">
+          <div class="emp-name">${esc(e.name)} ${!e.active?`<span class="badge badge-gray">${t('inactive')}</span>`:''}</div>
+          <div class="emp-desig">${esc(e.designation)}</div>
+        </div>
+        <div style="display:flex;gap:6px;">
+          <button class="btn btn-ghost btn-sm" data-emp-edit="${e.id}">${t('edit')}</button>
+          <button class="btn btn-danger btn-sm" data-emp-del="${e.id}">${t('del')}</button>
+        </div>
+      </div>
+    `).join('')}
+    ${canAddEmployee()? `<button class="btn btn-amber btn-block" id="btnAddEmp" style="margin-top:10px;">${t('addEmployee')}</button>` :
+      `<div class="info-box" style="margin-top:10px;">${t('permNoAddEmp')}</div>`}
+    ${canAddEmployee()? `<button class="btn btn-outline btn-block" id="btnRestoreDefaults" style="margin-top:8px;">${t('restoreDefaults')}</button>`:''}
+  </div>`;
+}
+
+function renderDivSettings(){
+  const divs = STATE.divisions;
+  return `
+  <div class="card">
+    <div class="card-title">${t('divMgmt')}</div>
+    ${divs.map(d=>`
+      <div class="emp-row">
+        <div style="flex:1;">
+          <div class="emp-name">${esc(STATE.lang==='bn'?d.name_bn:d.name_en)} ${d.is_default?`<span class="badge badge-gray">default</span>`:''}</div>
+          <div class="emp-desig">${esc(STATE.lang==='bn'?d.name_en:d.name_bn)}</div>
+        </div>
+        ${!d.is_default? `<button class="btn btn-danger btn-sm" data-div-del="${d.id}">${t('del')}</button>` : ''}
+      </div>
+    `).join('')}
+    <button class="btn btn-amber btn-block" id="btnAddDiv" style="margin-top:10px;">${t('addDivision')}</button>
+  </div>`;
+}
+
+function renderAccountSettings(){
+  return `
+  <div class="card">
+    <div class="card-title">${t('account')}</div>
+    <p style="font-size:13px;color:var(--ink-soft);margin:0 0 12px;">${t('loggedInAs')}: <b>${esc(STATE.session.username)}</b> (${STATE.session.role==='admin'?t('roleAdmin'):t('roleEmployee')})</p>
+    <div class="field">
+      <label>${t('changePw')} — Admin</label>
+      <input type="password" id="pwAdmin" placeholder="${t('newPw')}">
+    </div>
+    <div class="field">
+      <label>${t('changePw')} — ${t('roleEmployee')}</label>
+      <input type="password" id="pwEmp" placeholder="${t('newPw')}">
+    </div>
+    <button class="btn btn-primary btn-block" id="btnSavePw">${t('saveBtn')}</button>
+  </div>
+  <div class="card">
+    <div class="card-title">${t('langSet')}</div>
+    <div class="lang-toggle">
+      <button data-l2="bn" class="${STATE.lang==='bn'?'active':''}">বাংলা</button>
+      <button data-l2="en" class="${STATE.lang==='en'?'active':''}">English</button>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-title">Server</div>
+    <button class="btn btn-outline btn-block" id="btnChangeServer">${t('editApiUrl')}</button>
+  </div>`;
+}
+
+function bindSettings(){
+  document.querySelectorAll('[data-stab]').forEach(el=>{
+    el.onclick = ()=>{ settingsTab = el.getAttribute('data-stab'); render(); };
+  });
+
+  const addEmpBtn = document.getElementById('btnAddEmp');
+  if(addEmpBtn) addEmpBtn.onclick = ()=> openEmpModal(null);
+  const restoreBtn = document.getElementById('btnRestoreDefaults');
+  if(restoreBtn) restoreBtn.onclick = restoreDefaultEmployees;
+  document.querySelectorAll('[data-emp-edit]').forEach(el=>{ el.onclick = ()=> openEmpModal(el.getAttribute('data-emp-edit')); });
+  document.querySelectorAll('[data-emp-del]').forEach(el=>{
+    el.onclick = async ()=>{
+      const id = el.getAttribute('data-emp-del');
+      try{
+        const res = await API.call('deleteEmployee', {id});
+        if(res.ok){ STATE.employees = STATE.employees.filter(e=>e.id!==id); toast(t('empDeleted')); }
+        else toast(t('networkErr'), true);
+      }catch(e){ toast(t('networkErr'), true); }
+      render();
+    };
+  });
+
+  const addDivBtn = document.getElementById('btnAddDiv');
+  if(addDivBtn) addDivBtn.onclick = ()=> openDivModal();
+  document.querySelectorAll('[data-div-del]').forEach(el=>{
+    el.onclick = async ()=>{
+      const id = el.getAttribute('data-div-del');
+      try{
+        const res = await API.call('deleteDivision', {id});
+        if(res.ok){ STATE.divisions = STATE.divisions.filter(d=>d.id!==id); toast(t('divDeleted')); }
+        else if(res.error==='default'){ toast(t('cannotDeleteDefault'), true); }
+        else toast(t('networkErr'), true);
+      }catch(e){ toast(t('networkErr'), true); }
+      render();
+    };
+  });
+
+  document.querySelectorAll('[data-l2]').forEach(el=>{
+    el.onclick = ()=>{ STATE.lang = el.getAttribute('data-l2'); LS.set('otr_lang',STATE.lang); render(); };
+  });
+  const savePwBtn = document.getElementById('btnSavePw');
+  if(savePwBtn) savePwBtn.onclick = async ()=>{
+    const pa = document.getElementById('pwAdmin').value.trim();
+    const pe = document.getElementById('pwEmp').value.trim();
+    try{
+      if(pa) await API.call('changePassword', {role:'admin', newPassword:pa});
+      if(pe) await API.call('changePassword', {role:'employee', newPassword:pe});
+      if(pa||pe) toast(t('pwChanged'));
+    }catch(e){ toast(t('networkErr'), true); }
+  };
+  const changeServerBtn = document.getElementById('btnChangeServer');
+  if(changeServerBtn) changeServerBtn.onclick = ()=> API.changeServer();
+
+  const saveRSBtn = document.getElementById('btnSaveReportSettings');
+  if(saveRSBtn) saveRSBtn.onclick = async ()=>{
+    const cfg = {
+      header_text: document.getElementById('rsHeaderText').value,
+      weekly_header_line1: document.getElementById('rsWeekLine1').value,
+      weekly_header_line2: document.getElementById('rsWeekLine2').value,
+      weekly_header_line3: document.getElementById('rsWeekLine3').value,
+      sig1: document.getElementById('rsSig1').value,
+      sig2: document.getElementById('rsSig2').value,
+      sig3: document.getElementById('rsSig3').value,
+      sig4: document.getElementById('rsSig4').value,
+      sig5: document.getElementById('rsSig5').value,
+      sig6: document.getElementById('rsSig6').value
+    };
+    try{
+      const res = await API.call('saveOrgConfig', {orgConfig: cfg});
+      if(res.ok){ STATE.orgConfig = cfg; toast(t('savedOk')); }
+      else toast(diagnoseErr(new Error(res.error||'bad_response')), true);
+    }catch(e){ toast(diagnoseErr(e), true); }
+  };
+}
+
+async function restoreDefaultEmployees(){
+  try{
+    const res = await API.call('restoreDefaultEmployees');
+    if(res.ok){
+      if(res.added && res.added.length){
+        res.added.slice().reverse().forEach(emp => STATE.employees.unshift(emp));
+        toast(t('savedOk'));
+      } else {
+        toast(t('noneMissing'));
+      }
+    } else {
+      toast(diagnoseErr(new Error(res.error||'bad_response')), true);
+    }
+  }catch(e){ toast(diagnoseErr(e), true); }
+  render();
+}
+
+function openEmpModal(empId){
+  if(!empId && !canAddEmployee()){ toast(t('permNoAddEmp'), true); return; }
+  const emp = empId ? STATE.employees.find(e=>e.id===empId) : {name:'', designation:'', active:true, employee_code:'', basic_salary:''};
+  const modal = document.createElement('div');
+  modal.className = 'modal-bg center';
+  modal.innerHTML = `
+    <div class="modal-box">
+      <div class="modal-title">${empId? t('edit') : t('addEmployee')}</div>
+      <div class="field"><label>${t('empName')}</label><input type="text" id="mEmpName" value="${esc(emp.name)}"></div>
+      <div class="field"><label>${t('empDesig')}</label><input type="text" id="mEmpDesig" value="${esc(emp.designation)}"></div>
+      <div class="row2">
+        <div class="field"><label>${t('empCode')}</label><input type="text" id="mEmpCode" value="${esc(emp.employee_code||'')}"></div>
+        <div class="field"><label>${t('empSalary')}</label><input type="text" id="mEmpSalary" value="${esc(emp.basic_salary||'')}"></div>
+      </div>
+      <div style="display:flex;gap:8px;">
+        <button class="btn btn-outline btn-block" id="mCancel">${t('cancel')}</button>
+        <button class="btn btn-primary btn-block" id="mSave">${t('saveBtn')}</button>
+      </div>
+    </div>`;
+  document.body.appendChild(modal);
+  modal.querySelector('#mCancel').onclick = ()=> modal.remove();
+  modal.querySelector('#mSave').onclick = async ()=>{
+    const name = document.getElementById('mEmpName').value.trim();
+    const desig = document.getElementById('mEmpDesig').value.trim();
+    const code = document.getElementById('mEmpCode').value.trim();
+    const salary = document.getElementById('mEmpSalary').value.trim();
+    if(!name){ toast(t('fillRequired'), true); return; }
+    try{
+      const payloadEmp = empId? {id:empId, name, designation:desig, active:true, employee_code:code, basic_salary:salary}
+                               : {name, designation:desig, active:true, employee_code:code, basic_salary:salary};
+      const res = await API.call('saveEmployee', {employee: payloadEmp});
+      if(res.ok){
+        if(empId){
+          const rec = STATE.employees.find(e=>e.id===empId);
+          Object.assign(rec, res.employee);
+        } else {
+          STATE.employees.unshift(res.employee);
+        }
+        toast(t('savedOk'));
+      } else if(res.error==='forbidden'){ toast(t('permNoAddEmp'), true); }
+      else { toast(t('networkErr'), true); }
+    }catch(e){ toast(t('networkErr'), true); }
+    modal.remove();
+    render();
+  };
+}
+
+function openDivModal(){
+  const modal = document.createElement('div');
+  modal.className = 'modal-bg center';
+  modal.innerHTML = `
+    <div class="modal-box">
+      <div class="modal-title">${t('addDivision')}</div>
+      <div class="field"><label>${t('nameBn')}</label><input type="text" id="mDivBn"></div>
+      <div class="field"><label>${t('nameEn')}</label><input type="text" id="mDivEn"></div>
+      <div style="display:flex;gap:8px;">
+        <button class="btn btn-outline btn-block" id="mCancel">${t('cancel')}</button>
+        <button class="btn btn-primary btn-block" id="mSave">${t('saveBtn')}</button>
+      </div>
+    </div>`;
+  document.body.appendChild(modal);
+  modal.querySelector('#mCancel').onclick = ()=> modal.remove();
+  modal.querySelector('#mSave').onclick = async ()=>{
+    const bn = document.getElementById('mDivBn').value.trim();
+    const en = document.getElementById('mDivEn').value.trim();
+    if(!bn && !en){ toast(t('fillRequired'), true); return; }
+    try{
+      const res = await API.call('saveDivision', {division:{name_bn:bn||en, name_en:en||bn, is_default:false, active:true}});
+      if(res.ok){ STATE.divisions.push(res.division); toast(t('savedOk')); }
+      else toast(t('networkErr'), true);
+    }catch(e){ toast(t('networkErr'), true); }
+    modal.remove();
+    render();
+  };
+}
+/* ---------- render root (app screens only; assumes an authenticated session) ---------- */
+function render(){
+  const root = document.getElementById('root');
+  document.documentElement.lang = STATE.lang;
+
+  if(!STATE.session){
+    // shouldn't normally happen (boot() redirects first), but never show
+    // app internals without a session — bounce back to the login page
+    window.location.href = 'index.html';
+    return;
+  }
+
+  let body = '';
+  if(STATE.screen==='new') body = renderNewSheet();
+  else if(STATE.screen==='records') body = renderRecords();
+  else if(STATE.screen==='summary') body = renderSummary();
+  else if(STATE.screen==='settings') body = renderSettings();
+  else body = renderNewSheet();
+
+  root.innerHTML = `
+    ${renderTopbar()}
+    <main>${body}</main>
+    ${renderBottomNav()}
+  `;
+  bindGlobal();
+}
+
+function renderTopbar(){
+  return `
+  <div class="topbar">
+    <div class="brand">
+      <div class="brand-mark">OT</div>
+      <div>
+        <div class="brand-title">${t('appName')}</div>
+        <div class="brand-sub">${t('appSub')}</div>
+      </div>
+    </div>
+    <div class="topbar-actions">
+      <div class="topbar-sync" title="API"><span class="sync-dot ${API.status==='on'?'on':(API.status==='busy'?'busy':'off')}" id="syncStatusDot"></span></div>
+      <div class="icon-btn" id="btnLangTop" title="lang">${STATE.lang==='bn'?'EN':'বাং'}</div>
+      <div class="icon-btn" id="btnLogout" title="logout">⏻</div>
+    </div>
+  </div>`;
+}
+function renderBottomNav(){
+  const items = [
+    {id:'new', ico:'✎', label:t('navNew')},
+    {id:'records', ico:'▤', label:t('navRecords')},
+    {id:'summary', ico:'◱', label:t('navSummary')},
+    {id:'settings', ico:'⚙', label:t('navSettings')}
+  ];
+  return `<div class="bottomnav">
+    ${items.map(i=>`<div class="navitem ${STATE.screen===i.id?'active':''}" data-nav="${i.id}">
+      <div class="ni-ico">${i.ico}</div><div>${i.label}</div>
+    </div>`).join('')}
+  </div>`;
+}
+
+function bindGlobal(){
+  document.getElementById('btnLangTop').onclick = ()=>{
+    STATE.lang = STATE.lang==='bn'?'en':'bn';
+    LS.set('otr_lang', STATE.lang);
+    render();
+  };
+  document.getElementById('btnLogout').onclick = async ()=>{
+    await API.logout();
+    STATE.session = null;
+    window.location.href = 'index.html';
+  };
+  document.querySelectorAll('[data-nav]').forEach(el=>{
+    el.onclick = ()=>{ STATE.screen = el.getAttribute('data-nav'); STATE.editingSheetId=null; render(); };
+  });
+  bindScreenSpecific();
+}
+
+/* ---------- boot sequence ---------- */
+(async function boot(){
+  STATE.screen = 'boot';
+  render_boot_placeholder();
+
+  if(!API.baseUrl || !API.token){
+    // no server configured or no session on this device — go set up / log in
+    window.location.href = 'index.html';
+    return;
+  }
+
+  try{
+    const res = await API.call('verifySession');
+    if(res && res.ok){
+      STATE.session = {username: res.username, role: res.role};
+      await loadBootstrap();
+      STATE.screen = 'new';
+      render();
+      return;
+    }
+  }catch(e){ /* fall through to redirect */ }
+
+  // token missing/expired/invalid, or server unreachable — back to login,
+  // which will show the right diagnostic if the server itself is the problem
+  window.location.href = 'index.html';
+})();
+
+function render_boot_placeholder(){
+  document.getElementById('root').innerHTML = `
+  <div class="login-wrap">
+    <div class="login-card" style="text-align:center;">
+      <div class="login-logo">OT</div>
+      <div class="spin"></div>
+      <div class="disp" style="font-size:16px;font-weight:700;">${t('connecting')}</div>
+    </div>
+  </div>`;
+}
+
+</script>
+</body>
+</html>
