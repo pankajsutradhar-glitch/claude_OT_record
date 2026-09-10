@@ -186,6 +186,9 @@ textarea{resize:vertical;min-height:64px;}
 .role-toggle{display:flex;background:var(--paper-2);border-radius:10px;padding:3px;margin-bottom:18px;}
 .role-toggle button{flex:1;padding:9px;border:none;background:transparent;border-radius:8px;font-weight:600;font-size:13px;color:var(--ink-soft);cursor:pointer;font-family:inherit;}
 .role-toggle button.active{background:var(--ink);color:var(--paper);}
+.remember-row{display:flex;align-items:center;gap:9px;margin:2px 0 16px;cursor:pointer;user-select:none;}
+.remember-row input[type=checkbox]{width:18px;height:18px;accent-color:var(--ink);cursor:pointer;flex-shrink:0;}
+.remember-row span{font-size:13px;color:var(--ink-soft);}
 .spin{width:34px;height:34px;border:3px solid var(--paper-2);border-top-color:var(--amber);border-radius:50%;margin:0 auto 16px;animation:spin 0.8s linear infinite;}
 @keyframes spin{to{transform:rotate(360deg);}}
 
@@ -410,6 +413,10 @@ function renderLogin(){
         <label>${T[STATE.lang].password}</label>
         <input type="password" id="loginPass" placeholder="••••">
       </div>
+      <label class="remember-row">
+        <input type="checkbox" id="rememberMe" checked>
+        <span>${t('rememberMe')}</span>
+      </label>
       <div id="loginErrBox"></div>
       <button class="btn btn-primary btn-block" id="btnSignIn">${T[STATE.lang].signin}</button>
       <div style="text-align:center;margin-top:16px;">
@@ -436,11 +443,12 @@ function bindLogin(){
 async function doLogin(){
   const u = document.getElementById('loginUser').value.trim();
   const p = document.getElementById('loginPass').value;
+  const rememberMe = document.getElementById('rememberMe').checked;
   const btn = document.getElementById('btnSignIn');
   btn.disabled = true;
   document.getElementById('loginErrBox').innerHTML = '';
   try{
-    const res = await API.login(u, p);
+    const res = await API.login(u, p, rememberMe);
     if(!res.ok || res.role !== loginRole){
       const msg = res.error==='locked_out' ? t('lockedOut') : t('loginErr');
       document.getElementById('loginErrBox').innerHTML = `<div class="warn-box">${msg}</div>`;
