@@ -12,6 +12,7 @@ const T = {
     login:'লগইন', username:'ইউজারনেম', password:'পাসওয়ার্ড', signin:'প্রবেশ করুন',
     roleAdmin:'অ্যাডমিন', roleEmployee:'কর্মচারী', loginErr:'ইউজারনেম বা পাসওয়ার্ড সঠিক নয়',
     lockedOut:'অনেকবার ভুল চেষ্টার কারণে সাময়িকভাবে বন্ধ, ১৫ মিনিট পর আবার চেষ্টা করুন',
+    rememberMe:'আমাকে মনে রাখুন',
     navNew:'নতুন শিট', navRecords:'রেকর্ডস', navSummary:'সারাংশ', navSettings:'সেটিংস', navLogout:'লগআউট',
     newSheetTitle:'নতুন ওটি শিট তৈরী', editSheetTitle:'ওটি শিট সম্পাদনা',
     date:'তারিখ', division:'বিভাগ', workDesc:'অতিরিক্ত কাজের বিবরণী', remarks:'মন্তব্য',
@@ -78,6 +79,7 @@ const T = {
     login:'Login', username:'Username', password:'Password', signin:'Sign In',
     roleAdmin:'Admin', roleEmployee:'Employee', loginErr:'Incorrect username or password',
     lockedOut:'Too many failed attempts — try again in 15 minutes',
+    rememberMe:'Remember me',
     navNew:'New Sheet', navRecords:'Records', navSummary:'Summary', navSettings:'Settings', navLogout:'Logout',
     newSheetTitle:'Create OT Sheet', editSheetTitle:'Edit OT Sheet',
     date:'Date', division:'Division', workDesc:'Work Description', remarks:'Remarks',
@@ -178,7 +180,10 @@ function canExport(){ return isAdmin(); }
    ========================================================= */
 const API = {
   baseUrl: localStorage.getItem('otr_api_url') || '',
-  token: localStorage.getItem('otr_token') || '',
+  // token may live in localStorage ("remember me" checked — survives closing
+  // the browser) or sessionStorage (unchecked — forgotten once the tab/
+  // browser closes). Check both; localStorage wins if somehow both are set.
+  token: localStorage.getItem('otr_token') || sessionStorage.getItem('otr_token') || '',
   status: 'off', // off | busy | on | error
 
   setStatus(s){ this.status = s; const el=document.getElementById('syncStatusDot'); if(el){ el.className='sync-dot '+(s==='on'?'on':(s==='busy'?'busy':'off')); } },
@@ -216,11 +221,17 @@ const API = {
     return data;
   },
 
-  async login(username, password){
+  async login(username, password, rememberMe){
     const res = await this.call('login', {username, password});
     if(res.ok){
       this.token = res.token;
-      localStorage.setItem('otr_token', res.token);
+      if(rememberMe){
+        localStorage.setItem('otr_token', res.token);
+        sessionStorage.removeItem('otr_token');
+      } else {
+        sessionStorage.setItem('otr_token', res.token);
+        localStorage.removeItem('otr_token');
+      }
     }
     return res;
   },
@@ -228,6 +239,7 @@ const API = {
     try{ await this.call('logout'); }catch(e){}
     this.token = '';
     localStorage.removeItem('otr_token');
+    sessionStorage.removeItem('otr_token');
   },
   setBaseUrl(url){
     this.baseUrl = url.trim();
@@ -236,6 +248,7 @@ const API = {
   changeServer(){
     localStorage.removeItem('otr_api_url');
     localStorage.removeItem('otr_token');
+    sessionStorage.removeItem('otr_token');
     this.baseUrl = ''; this.token = '';
     STATE.session = null;
     STATE.screen = 'setup';
@@ -307,4 +320,3 @@ function findConflicts(employeeId, date, newIntervals, excludeSheetId){
   });
   return conflicts;
 }
-
