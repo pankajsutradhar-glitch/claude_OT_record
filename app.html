@@ -1,1334 +1,1226 @@
-<!DOCTYPE html>
-<html lang="bn">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover">
-<meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="theme-color" content="#0F2E2C">
-<title>OT_Record — অতিরিক্ত কর্মঘন্টা ব্যবস্থাপনা</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-<style>
-:root{
-  --ink:#0F2E2C;
-  --ink-2:#163F3B;
-  --paper:#F6F4EE;
-  --paper-2:#EDEAE1;
-  --line:#D9D4C6;
-  --amber:#C77C2C;
-  --amber-2:#E0954A;
-  --rust:#B0483B;
-  --moss:#4B7A5A;
-  --white:#FFFFFF;
-  --ink-soft:#5B6A66;
-  --shadow: 0 1px 2px rgba(15,46,44,.06), 0 4px 14px rgba(15,46,44,.07);
-  --radius: 14px;
-}
-*{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
-html,body{margin:0;padding:0;height:100%;}
-body{
-  font-family:'Hind Siliguri','Space Grotesk',system-ui,sans-serif;
-  background:
-    radial-gradient(1200px 500px at 100% -10%, rgba(199,124,44,.08), transparent 60%),
-    var(--paper);
-  color:var(--ink);
-  min-height:100vh;
-  overflow-x:hidden;
-}
-.mono{font-family:'JetBrains Mono',monospace;}
-.disp{font-family:'Space Grotesk',sans-serif;}
-#root{max-width:560px;margin:0 auto;min-height:100vh;position:relative;padding-bottom:82px;}
+/*******************************************************************
+ * OT_Record — Secure Backend API (Google Apps Script)
+ *
+ * Architecture:
+ *   GitHub Pages (static HTML/JS)
+ *        │  HTTPS POST (JSON body, text/plain content-type to avoid CORS preflight)
+ *        ▼
+ *   THIS Apps Script Web App  (deployed: Execute as "Me", Access "Anyone")
+ *        │  Utilities / SpreadsheetApp / DriveApp — runs as the script owner,
+ *        │  so end users never touch Google OAuth, Client IDs, or API keys.
+ *        ▼
+ *   Google Sheets (database)  +  Google Drive (image storage)
+ *
+ * The frontend only ever knows this Web App's /exec URL. Nothing else
+ * about Google is exposed to the browser.
+ *
+ * AUTH MODEL
+ *   - Users are stored in the "Users" sheet as: username, password_hash,
+ *     salt, role.  Plaintext passwords are never stored.
+ *   - Login verifies a salted SHA-256 hash and issues a random session
+ *     token, stored server-side in CacheService (shared across all
+ *     requests/devices) with a sliding expiry.
+ *   - Every action except "login" requires a valid, non-expired token.
+ *   - Role (admin/employee) is resolved from the *server-side* session,
+ *     never trusted from the client — so permission checks here are
+ *     real enforcement, not just UI hints.
+ *******************************************************************/
 
-.topbar{
-  position:sticky;top:0;z-index:30;
-  background:var(--ink);
-  color:var(--paper);
-  padding:14px 18px;
-  display:flex;align-items:center;justify-content:space-between;
-  box-shadow:var(--shadow);
-}
-.topbar .brand{display:flex;align-items:center;gap:10px;}
-.brand-mark{
-  width:34px;height:34px;border-radius:9px;
-  background:linear-gradient(135deg,var(--amber),var(--rust));
-  display:flex;align-items:center;justify-content:center;
-  font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:14px;color:#fff;
-  flex-shrink:0;
-}
-.brand-title{font-size:15px;font-weight:600;line-height:1.15;}
-.brand-sub{font-size:10.5px;color:#9FC2B8;letter-spacing:.04em;}
-.topbar-actions{display:flex;gap:8px;align-items:center;}
-.icon-btn{
-  background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.14);
-  color:var(--paper);width:34px;height:34px;border-radius:9px;
-  display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:15px;
-}
-.icon-btn:active{background:rgba(255,255,255,.18);}
+/* ================================================================
+ * CONFIG
+ * ================================================================ */
+const SESSION_TTL_SECONDS = 60 * 60;      // 60 minutes sliding inactivity timeout
+const MAX_FAILED_LOGINS   = 5;            // lockout threshold
+const LOGIN_LOCKOUT_SECONDS = 15 * 60;    // 15 minute lockout window
 
-main{padding:16px 16px 24px;}
+/* Default roster — lives only here, server-side. Never sent to the
+   browser except as ordinary employee records after an authenticated
+   login (via getBootstrap/restoreDefaultEmployees), same as any other
+   employee data. */
+const DEFAULT_EMPLOYEES_ = [
+  ['emp1', 'জনাব মোঃ রেজাউল করিম', 'সিনিঃ ফোরম্যান'],
+  ['emp2', 'জনাব মোঃ ওমর ফারুক', 'সিনিঃ ফোরম্যান'],
+  ['emp3', 'জনাব মোঃ আলাল উদ্দিন', 'সিনিঃ টেকনিশিয়ান'],
+  ['emp4', 'জনাব মাসুদ রানা খান', 'জুনিঃ টেকনিশিয়ান'],
+  ['emp5', 'জনাব মমিন খন্দকার', 'জুনিঃ টেকনিশিয়ান'],
+  ['emp6', 'সুমন হোসেন', 'জুনিঃ টেকনিশিয়ান']
+];
 
-.card{
-  background:var(--white);
-  border:1px solid var(--line);
-  border-radius:var(--radius);
-  padding:16px;
-  margin-bottom:14px;
-  box-shadow:var(--shadow);
-}
-.card-title{font-size:13px;font-weight:600;color:var(--ink);margin:0 0 12px;display:flex;align-items:center;gap:8px;}
-.card-title .tag{
-  font-family:'JetBrains Mono',monospace;font-size:9.5px;color:var(--amber);
-  background:rgba(199,124,44,.1);border:1px solid rgba(199,124,44,.25);
-  padding:2px 6px;border-radius:5px;letter-spacing:.05em;
+const TAB = {
+  users:      'Users',
+  employees:  'Employees',
+  divisions:  'Divisions',
+  otsheets:   'OTSheets',
+  orgconfig:  'ReportSettings'
+};
+
+function getSS_() { return SpreadsheetApp.getActiveSpreadsheet(); }
+
+/* ================================================================
+ * HTTP ENTRY POINTS
+ * ================================================================ */
+
+/* GET is only used to sanity-check the deployment URL in a browser. */
+function doGet(e) {
+  return jsonOut_({ ok: true, message: 'OT_Record API is running.' });
 }
 
-label{display:block;font-size:12px;font-weight:600;color:var(--ink-soft);margin:0 0 6px;letter-spacing:.01em;}
-input[type=text],input[type=password],input[type=date],input[type=time],input[type=number],textarea,select{
-  width:100%;padding:11px 12px;border:1.5px solid var(--line);border-radius:10px;
-  font-family:inherit;font-size:14.5px;background:var(--paper);color:var(--ink);
-  outline:none;transition:border-color .15s;
-}
-input:focus,textarea:focus,select:focus{border-color:var(--amber);background:#fff;}
-textarea{resize:vertical;min-height:64px;}
-.field{margin-bottom:14px;}
-.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
-
-.btn{
-  display:inline-flex;align-items:center;justify-content:center;gap:7px;
-  padding:11px 18px;border-radius:10px;border:none;font-weight:600;font-size:14px;
-  cursor:pointer;font-family:inherit;transition:transform .06s, opacity .15s;
-}
-.btn:active{transform:scale(.97);}
-.btn-primary{background:var(--ink);color:var(--paper);}
-.btn-primary:disabled{opacity:.35;cursor:not-allowed;}
-.btn-amber{background:var(--amber);color:#fff;}
-.btn-outline{background:transparent;color:var(--ink);border:1.5px solid var(--line);}
-.btn-danger{background:transparent;color:var(--rust);border:1.5px solid rgba(176,72,59,.3);}
-.btn-ghost{background:rgba(15,46,44,.05);color:var(--ink);}
-.btn-block{width:100%;}
-.btn-sm{padding:7px 12px;font-size:12.5px;border-radius:8px;}
-
-.bottomnav{
-  position:fixed;bottom:0;left:50%;transform:translateX(-50%);
-  width:100%;max-width:560px;
-  background:var(--ink);
-  display:flex;justify-content:space-around;align-items:center;
-  padding:8px 4px calc(8px + env(safe-area-inset-bottom));
-  z-index:40;box-shadow:0 -4px 16px rgba(0,0,0,.15);
-}
-.navitem{
-  flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;
-  padding:6px 2px;border-radius:10px;color:#7FA79C;cursor:pointer;
-  font-size:10px;font-weight:600;letter-spacing:.01em;
-}
-.navitem .ni-ico{font-size:18px;line-height:1;}
-.navitem.active{color:var(--amber-2);}
-
-.badge{display:inline-block;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:600;}
-.badge-amber{background:rgba(199,124,44,.12);color:var(--amber);}
-.badge-moss{background:rgba(75,122,90,.12);color:var(--moss);}
-.badge-rust{background:rgba(176,72,59,.12);color:var(--rust);}
-.badge-gray{background:var(--paper-2);color:var(--ink-soft);}
-
-.sheet-card{
-  background:#fff;border:1px solid var(--line);border-radius:var(--radius);
-  padding:14px;margin-bottom:10px;box-shadow:var(--shadow);
-}
-.sheet-card .date-block{
-  font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--amber);font-weight:600;
-}
-.sheet-card h4{margin:2px 0 6px;font-size:14.5px;font-weight:600;}
-.sheet-card p{margin:0;font-size:12.5px;color:var(--ink-soft);line-height:1.5;}
-.sheet-meta{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;}
-.sheet-actions{display:flex;gap:8px;margin-top:10px;}
-.sheet-emp-list{margin:8px 0;border-top:1px dashed var(--line);padding-top:6px;}
-.sheet-emp-line{display:flex;align-items:center;gap:8px;font-size:11.5px;padding:3px 0;color:var(--ink-soft);}
-.sheet-emp-line b{color:var(--ink);font-weight:600;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-.sheet-emp-line .t{font-family:'JetBrains Mono',monospace;color:var(--ink);white-space:nowrap;font-size:11px;}
-.hrs-live{font-size:11.5px;color:var(--moss);font-weight:700;margin:-2px 0 8px;text-align:right;}
-.hrs-live-total{font-size:12px;font-weight:700;color:var(--ink);text-align:right;margin-top:4px;padding-top:6px;border-top:1px dashed var(--line);}
-
-.emp-row{
-  display:flex;align-items:center;gap:10px;padding:10px 4px;border-bottom:1px solid var(--paper-2);
-}
-.emp-row:last-child{border-bottom:none;}
-.emp-check{
-  width:22px;height:22px;border-radius:6px;border:2px solid var(--line);flex-shrink:0;
-  display:flex;align-items:center;justify-content:center;cursor:pointer;background:#fff;
-}
-.emp-check.checked{background:var(--ink);border-color:var(--ink);color:var(--paper);font-size:13px;}
-.emp-name{font-size:14px;font-weight:600;flex:1;}
-.emp-desig{font-size:11px;color:var(--ink-soft);}
-
-.slot-adjust{
-  margin-top:8px;padding:10px;background:var(--paper);border-radius:10px;border:1px dashed var(--line);
-}
-.slot-adjust-title{font-size:11px;font-weight:600;color:var(--ink-soft);margin-bottom:6px;}
-
-.slot-item{
-  display:flex;align-items:center;gap:8px;margin-bottom:8px;padding:8px 10px;
-  background:var(--paper);border-radius:10px;
-}
-.slot-item span{font-size:12px;color:var(--ink-soft);}
-
-.selectall-bar{
-  display:flex;align-items:center;justify-content:space-between;
-  padding:9px 10px;background:var(--paper);border-radius:10px;margin-bottom:8px;
-  border:1px dashed var(--line);
-}
-.selectall-bar span{font-size:12.5px;font-weight:600;color:var(--ink-soft);}
-
-.login-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;}
-.login-card{width:100%;max-width:380px;background:#fff;border-radius:20px;padding:32px 26px;box-shadow:0 10px 40px rgba(15,46,44,.15);border:1px solid var(--line);}
-.login-logo{width:56px;height:56px;border-radius:14px;background:linear-gradient(135deg,var(--amber),var(--rust));display:flex;align-items:center;justify-content:center;color:#fff;font-family:'Space Grotesk';font-weight:700;font-size:22px;margin:0 auto 16px;}
-.role-toggle{display:flex;background:var(--paper-2);border-radius:10px;padding:3px;margin-bottom:18px;}
-.role-toggle button{flex:1;padding:9px;border:none;background:transparent;border-radius:8px;font-weight:600;font-size:13px;color:var(--ink-soft);cursor:pointer;font-family:inherit;}
-.role-toggle button.active{background:var(--ink);color:var(--paper);}
-.spin{width:34px;height:34px;border:3px solid var(--paper-2);border-top-color:var(--amber);border-radius:50%;margin:0 auto 16px;animation:spin 0.8s linear infinite;}
-@keyframes spin{to{transform:rotate(360deg);}}
-
-.tbl-wrap{overflow-x:auto;border-radius:10px;border:1px solid var(--line);}
-table{border-collapse:collapse;width:100%;font-size:12px;}
-th,td{padding:8px 9px;text-align:center;white-space:nowrap;border-bottom:1px solid var(--paper-2);}
-th{background:var(--paper-2);font-weight:600;color:var(--ink-soft);font-size:10.5px;position:sticky;top:0;}
-td:first-child,th:first-child{position:sticky;left:0;background:#fff;text-align:right;font-weight:600;z-index:1;}
-th:first-child{background:var(--paper-2);z-index:2;}
-tr:nth-child(even) td{background:#FBFAF7;}
-tr:nth-child(even) td:first-child{background:#FBFAF7;}
-.cell-x{color:#C7C2B4;}
-.cell-h{color:var(--moss);font-weight:600;}
-
-.empty{text-align:center;padding:48px 20px;color:var(--ink-soft);}
-.empty .ei{font-size:38px;margin-bottom:10px;opacity:.5;}
-.empty p{font-size:13.5px;margin:4px 0;}
-
-#toast{
-  position:fixed;bottom:96px;left:50%;transform:translateX(-50%) translateY(20px);
-  background:var(--ink);color:var(--paper);padding:11px 20px;border-radius:30px;
-  font-size:13px;font-weight:600;box-shadow:0 6px 20px rgba(0,0,0,.25);z-index:100;
-  opacity:0;pointer-events:none;transition:all .25s ease;max-width:88%;text-align:center;
-}
-#toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
-#toast.err{background:var(--rust);}
-
-.modal-bg{position:fixed;inset:0;background:rgba(15,46,44,.45);z-index:200;display:flex;align-items:flex-end;justify-content:center;}
-.modal-bg.center{align-items:center;padding:20px;}
-.modal-box{
-  background:#fff;width:100%;max-width:560px;border-radius:20px 20px 0 0;
-  padding:20px 18px calc(20px + env(safe-area-inset-bottom));
-  max-height:88vh;overflow-y:auto;box-shadow:0 -8px 30px rgba(0,0,0,.2);
-  animation:slideup .22s ease;
-}
-.modal-bg.center .modal-box{border-radius:18px;max-width:400px;animation:popin .18s ease;}
-@keyframes slideup{from{transform:translateY(30px);opacity:0;}to{transform:translateY(0);opacity:1;}}
-@keyframes popin{from{transform:scale(.94);opacity:0;}to{transform:scale(1);opacity:1;}}
-.modal-handle{width:36px;height:4px;background:var(--line);border-radius:3px;margin:0 auto 14px;}
-.modal-title{font-size:16px;font-weight:700;margin:0 0 4px;}
-.modal-sub{font-size:12px;color:var(--ink-soft);margin:0 0 16px;}
-
-.lang-toggle{display:flex;gap:6px;}
-.lang-toggle button{padding:6px 12px;border-radius:8px;border:1.5px solid var(--line);background:#fff;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;}
-.lang-toggle button.active{background:var(--ink);color:#fff;border-color:var(--ink);}
-
-.section-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
-.section-head h2{font-size:18px;font-weight:700;margin:0;font-family:'Space Grotesk',sans-serif;}
-.section-head .sub{font-size:11.5px;color:var(--ink-soft);margin-top:2px;}
-
-.divider{height:1px;background:var(--line);margin:14px 0;}
-
-.stat-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;}
-.stat-box{background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px 14px;}
-.stat-box .sn{font-family:'Space Grotesk';font-size:22px;font-weight:700;color:var(--ink);}
-.stat-box .sl{font-size:10.5px;color:var(--ink-soft);font-weight:600;margin-top:2px;}
-
-.img-thumb{width:100%;border-radius:10px;margin-top:10px;border:1px solid var(--line);display:block;}
-.upload-box{
-  border:1.5px dashed var(--line);border-radius:12px;padding:18px;text-align:center;
-  cursor:pointer;background:var(--paper);font-size:12.5px;color:var(--ink-soft);
-}
-
-.search-box{position:relative;margin-bottom:14px;}
-.search-box input{padding-left:36px;}
-.search-box::before{content:'⌕';position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--ink-soft);font-size:16px;}
-
-.pill-scroll{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;margin-bottom:14px;}
-.pill{flex-shrink:0;padding:7px 14px;border-radius:20px;background:#fff;border:1.5px solid var(--line);font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;}
-.pill.active{background:var(--ink);color:#fff;border-color:var(--ink);}
-
-::-webkit-scrollbar{height:5px;width:5px;}
-::-webkit-scrollbar-thumb{background:var(--line);border-radius:10px;}
-
-.warn-box{background:rgba(176,72,59,.08);border:1px solid rgba(176,72,59,.25);color:var(--rust);border-radius:10px;padding:10px 12px;font-size:12.5px;margin-bottom:12px;font-weight:500;}
-.info-box{background:rgba(75,122,90,.08);border:1px solid rgba(75,122,90,.25);color:var(--moss);border-radius:10px;padding:10px 12px;font-size:12.5px;margin-bottom:12px;}
-
-.sync-dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px;}
-.sync-dot.on{background:var(--moss);box-shadow:0 0 0 3px rgba(75,122,90,.15);}
-.sync-dot.off{background:#C7C2B4;}
-.sync-dot.busy{background:var(--amber);animation:pulse 1s infinite;}
-@keyframes pulse{0%,100%{opacity:1;}50%{opacity:.3;}}
-.steps-box{font-size:12px;color:var(--ink-soft);line-height:1.85;background:var(--paper);border-radius:10px;padding:12px 14px;}
-.steps-box b{color:var(--ink);}
-.steps-box a{color:var(--amber);text-decoration:none;font-weight:600;}
-.topbar-sync{display:flex;align-items:center;font-size:10px;color:#9FC2B8;}
-</style>
-</head>
-<body>
-<div id="root"><div id="loadingFallback" style="text-align:center;padding:60px 20px;font-family:sans-serif;color:#5B6A66;">Loading…</div></div>
-<div id="toast"></div>
-
-<script>
-  window.addEventListener('error', function(e){
-    var el = document.getElementById('root');
-    if(el && document.getElementById('loadingFallback')){
-      el.innerHTML = '<div style="max-width:420px;margin:60px auto;padding:20px;font-family:sans-serif;color:#B0483B;background:#FBECEA;border:1px solid #E8B4AE;border-radius:10px;">'
-        + '<b>Something failed to load.</b><br><br>'
-        + 'Message: ' + (e.message || 'unknown error') + '<br>'
-        + (e.filename ? ('File: ' + e.filename + (e.lineno ? (' (line ' + e.lineno + ')') : '') + '<br>') : '')
-        + '<br>Make sure <code>common.js</code> is uploaded in the exact same folder as this file.'
-        + '</div>';
-    }
-  });
-</script>
-<script src="common.js" onerror="document.getElementById('root').innerHTML='<div style=&quot;max-width:420px;margin:60px auto;padding:20px;font-family:sans-serif;color:#B0483B;background:#FBECEA;border:1px solid #E8B4AE;border-radius:10px;&quot;><b>common.js failed to load.</b><br><br>Make sure common.js is uploaded in the exact same folder as this file, with that exact filename.</div>'"></script>
-<script>
-async function loadBootstrap(){
-  const res = await API.call('getBootstrap');
-  if(res.ok){
-    STATE.employees = res.employees || [];
-    STATE.divisions = res.divisions || [];
-    STATE.sheets = res.sheets || [];
-    STATE.orgConfig = res.orgConfig || {};
-    STATE.loaded = true;
+/* All real traffic goes through POST as a single JSON envelope:
+   { action: "...", token: "...", ...actionSpecificFields }
+   Content-Type is left as the fetch() default (text/plain) on the
+   client side specifically so the browser treats it as a "simple
+   request" and skips the CORS preflight — Apps Script web apps
+   deployed with "Anyone" access already return
+   Access-Control-Allow-Origin: * for such simple requests. */
+function doPost(e) {
+  let payload;
+  try {
+    payload = JSON.parse(e.postData.contents);
+  } catch (err) {
+    return jsonOut_({ ok: false, error: 'bad_request' });
   }
-  return res;
-}
 
-/* =========================================================
-   NEW / EDIT OT SHEET
-   ========================================================= */
-let sheetDraft = null;
-
-function freshDraft(){
-  return {
-    id: null,
-    date: new Date().toISOString().slice(0,10),
-    division_id: (STATE.divisions.find(d=>d.active)||{}).id || '',
-    work_description: '',
-    remarks: '',
-    slots: [ {id:uid('slot'), start:'16:00', end:'18:00'} ],
-    employees: [],
-    image: null,
-    created_by: STATE.session ? STATE.session.username : '',
-    created_at: new Date().toISOString()
-  };
-}
-function loadDraftForEdit(sheetId){
-  const s = STATE.sheets.find(x=>x.id===sheetId);
-  sheetDraft = JSON.parse(JSON.stringify(s));
-}
-
-function renderNewSheet(){
-  if(!sheetDraft || (STATE.editingSheetId && sheetDraft.id!==STATE.editingSheetId)){
-    if(STATE.editingSheetId) loadDraftForEdit(STATE.editingSheetId);
-    else sheetDraft = freshDraft();
-  }
-  const divs = STATE.divisions.filter(d=>d.active);
-  const emps = STATE.employees.filter(e=>e.active);
-  const isEdit = !!sheetDraft.id;
-  const allSelected = emps.length>0 && emps.every(e=> sheetDraft.employees.find(x=>x.employee_id===e.id));
-
-  return `
-  <div class="section-head">
-    <div>
-      <h2>${isEdit? t('editSheetTitle') : t('newSheetTitle')}</h2>
-      <div class="sub">${bnum(sheetDraft.date)}</div>
-    </div>
-  </div>
-
-  <div class="card">
-    <div class="card-title"><span class="tag">01</span> ${t('date')} / ${t('division')}</div>
-    <div class="row2">
-      <div class="field">
-        <label>${t('date')}</label>
-        <input type="date" id="fDate" value="${sheetDraft.date}">
-      </div>
-      <div class="field">
-        <label>${t('division')}</label>
-        <select id="fDivision">
-          ${divs.map(d=>`<option value="${d.id}" ${d.id===sheetDraft.division_id?'selected':''}>${esc(STATE.lang==='bn'?d.name_bn:d.name_en)}</option>`).join('')}
-        </select>
-      </div>
-    </div>
-    <div class="field">
-      <label>${t('workDesc')}</label>
-      <textarea id="fWorkDesc" placeholder="${t('workDesc')}">${esc(sheetDraft.work_description||'')}</textarea>
-    </div>
-    <div class="field" style="margin-bottom:0;">
-      <label>${t('remarks')}</label>
-      <textarea id="fRemarks" placeholder="${t('remarks')}">${esc(sheetDraft.remarks||'')}</textarea>
-    </div>
-  </div>
-
-  <div class="card">
-    <div class="card-title"><span class="tag">02</span> ${t('timeSlots')}</div>
-    <div id="slotsList">
-      ${sheetDraft.slots.map((s,i)=>`
-        <div class="slot-item">
-          <span class="mono">${bnum(i+1)}</span>
-          <input type="time" value="${s.start}" data-slot-start="${s.id}" style="flex:1;">
-          <span>→</span>
-          <input type="time" value="${s.end}" data-slot-end="${s.id}" style="flex:1;">
-          ${sheetDraft.slots.length>1?`<button class="btn btn-sm btn-danger" data-slot-del="${s.id}">✕</button>`:''}
-        </div>
-        <div class="hrs-live" id="slothrs-${s.id}" style="margin-top:-6px;">${t('timeHrs')}: ${bnum(trimNum(durationHours(s.start,s.end)))}</div>
-      `).join('')}
-    </div>
-    <button class="btn btn-outline btn-sm" id="btnAddSlot" style="margin-top:4px;">${t('addSlot')}</button>
-  </div>
-
-  <div class="card">
-    <div class="card-title"><span class="tag">03</span> ${t('selectEmployees')}</div>
-    ${emps.length===0? `<div class="empty" style="padding:20px;"><p>${t('noEmployees')}</p></div>` : `
-    <div class="selectall-bar">
-      <span>${bnum(sheetDraft.employees.length)} / ${bnum(emps.length)} ${t('employees')}</span>
-      <button class="btn btn-sm ${allSelected?'btn-outline':'btn-amber'}" id="btnSelectAll">${allSelected? t('deselectAll') : t('selectAll')}</button>
-    </div>
-    <div id="empChecklist">
-      ${emps.map(e=>renderEmpRow(e)).join('')}
-    </div>`}
-  </div>
-
-  <div class="card">
-    <div class="card-title"><span class="tag">04</span> ${t('uploadImage')}</div>
-    <div class="upload-box" id="uploadBox">${sheetDraft.image? '' : '📷 '+t('tapUpload')}</div>
-    <input type="file" id="fileImg" accept="image/*" style="display:none;">
-    <div id="uploadStatus"></div>
-    ${sheetDraft.image? `<img src="${sheetDraft.image}" class="img-thumb" id="imgPreview">` : ''}
-  </div>
-
-  <div id="formErrBox"></div>
-
-  ${sheetDraft.employees.length>0 ? `
-  <button class="btn btn-primary btn-block" id="btnSaveSheet" style="margin-top:6px;">
-    ${isEdit? t('update') : t('save')}
-  </button>` : ''}
-  ${isEdit? `<button class="btn btn-outline btn-block" id="btnCancelEdit" style="margin-top:8px;">${t('cancel')}</button>`:''}
-  `;
-}
-
-function renderEmpRow(e){
-  const inSheet = sheetDraft.employees.find(x=>x.employee_id===e.id);
-  const checked = !!inSheet;
-  return `
-  <div>
-    <div class="emp-row">
-      <div class="emp-check ${checked?'checked':''}" data-emp-toggle="${e.id}">${checked?'✓':''}</div>
-      <div style="flex:1;">
-        <div class="emp-name">${esc(e.name)}</div>
-        <div class="emp-desig">${esc(e.designation)}</div>
-      </div>
-    </div>
-    ${checked? `
-    <div class="slot-adjust">
-      <div class="slot-adjust-title">${t('actualTime')}</div>
-      ${sheetDraft.slots.map((s,i)=>{
-        const adj = inSheet.adjustments.find(a=>a.slot_id===s.id) || {actual_start:s.start, actual_end:s.end};
-        const hrs = durationHours(adj.actual_start, adj.actual_end);
-        return `
-        <div class="row2" style="margin-bottom:6px;">
-          <div>
-            <label style="margin-bottom:3px;">${t('start')} (${bnum(i+1)})</label>
-            <input type="time" value="${adj.actual_start}" data-adj-start="${e.id}|${s.id}">
-          </div>
-          <div>
-            <label style="margin-bottom:3px;">${t('end')} (${bnum(i+1)})</label>
-            <input type="time" value="${adj.actual_end}" data-adj-end="${e.id}|${s.id}">
-          </div>
-        </div>
-        <div class="hrs-live" id="hrs-${e.id}-${s.id}">= ${bnum(trimNum(hrs))} ${t('hours')}</div>`;
-      }).join('')}
-      <div class="hrs-live-total" id="hrstotal-${e.id}">${t('total')}: ${bnum(trimNum(inSheet.adjustments.reduce((sum,a)=>sum+durationHours(a.actual_start,a.actual_end),0)))} ${t('hours')}</div>
-    </div>` : ''}
-  </div>`;
-}
-
-function updateSlotHrsLive(sid){
-  const slot = sheetDraft.slots.find(s=>s.id===sid);
-  if(!slot) return;
-  const hrs = durationHours(slot.start, slot.end);
-  const el = document.getElementById(`slothrs-${sid}`);
-  if(el) el.textContent = `${t('timeHrs')}: ${bnum(trimNum(hrs))}`;
-}
-
-function updateHrsLive(eid, sid){
-  const empEntry = sheetDraft.employees.find(x=>x.employee_id===eid);
-  if(!empEntry) return;
-  const adj = empEntry.adjustments.find(a=>a.slot_id===sid);
-  const hrs = durationHours(adj.actual_start, adj.actual_end);
-  const elS = document.getElementById(`hrs-${eid}-${sid}`);
-  if(elS) elS.textContent = `= ${bnum(trimNum(hrs))} ${t('hours')}`;
-  const total = empEntry.adjustments.reduce((sum,a)=>sum+durationHours(a.actual_start,a.actual_end),0);
-  const elT = document.getElementById(`hrstotal-${eid}`);
-  if(elT) elT.textContent = `${t('total')}: ${bnum(trimNum(total))} ${t('hours')}`;
-}
-
-function bindScreenSpecific(){
-  if(STATE.screen==='new') bindNewSheet();
-  else if(STATE.screen==='records') bindRecords();
-  else if(STATE.screen==='summary') bindSummary();
-  else if(STATE.screen==='settings') bindSettings();
-}
-
-function bindNewSheet(){
-  const byId = id=>document.getElementById(id);
-  if(byId('fDate')) byId('fDate').onchange = e=>{ sheetDraft.date = e.target.value; };
-  if(byId('fDivision')) byId('fDivision').onchange = e=>{ sheetDraft.division_id = e.target.value; };
-  if(byId('fWorkDesc')) byId('fWorkDesc').oninput = e=>{ sheetDraft.work_description = e.target.value; };
-  if(byId('fRemarks')) byId('fRemarks').oninput = e=>{ sheetDraft.remarks = e.target.value; };
-
-  document.querySelectorAll('[data-slot-start]').forEach(el=>{
-    el.onchange = e=>{
-      const sid = el.getAttribute('data-slot-start');
-      sheetDraft.slots.find(s=>s.id===sid).start = e.target.value;
-      updateSlotHrsLive(sid);
-    };
-  });
-  document.querySelectorAll('[data-slot-end]').forEach(el=>{
-    el.onchange = e=>{
-      const sid = el.getAttribute('data-slot-end');
-      sheetDraft.slots.find(s=>s.id===sid).end = e.target.value;
-      updateSlotHrsLive(sid);
-    };
-  });
-  document.querySelectorAll('[data-slot-del]').forEach(el=>{
-    el.onclick = ()=>{
-      const sid = el.getAttribute('data-slot-del');
-      sheetDraft.slots = sheetDraft.slots.filter(s=>s.id!==sid);
-      sheetDraft.employees.forEach(e=>{ e.adjustments = e.adjustments.filter(a=>a.slot_id!==sid); });
-      render();
-    };
-  });
-  const addSlotBtn = byId('btnAddSlot');
-  if(addSlotBtn) addSlotBtn.onclick = ()=>{
-    const newSlot = {id:uid('slot'), start:'16:00', end:'18:00'};
-    sheetDraft.slots.push(newSlot);
-    sheetDraft.employees.forEach(e=>{ e.adjustments.push({slot_id:newSlot.id, actual_start:newSlot.start, actual_end:newSlot.end}); });
-    render();
-  };
-
-  const selectAllBtn = byId('btnSelectAll');
-  if(selectAllBtn) selectAllBtn.onclick = ()=>{
-    const emps = STATE.employees.filter(e=>e.active);
-    const allSelected = emps.every(e=> sheetDraft.employees.find(x=>x.employee_id===e.id));
-    if(allSelected){
-      sheetDraft.employees = [];
+  const action = payload.action;
+  let result;
+  try {
+    if (action === 'login') {
+      result = actionLogin_(payload);
     } else {
-      emps.forEach(e=>{
-        if(!sheetDraft.employees.find(x=>x.employee_id===e.id)){
-          sheetDraft.employees.push({
-            employee_id: e.id,
-            adjustments: sheetDraft.slots.map(s=>({slot_id:s.id, actual_start:s.start, actual_end:s.end}))
-          });
-        }
-      });
-    }
-    render();
-  };
-
-  document.querySelectorAll('[data-emp-toggle]').forEach(el=>{
-    el.onclick = ()=>{
-      const eid = el.getAttribute('data-emp-toggle');
-      const idx = sheetDraft.employees.findIndex(x=>x.employee_id===eid);
-      if(idx>=0){ sheetDraft.employees.splice(idx,1); }
-      else {
-        sheetDraft.employees.push({
-          employee_id: eid,
-          adjustments: sheetDraft.slots.map(s=>({slot_id:s.id, actual_start:s.start, actual_end:s.end}))
-        });
-      }
-      render();
-    };
-  });
-  document.querySelectorAll('[data-adj-start]').forEach(el=>{
-    el.onchange = e=>{
-      const [eid,sid] = el.getAttribute('data-adj-start').split('|');
-      sheetDraft.employees.find(x=>x.employee_id===eid).adjustments.find(a=>a.slot_id===sid).actual_start = e.target.value;
-      updateHrsLive(eid, sid);
-    };
-  });
-  document.querySelectorAll('[data-adj-end]').forEach(el=>{
-    el.onchange = e=>{
-      const [eid,sid] = el.getAttribute('data-adj-end').split('|');
-      sheetDraft.employees.find(x=>x.employee_id===eid).adjustments.find(a=>a.slot_id===sid).actual_end = e.target.value;
-      updateHrsLive(eid, sid);
-    };
-  });
-
-  const uploadBox = byId('uploadBox');
-  const fileInput = byId('fileImg');
-  if(uploadBox) uploadBox.onclick = ()=> fileInput.click();
-  if(fileInput) fileInput.onchange = e=>{
-    const file = e.target.files[0];
-    if(!file) return;
-    const reader = new FileReader();
-    reader.onload = async ev=>{
-      byId('uploadStatus').innerHTML = `<div class="info-box">${t('uploading')}</div>`;
-      try{
-        const res = await API.call('uploadImage', {
-          base64: ev.target.result,
-          filename: `OT_${sheetDraft.date}_${Date.now()}.jpg`,
-          mimeType: file.type || 'image/jpeg'
-        });
-        if(res.ok){ sheetDraft.image = res.url; render(); }
-        else { toast(t('networkErr'), true); byId('uploadStatus').innerHTML=''; }
-      }catch(err){
-        toast(t('networkErr'), true);
-        byId('uploadStatus').innerHTML='';
-      }
-    };
-    reader.readAsDataURL(file);
-  };
-
-  const saveBtn = byId('btnSaveSheet');
-  if(saveBtn) saveBtn.onclick = doSaveSheet;
-  const cancelBtn = byId('btnCancelEdit');
-  if(cancelBtn) cancelBtn.onclick = ()=>{ STATE.editingSheetId = null; sheetDraft = null; STATE.screen = 'records'; render(); };
-}
-
-async function doSaveSheet(){
-  document.getElementById('formErrBox').innerHTML = '';
-  if(!sheetDraft.date || !sheetDraft.division_id){
-    document.getElementById('formErrBox').innerHTML = `<div class="warn-box">${t('fillRequired')}</div>`;
-    return;
-  }
-  if(sheetDraft.employees.length===0){
-    document.getElementById('formErrBox').innerHTML = `<div class="warn-box">${t('selectAtLeastOne')}</div>`;
-    return;
-  }
-  const excludeId = sheetDraft.id;
-  for(const emp of sheetDraft.employees){
-    const intervals = emp.adjustments.map(a=>({start:a.actual_start, end:a.actual_end}));
-    const conflicts = findConflicts(emp.employee_id, sheetDraft.date, intervals, excludeId);
-    if(conflicts.length>0){
-      const empObj = STATE.employees.find(x=>x.id===emp.employee_id);
-      document.getElementById('formErrBox').innerHTML = `<div class="warn-box">⚠ ${esc(empObj? empObj.name:'')} — ${t('overlapErr')}</div>`;
-      return;
-    }
-  }
-
-  const saveBtn = document.getElementById('btnSaveSheet');
-  if(saveBtn) saveBtn.disabled = true;
-
-  try{
-    const res = await API.call('saveSheet', {sheet: sheetDraft});
-    if(!res.ok){
-      if(res.error==='overlap'){
-        const empObj = STATE.employees.find(x=>x.id===res.employee_id);
-        document.getElementById('formErrBox').innerHTML = `<div class="warn-box">⚠ ${esc(empObj?empObj.name:'')} — ${t('overlapErr')}</div>`;
-      } else if(res.error==='unauthorized'){
-        toast(t('sessionExpired'), true);
-        STATE.session = null; render();
+      const sess = validateSession_(payload.token);
+      if (!sess) {
+        result = { ok: false, error: 'unauthorized' };
       } else {
-        document.getElementById('formErrBox').innerHTML = `<div class="warn-box">${t('networkErr')}</div>`;
+        result = dispatchAuthed_(action, payload, sess);
       }
-      if(saveBtn) saveBtn.disabled = false;
-      return;
     }
-    const idx = STATE.sheets.findIndex(s=>s.id===res.sheet.id);
-    if(idx>=0) STATE.sheets[idx] = res.sheet; else STATE.sheets.push(res.sheet);
-    toast(sheetDraft.id ? t('updatedOk') : t('savedOk'));
-    STATE.editingSheetId = null;
-    sheetDraft = null;
-    STATE.screen = 'records';
-    render();
-  }catch(e){
-    document.getElementById('formErrBox').innerHTML = `<div class="warn-box">${t('networkErr')}</div>`;
-    if(saveBtn) saveBtn.disabled = false;
+  } catch (err) {
+    result = { ok: false, error: 'server_error', detail: String(err) };
+  }
+  return jsonOut_(result);
+}
+
+function jsonOut_(obj) {
+  return ContentService.createTextOutput(JSON.stringify(obj))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
+function dispatchAuthed_(action, payload, sess) {
+  switch (action) {
+    case 'logout':          return actionLogout_(payload);
+    case 'verifySession':   return { ok: true, username: sess.username, role: sess.role };
+    case 'getBootstrap':    return actionGetBootstrap_();
+    case 'saveEmployee':    return actionSaveEmployee_(payload, sess);
+    case 'restoreDefaultEmployees': return actionRestoreDefaultEmployees_(payload, sess);
+    case 'deleteEmployee':  return actionDeleteEmployee_(payload, sess);
+    case 'saveDivision':    return actionSaveDivision_(payload, sess);
+    case 'deleteDivision':  return actionDeleteDivision_(payload, sess);
+    case 'saveSheet':       return actionSaveSheet_(payload, sess);
+    case 'deleteSheet':     return actionDeleteSheet_(payload, sess);
+    case 'uploadImage':     return actionUploadImage_(payload, sess);
+    case 'changePassword':  return actionChangePassword_(payload, sess);
+    case 'getOrgConfig':    return { ok: true, orgConfig: sheetKVToObj_(TAB.orgconfig) };
+    case 'saveOrgConfig':   return actionSaveOrgConfig_(payload, sess);
+    case 'generateReport':  return actionGenerateReport_(payload, sess);
+    default:                return { ok: false, error: 'unknown_action' };
   }
 }
 
-/* =========================================================
-   RECORDS
-   ========================================================= */
-let recordsFilter = '';
-function renderRecords(){
-  const all = STATE.sheets.slice().sort((a,b)=> b.date.localeCompare(a.date) || String(b.created_at).localeCompare(String(a.created_at)));
-  const filtered = recordsFilter ? all.filter(s=>{
-    const div = STATE.divisions.find(d=>d.id===s.division_id);
-    const divName = div ? (STATE.lang==='bn'?div.name_bn:div.name_en) : '';
-    return (s.work_description||'').includes(recordsFilter) || (s.remarks||'').includes(recordsFilter) || divName.includes(recordsFilter) || s.date.includes(recordsFilter);
-  }) : all;
+/* ================================================================
+ * FIRST-RUN SETUP / SEED DATA
+ * (called lazily by every action so a brand-new spreadsheet
+ *  self-initializes on first API call)
+ * ================================================================ */
+function ensureSetup_() {
+  const ss = getSS_();
 
-  return `
-  <div class="section-head">
-    <div><h2>${t('recordsTitle')}</h2><div class="sub">${t('recordsSub')} · ${bnum(all.length)} ${t('otSheetsCount')}</div></div>
-  </div>
-  <div class="search-box">
-    <input type="text" id="recSearch" placeholder="${t('searchEmp')}" value="${esc(recordsFilter)}">
-  </div>
-  ${filtered.length===0? `
-    <div class="empty">
-      <div class="ei">🗂️</div>
-      <p>${t('noRecords')}</p>
-      <button class="btn btn-amber" id="btnGoNew" style="margin-top:10px;">${t('createFirst')}</button>
-    </div>` :
-    filtered.map(s=>renderSheetCard(s)).join('')
+  if (!ss.getSheetByName(TAB.users)) {
+    const sh = ss.insertSheet(TAB.users);
+    sh.appendRow(['username', 'password_hash', 'salt', 'role']);
+    seedUser_(sh, 'admin', '123', 'admin');
+    seedUser_(sh, 'user', '123', 'employee');
+    sh.setFrozenRows(1);
   }
-  `;
+
+  if (!ss.getSheetByName(TAB.employees)) {
+    const sh = ss.insertSheet(TAB.employees);
+    sh.appendRow(['id', 'name', 'designation', 'active', 'employee_code', 'basic_salary']);
+    DEFAULT_EMPLOYEES_.forEach(r => sh.appendRow([r[0], r[1], r[2], true, '', '']));
+    sh.setFrozenRows(1);
+  }
+
+  if (!ss.getSheetByName(TAB.divisions)) {
+    const sh = ss.insertSheet(TAB.divisions);
+    sh.appendRow(['id', 'name_bn', 'name_en', 'is_default', 'active']);
+    sh.appendRow(['div1', 'যান্ত্রিক, জিটি, নর্থ', 'Mechanical, GT, North', true, true]);
+    sh.appendRow(['div2', 'যান্ত্রিক, এসটি, নর্থ', 'Mechanical, ST, North', true, true]);
+    sh.setFrozenRows(1);
+  }
+
+  if (!ss.getSheetByName(TAB.otsheets)) {
+    const sh = ss.insertSheet(TAB.otsheets);
+    sh.appendRow(['id', 'date', 'division_id', 'work_description', 'remarks',
+      'image_url', 'slots_json', 'employees_json',
+      'created_by', 'created_at', 'updated_by', 'updated_at']);
+    sh.setFrozenRows(1);
+  }
+
+  if (!ss.getSheetByName(TAB.orgconfig)) {
+    const sh = ss.insertSheet(TAB.orgconfig);
+    sh.appendRow(['key', 'value']);
+    const seed = [
+      ['header_text', 'আশুগঞ্জ ৪৫০ মে.ও. সিসিপিপি (নর্থ) প্লান্টের তত্ত্বাবধায়ক প্রকৌশলী (যান্ত্রিক সংরক্ষণ) জোন-বি দপ্তরের অধীনে যান্ত্রিক (জিটি, এইচআরএসজি ও অক্সিলারি) সংরক্ষন, নর্থ জোন-বি বিভাগে কর্মরত কর্মচারীদের'],
+      ['weekly_header_line1', 'আশুগঞ্জ পাওয়ার স্টেশন কোম্পানী লিঃ (এপিএসসিএল)'],
+      ['weekly_header_line2', 'আশুগঞ্জ, ব্রাহ্মণবাড়িয়া।'],
+      ['weekly_header_line3', 'যান্ত্রিক (জিটি, এইচআরএসজি ও অক্সিলারিজ), নর্থ, জোন-বি'],
+      ['sig1', 'সহকারী/উপ-বিভাগীয় প্রকৌশলী (যান্ত্রিক)\nআশুগঞ্জ ৪৫০মেঃওঃ সিসিপিপি (নর্থ)\nএপিএসসিএল'],
+      ['sig2', 'নির্বাহী প্রকৌশলী (যান্ত্রিক)\nআশুগঞ্জ ৪৫০মেঃওঃ সিসিপিপি (নর্থ)\nএপিএসসিএল'],
+      ['sig3', 'তত্ত্বাবধায়ক প্রকৌশলী (যান্ত্রিক)\nআশুগঞ্জ ৪৫০মেঃওঃ সিসিপিপি (নর্থ)\nএপিএসসিএল'],
+      ['sig4', 'প্রধান প্রকৌশলী\nআশুগঞ্জ ৪৫০মেঃওঃ সিসিপিপি (নর্থ)\nএপিএসসিএল'],
+      ['sig5', 'নির্বাহী পরিচালক (প্রকৌশল)\nএপিএসসিএল'],
+      ['sig6', 'ব্যবস্থাপনা পরিচালক\nএপিএসসিএল']
+    ];
+    seed.forEach(r => sh.appendRow(r));
+    sh.setFrozenRows(1);
+  }
 }
 
-function renderSheetCard(s){
-  const div = STATE.divisions.find(d=>d.id===s.division_id);
-  const divName = div ? (STATE.lang==='bn'?div.name_bn:div.name_en) : t('na');
-  const empCount = s.employees.length;
-  let totalHrs = 0;
-  const empLines = s.employees.map(e=>{
-    const emp = STATE.employees.find(x=>x.id===e.employee_id) || {name:'?'};
-    let hrs = 0;
-    const times = e.adjustments.map(a=>{
-      hrs += durationHours(a.actual_start,a.actual_end);
-      return `${bnum(fmtHM(a.actual_start))}–${bnum(fmtHM(a.actual_end))}`;
-    }).join(', ');
-    totalHrs += hrs;
-    return `<div class="sheet-emp-line"><b>${esc(emp.name)}</b><span class="t">${times}</span><span class="t">${bnum(trimNum(hrs))} ${t('hours')}</span></div>`;
-  }).join('');
-  return `
-  <div class="sheet-card">
-    <div class="date-block">${bnum(s.date)}</div>
-    <h4>${esc(divName)}</h4>
-    <p>${esc((s.work_description||'').slice(0,120)) || t('na')}</p>
-    <div class="sheet-emp-list">${empLines}</div>
-    <div class="sheet-meta">
-      <span class="badge badge-amber">${bnum(empCount)} ${t('employees')}</span>
-      <span class="badge badge-moss">${bnum(totalHrs.toFixed(2))} ${t('hours')}</span>
-      ${s.image? `<span class="badge badge-gray">📷</span>`:''}
-    </div>
-    <div class="sheet-actions">
-      <button class="btn btn-outline btn-sm" data-view="${s.id}">${t('view')}</button>
-      <button class="btn btn-ghost btn-sm" data-edit="${s.id}">${t('edit')}</button>
-      <button class="btn btn-danger btn-sm" data-del="${s.id}">${t('del')}</button>
-    </div>
-  </div>`;
+function seedUser_(sheet, username, plainPassword, role) {
+  const salt = makeSalt_();
+  const hash = hashPassword_(plainPassword, salt);
+  sheet.appendRow([username, hash, salt, role]);
 }
 
-function bindRecords(){
-  const search = document.getElementById('recSearch');
-  if(search) search.oninput = e=>{ recordsFilter = e.target.value; render(); };
-  const goNew = document.getElementById('btnGoNew');
-  if(goNew) goNew.onclick = ()=>{ STATE.screen='new'; sheetDraft=null; render(); };
-  document.querySelectorAll('[data-view]').forEach(el=>{ el.onclick = ()=> openViewModal(el.getAttribute('data-view')); });
-  document.querySelectorAll('[data-edit]').forEach(el=>{
-    el.onclick = ()=>{ STATE.editingSheetId = el.getAttribute('data-edit'); sheetDraft = null; STATE.screen = 'new'; render(); };
+/* ================================================================
+ * PASSWORD HASHING (salted SHA-256; no plaintext ever stored)
+ * ================================================================ */
+function makeSalt_() {
+  return Utilities.getUuid().replace(/-/g, '');
+}
+function hashPassword_(password, salt) {
+  const bytes = Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, password + ':' + salt, Utilities.Charset.UTF_8);
+  return bytes.map(b => (b < 0 ? b + 256 : b).toString(16).padStart(2, '0')).join('');
+}
+
+/* ================================================================
+ * SESSIONS  (CacheService — shared across all users/devices,
+ * sliding expiry refreshed on every valid request)
+ * ================================================================ */
+function newToken_() {
+  return Utilities.getUuid() + Utilities.getUuid();
+}
+function validateSession_(token) {
+  if (!token) return null;
+  const cache = CacheService.getScriptCache();
+  const raw = cache.get('sess_' + token);
+  if (!raw) return null;
+  const sess = JSON.parse(raw);
+  cache.put('sess_' + token, raw, SESSION_TTL_SECONDS); // refresh sliding TTL
+  return sess;
+}
+
+/* ================================================================
+ * BRUTE-FORCE PROTECTION
+ * ================================================================ */
+function loginAllowed_(username) {
+  const cache = CacheService.getScriptCache();
+  const raw = cache.get('fail_' + username);
+  const count = raw ? parseInt(raw, 10) : 0;
+  return count < MAX_FAILED_LOGINS;
+}
+function recordFailedLogin_(username) {
+  const cache = CacheService.getScriptCache();
+  const raw = cache.get('fail_' + username);
+  const count = raw ? parseInt(raw, 10) : 0;
+  cache.put('fail_' + username, String(count + 1), LOGIN_LOCKOUT_SECONDS);
+}
+function clearFailedLogin_(username) {
+  CacheService.getScriptCache().remove('fail_' + username);
+}
+
+/* ================================================================
+ * AUTH ACTIONS
+ * ================================================================ */
+function actionLogin_(payload) {
+  ensureSetup_();
+  const username = String(payload.username || '').trim();
+  const password = String(payload.password || '');
+  if (!username || !password) return { ok: false, error: 'missing_credentials' };
+
+  if (!loginAllowed_(username)) {
+    return { ok: false, error: 'locked_out' };
+  }
+
+  const users = sheetToObjects_(TAB.users);
+  const user = users.find(u => String(u.username).trim() === username);
+  if (!user) { recordFailedLogin_(username); return { ok: false, error: 'invalid' }; }
+
+  const computed = hashPassword_(password, user.salt);
+  if (computed !== user.password_hash) {
+    recordFailedLogin_(username);
+    return { ok: false, error: 'invalid' };
+  }
+
+  clearFailedLogin_(username);
+  const token = newToken_();
+  const cache = CacheService.getScriptCache();
+  cache.put('sess_' + token, JSON.stringify({ username: user.username, role: user.role }), SESSION_TTL_SECONDS);
+
+  return { ok: true, token: token, username: user.username, role: user.role };
+}
+
+function actionLogout_(payload) {
+  if (payload.token) CacheService.getScriptCache().remove('sess_' + payload.token);
+  return { ok: true };
+}
+
+function actionChangePassword_(payload, sess) {
+  // Admin can change either account's password; an employee may only change their own.
+  const targetRole = payload.role;
+  if (sess.role !== 'admin' && targetRole !== sess.role) {
+    return { ok: false, error: 'forbidden' };
+  }
+  const sh = getSS_().getSheetByName(TAB.users);
+  const data = sh.getDataRange().getValues();
+  for (let i = 1; i < data.length; i++) {
+    if (data[i][3] === targetRole) {
+      const salt = makeSalt_();
+      const hash = hashPassword_(payload.newPassword, salt);
+      sh.getRange(i + 1, 2).setValue(hash); // password_hash
+      sh.getRange(i + 1, 3).setValue(salt); // salt
+      return { ok: true };
+    }
+  }
+  return { ok: false, error: 'not_found' };
+}
+
+/* Report Settings (header text / weekly header lines / officer names) —
+   admin only, used to fill in the formal report letterhead & signatures. */
+function actionSaveOrgConfig_(payload, sess) {
+  if (sess.role !== 'admin') return { ok: false, error: 'forbidden' };
+  ensureSetup_();
+  const cfg = payload.orgConfig || {};
+  const sh = getSS_().getSheetByName(TAB.orgconfig);
+  const rows = Object.keys(cfg).map(k => [k, cfg[k] || '']);
+  const lastRow = sh.getLastRow();
+  if (lastRow > 1) sh.getRange(2, 1, lastRow - 1, 2).clearContent();
+  if (rows.length) sh.getRange(2, 1, rows.length, 2).setValues(rows);
+  return { ok: true };
+}
+
+/* ================================================================
+ * GENERIC SHEET <-> OBJECT HELPERS
+ * ================================================================ */
+function headersOf_(sh) { return sh.getRange(1, 1, 1, sh.getLastColumn()).getValues()[0]; }
+
+function sheetToObjects_(tabName) {
+  const sh = getSS_().getSheetByName(tabName);
+  const values = sh.getDataRange().getValues();
+  const headers = values.shift();
+  return values
+    .filter(row => row.some(c => c !== '' && c !== null))
+    .map(row => {
+      const obj = {};
+      headers.forEach((h, i) => { obj[h] = row[i]; });
+      return obj;
+    });
+}
+function sheetKVToObj_(tabName) {
+  const sh = getSS_().getSheetByName(tabName);
+  if (!sh) return {};
+  const data = sh.getDataRange().getValues();
+  const out = {};
+  for (let i = 1; i < data.length; i++) {
+    if (data[i][0] !== '') out[data[i][0]] = data[i][1];
+  }
+  return out;
+}
+function findRowIndexById_(sh, headers, id) {
+  const idCol = headers.indexOf('id');
+  const data = sh.getDataRange().getValues();
+  for (let i = 1; i < data.length; i++) {
+    if (String(data[i][idCol]) === String(id)) return i + 1;
+  }
+  return -1;
+}
+function safeParse_(str, fallback) {
+  try { return str ? JSON.parse(str) : fallback; } catch (e) { return fallback; }
+}
+function formatDateVal_(v) {
+  if (Object.prototype.toString.call(v) === '[object Date]') {
+    return Utilities.formatDate(v, Session.getScriptTimeZone(), 'yyyy-MM-dd');
+  }
+  return v;
+}
+function newId_(prefix) { return prefix + '_' + Utilities.getUuid().slice(0, 8); }
+function isTruthyCell_(v) {
+  if (v === true) return true;
+  if (typeof v === 'string') return ['true', 'TRUE', '1', 'yes'].includes(v.trim());
+  if (typeof v === 'number') return v === 1;
+  return false;
+}
+
+/* ================================================================
+ * BOOTSTRAP (everything the app needs after login)
+ * ================================================================ */
+function actionGetBootstrap_() {
+  ensureSetup_();
+  const employees = sheetToObjects_(TAB.employees).map(e => ({
+    id: e.id, name: e.name, designation: e.designation,
+    active: isTruthyCell_(e.active), employee_code: e.employee_code || '', basic_salary: e.basic_salary || ''
+  }));
+  const divisions = sheetToObjects_(TAB.divisions).map(d => ({
+    id: d.id, name_bn: d.name_bn, name_en: d.name_en,
+    is_default: isTruthyCell_(d.is_default), active: isTruthyCell_(d.active)
+  }));
+  const rawSheets = sheetToObjects_(TAB.otsheets);
+  const sheets = rawSheets.map(r => ({
+    id: r.id, date: formatDateVal_(r.date), division_id: r.division_id,
+    work_description: r.work_description, remarks: r.remarks, image: r.image_url || '',
+    slots: safeParse_(r.slots_json, []), employees: safeParse_(r.employees_json, []),
+    created_by: r.created_by, created_at: r.created_at, updated_by: r.updated_by, updated_at: r.updated_at
+  }));
+  const orgConfig = sheetKVToObj_(TAB.orgconfig);
+  return { ok: true, employees, divisions, sheets, orgConfig };
+}
+
+/* ================================================================
+ * EMPLOYEES  (add = admin only; edit/delete = any logged-in user)
+ * ================================================================ */
+function actionSaveEmployee_(payload, sess) {
+  const emp = payload.employee || {};
+  const isNew = !emp.id;
+  if (isNew && sess.role !== 'admin') return { ok: false, error: 'forbidden' };
+
+  const sh = getSS_().getSheetByName(TAB.employees);
+  const headers = headersOf_(sh);
+  if (isNew) emp.id = newId_('emp');
+  const rowVals = headers.map(h => (emp[h] !== undefined ? emp[h] : ''));
+  const rowIdx = findRowIndexById_(sh, headers, emp.id);
+
+  if (isNew) {
+    // insert new employees at the top (row 2), just under the header
+    sh.insertRowAfter(1);
+    sh.getRange(2, 1, 1, headers.length).setValues([rowVals]);
+  } else if (rowIdx > 0) {
+    sh.getRange(rowIdx, 1, 1, headers.length).setValues([rowVals]);
+  } else {
+    sh.appendRow(rowVals);
+  }
+  return { ok: true, employee: emp };
+}
+
+/* Adds back any of the 6 default roster members that are missing (matched
+   by exact name), inserted at the top, in their original order. Admin only. */
+function actionRestoreDefaultEmployees_(payload, sess) {
+  if (sess.role !== 'admin') return { ok: false, error: 'forbidden' };
+  const sh = getSS_().getSheetByName(TAB.employees);
+  const headers = headersOf_(sh);
+  const existing = sheetToObjects_(TAB.employees);
+  const missing = DEFAULT_EMPLOYEES_.filter(row => !existing.find(e => e.name === row[1]));
+  const added = [];
+  missing.slice().reverse().forEach(row => {
+    const emp = { id: newId_('emp'), name: row[1], designation: row[2], active: true, employee_code: '', basic_salary: '' };
+    const rowVals = headers.map(h => (emp[h] !== undefined ? emp[h] : ''));
+    sh.insertRowAfter(1);
+    sh.getRange(2, 1, 1, headers.length).setValues([rowVals]);
+    added.unshift(emp);
   });
-  document.querySelectorAll('[data-del]').forEach(el=>{ el.onclick = ()=> openDeleteConfirm(el.getAttribute('data-del')); });
+  return { ok: true, added: added };
 }
 
-function openViewModal(sheetId){
-  const s = STATE.sheets.find(x=>x.id===sheetId);
-  const div = STATE.divisions.find(d=>d.id===s.division_id);
-  const divName = div ? (STATE.lang==='bn'?div.name_bn:div.name_en) : t('na');
-  const empRows = s.employees.map(e=>{
-    const emp = STATE.employees.find(x=>x.id===e.employee_id) || {name:'?',designation:''};
-    const hrs = e.adjustments.reduce((sum,a)=>sum+durationHours(a.actual_start,a.actual_end),0);
-    const times = e.adjustments.map(a=>`${bnum(fmtHM(a.actual_start))}–${bnum(fmtHM(a.actual_end))}`).join(', ');
-    return `<div class="emp-row"><div style="flex:1;">
-      <div class="emp-name">${esc(emp.name)}</div>
-      <div class="emp-desig">${esc(emp.designation)} · ${times}</div>
-    </div><span class="badge badge-moss">${bnum(hrs.toFixed(2))}${t('hours')}</span></div>`;
-  }).join('');
-
-  const modal = document.createElement('div');
-  modal.className = 'modal-bg';
-  modal.innerHTML = `
-    <div class="modal-box">
-      <div class="modal-handle"></div>
-      <div class="modal-title">${bnum(s.date)} — ${esc(divName)}</div>
-      <div class="modal-sub">${esc(s.work_description) || t('na')}</div>
-      ${s.remarks? `<div class="info-box">${esc(s.remarks)}</div>`:''}
-      <div class="divider"></div>
-      ${empRows}
-      ${s.image? `<img src="${s.image}" class="img-thumb">
-        <a href="${s.image}" target="_blank" class="btn btn-outline btn-block btn-sm" style="margin-top:8px;text-decoration:none;">${t('view')}</a>` : ''}
-      <button class="btn btn-primary btn-block" id="btnCloseModal" style="margin-top:14px;">${t('close')}</button>
-    </div>`;
-  document.body.appendChild(modal);
-  modal.onclick = e=>{ if(e.target===modal) modal.remove(); };
-  modal.querySelector('#btnCloseModal').onclick = ()=> modal.remove();
+function actionDeleteEmployee_(payload, sess) {
+  if (sess.role !== 'admin') return { ok: false, error: 'forbidden' };
+  const sh = getSS_().getSheetByName(TAB.employees);
+  const headers = headersOf_(sh);
+  const rowIdx = findRowIndexById_(sh, headers, payload.id);
+  if (rowIdx > 0) sh.deleteRow(rowIdx);
+  return { ok: true };
 }
 
-function openDeleteConfirm(sheetId){
-  const modal = document.createElement('div');
-  modal.className = 'modal-bg center';
-  modal.innerHTML = `
-    <div class="modal-box" style="border-radius:18px;">
-      <div class="modal-title">${t('del')}?</div>
-      <div class="modal-sub">${t('confirmDelete')}</div>
-      <div style="display:flex;gap:8px;margin-top:16px;">
-        <button class="btn btn-outline btn-block" id="btnNo">${t('cancel')}</button>
-        <button class="btn btn-danger btn-block" style="background:var(--rust);color:#fff;" id="btnYes">${t('yesDelete')}</button>
-      </div>
-    </div>`;
-  document.body.appendChild(modal);
-  modal.querySelector('#btnNo').onclick = ()=> modal.remove();
-  modal.querySelector('#btnYes').onclick = async ()=>{
-    try{
-      const res = await API.call('deleteSheet', {id: sheetId});
-      if(res.ok){
-        STATE.sheets = STATE.sheets.filter(s=>s.id!==sheetId);
-        toast(t('deletedOk'));
-      } else { toast(t('networkErr'), true); }
-    }catch(e){ toast(t('networkErr'), true); }
-    modal.remove();
-    render();
+/* ================================================================
+ * DIVISIONS  (add/delete = any logged-in user; default undeletable)
+ * ================================================================ */
+function actionSaveDivision_(payload, sess) {
+  const div = payload.division || {};
+  const sh = getSS_().getSheetByName(TAB.divisions);
+  const headers = headersOf_(sh);
+  if (!div.id) div.id = newId_('div');
+  if (div.is_default === undefined) div.is_default = false;
+  if (div.active === undefined) div.active = true;
+  const rowVals = headers.map(h => (div[h] !== undefined ? div[h] : ''));
+  const rowIdx = findRowIndexById_(sh, headers, div.id);
+  if (rowIdx > 0) sh.getRange(rowIdx, 1, 1, headers.length).setValues([rowVals]);
+  else sh.appendRow(rowVals);
+  return { ok: true, division: div };
+}
+
+function actionDeleteDivision_(payload, sess) {
+  const sh = getSS_().getSheetByName(TAB.divisions);
+  const headers = headersOf_(sh);
+  const rowIdx = findRowIndexById_(sh, headers, payload.id);
+  if (rowIdx < 1) return { ok: false, error: 'not_found' };
+  const isDefaultCol = headers.indexOf('is_default');
+  if (sh.getRange(rowIdx, isDefaultCol + 1).getValue() === true) {
+    return { ok: false, error: 'default' };
+  }
+  sh.deleteRow(rowIdx);
+  return { ok: true };
+}
+
+/* ================================================================
+ * OT SHEETS  (add/edit/delete = any logged-in user)
+ * ================================================================ */
+function toMin_(hhmm) {
+  if (!hhmm) return null;
+  const p = String(hhmm).split(':').map(Number);
+  return p[0] * 60 + p[1];
+}
+function overlaps_(aS, aE, bS, bE) {
+  let as = toMin_(aS), ae = toMin_(aE), bs = toMin_(bS), be = toMin_(bE);
+  if (as === null || ae === null || bs === null || be === null) return false;
+  if (ae <= as) ae += 1440;
+  if (be <= bs) be += 1440;
+  return as < be && bs < ae;
+}
+function checkOverlap_(payload) {
+  const rows = sheetToObjects_(TAB.otsheets);
+  for (const r of rows) {
+    if (String(r.id) === String(payload.id)) continue;
+    if (formatDateVal_(r.date) !== payload.date) continue;
+    const existingEmps = safeParse_(r.employees_json, []);
+    for (const pe of (payload.employees || [])) {
+      const existing = existingEmps.find(e => e.employee_id === pe.employee_id);
+      if (!existing) continue;
+      for (const pa of (pe.adjustments || [])) {
+        for (const ea of (existing.adjustments || [])) {
+          if (overlaps_(pa.actual_start, pa.actual_end, ea.actual_start, ea.actual_end)) {
+            return pe.employee_id;
+          }
+        }
+      }
+    }
+  }
+  return null;
+}
+
+function actionSaveSheet_(payload, sess) {
+  const sheetData = payload.sheet || {};
+  ensureSetup_();
+  const sh = getSS_().getSheetByName(TAB.otsheets);
+  const headers = headersOf_(sh);
+
+  if (!sheetData.id) sheetData.id = newId_('sheet');
+
+  const conflictEmpId = checkOverlap_(sheetData);
+  if (conflictEmpId) return { ok: false, error: 'overlap', employee_id: conflictEmpId };
+
+  const now = new Date().toISOString();
+  const row = {
+    id: sheetData.id, date: sheetData.date, division_id: sheetData.division_id,
+    work_description: sheetData.work_description || '', remarks: sheetData.remarks || '',
+    image_url: sheetData.image || '',
+    slots_json: JSON.stringify(sheetData.slots || []),
+    employees_json: JSON.stringify(sheetData.employees || []),
+    created_by: sheetData.created_by || sess.username,
+    created_at: sheetData.created_at || now,
+    updated_by: sess.username, updated_at: now
+  };
+  const rowVals = headers.map(h => (row[h] !== undefined ? row[h] : ''));
+  const rowIdx = findRowIndexById_(sh, headers, sheetData.id);
+  if (rowIdx > 0) sh.getRange(rowIdx, 1, 1, headers.length).setValues([rowVals]);
+  else sh.appendRow(rowVals);
+
+  return {
+    ok: true,
+    sheet: {
+      id: row.id, date: row.date, division_id: row.division_id,
+      work_description: row.work_description, remarks: row.remarks, image: row.image_url,
+      slots: sheetData.slots || [], employees: sheetData.employees || [],
+      created_by: row.created_by, created_at: row.created_at,
+      updated_by: row.updated_by, updated_at: row.updated_at
+    }
   };
 }
 
-/* =========================================================
-   SUMMARY
-   ========================================================= */
-function currentMonthStr(){ const d=new Date(); return d.toISOString().slice(0,7); }
-let summaryMonth = currentMonthStr();
-function daysInMonth(ym){ const [y,m] = ym.split('-').map(Number); return new Date(y, m, 0).getDate(); }
+function actionDeleteSheet_(payload, sess) {
+  const sh = getSS_().getSheetByName(TAB.otsheets);
+  const headers = headersOf_(sh);
+  const rowIdx = findRowIndexById_(sh, headers, payload.id);
+  if (rowIdx > 0) sh.deleteRow(rowIdx);
+  return { ok: true };
+}
 
-function computeMonthlyData(ym){
-  const dim = daysInMonth(ym);
-  const data = STATE.employees.map(e=>({emp:e, sheetsCount:0, totalHours:0, days:new Array(dim+1).fill(0)}));
-  STATE.sheets.forEach(s=>{
-    if(!s.date.startsWith(ym)) return;
-    const day = Number(s.date.split('-')[2]);
-    s.employees.forEach(se=>{
-      const rec = data.find(d=>d.emp.id===se.employee_id);
-      if(!rec) return;
+/* ================================================================
+ * IMAGE UPLOAD  (Drive access happens only here, server-side)
+ * ================================================================ */
+function getOrCreateFolder_(name) {
+  const it = DriveApp.getFoldersByName(name);
+  if (it.hasNext()) return it.next();
+  return DriveApp.createFolder(name);
+}
+function actionUploadImage_(payload, sess) {
+  const folder = getOrCreateFolder_('OT_Record_Images');
+  const base64Data = payload.base64 || '';
+  const pureBase64 = base64Data.indexOf(',') >= 0 ? base64Data.split(',').pop() : base64Data;
+  const bytes = Utilities.base64Decode(pureBase64);
+  const blob = Utilities.newBlob(bytes, payload.mimeType || 'image/jpeg', payload.filename || ('ot_' + Date.now() + '.jpg'));
+  const file = folder.createFile(blob);
+  file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+  return { ok: true, url: 'https://drive.google.com/uc?export=view&id=' + file.getId() };
+}
+
+/* ================================================================
+ * FORMAL REPORT GENERATOR (4 sheets, matches the uploaded Book.xlsx
+ * template exactly: layout, fonts, column widths, row heights, and
+ * native Excel conditional formatting on hours > 0).
+ *
+ * Built server-side because only Apps Script/Google Sheets has a
+ * real conditional-formatting API; a fresh temp Spreadsheet is
+ * built, exported to true .xlsx via Drive's export endpoint (which
+ * preserves the CF rules as native Excel conditional formatting),
+ * then the temp file is trashed.
+ *
+ * Fixed template text (headers/signatures) is hardcoded below,
+ * matching the template verbatim — not user-editable, per "follow
+ * as it is" instruction.
+ * ================================================================ */
+const BN_DIGITS_ = ['০','১','২','৩','৪','৫','৬','৭','৮','৯'];
+const BN_MONTHS_ = ['জানুয়ারি','ফেব্রুয়ারি','মার্চ','এপ্রিল','মে','জুন','জুলাই','আগস্ট','সেপ্টেম্বর','অক্টোবর','নভেম্বর','ডিসেম্বর'];
+const EN_MONTHS_ = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+
+/* Builds the downloaded file's name: "OT Report <Month>-<Year>-downloaded @<DD-MM-YYYY>.xlsx"
+   Note: "/" is not a valid filename character (browsers/OS mangle or reject
+   it), so the download-date portion uses "-" instead of "/". */
+function buildReportFilename_(ym) {
+  const parts = ym.split('-');
+  const monthName = EN_MONTHS_[parseInt(parts[1], 10) - 1];
+  const year = parts[0];
+  const now = new Date();
+  const tz = Session.getScriptTimeZone();
+  const dd = Utilities.formatDate(now, tz, 'dd');
+  const mm = Utilities.formatDate(now, tz, 'MM');
+  const yyyy = Utilities.formatDate(now, tz, 'yyyy');
+  return 'OT Report ' + monthName + '-' + year + '-downloaded @' + dd + '-' + mm + '-' + yyyy + '.xlsx';
+}
+const ORD_WEEK_ = ['১ম সপ্তাহ', '২য় সপ্তাহ', '৩য় সপ্তাহ', '৪র্থ সপ্তাহ', '৫ম সপ্তাহ'];
+const CF_FILL = '#FFC7CE';
+const CF_FONT = '#9C0006';
+const TEMPLATE_FONT = 'NikoshBAN'; // exact font used throughout the template; Excel renders it correctly on machines that have it installed
+
+/* fixed template text — matches Book.xlsx verbatim */
+const RPT_DEFAULTS_ = {
+  header_text: 'আশুগঞ্জ ৪৫০ মে.ও. সিসিপিপি (নর্থ) প্লান্টের তত্ত্বাবধায়ক প্রকৌশলী (যান্ত্রিক সংরক্ষণ) জোন-বি দপ্তরের অধীনে যান্ত্রিক (জিটি, এইচআরএসজি ও অক্সিলারি) সংরক্ষন, নর্থ জোন-বি বিভাগে কর্মরত কর্মচারীদের',
+  weekly_header_line1: 'আশুগঞ্জ পাওয়ার স্টেশন কোম্পানী লিঃ (এপিএসসিএল)',
+  weekly_header_line2: 'আশুগঞ্জ, ব্রাহ্মণবাড়িয়া।',
+  weekly_header_line3: 'যান্ত্রিক (জিটি, এইচআরএসজি ও অক্সিলারিজ), নর্থ, জোন-বি',
+  sig1: 'সহকারী/উপ-বিভাগীয় প্রকৌশলী (যান্ত্রিক)\nআশুগঞ্জ ৪৫০মেঃওঃ সিসিপিপি (নর্থ)\nএপিএসসিএল',
+  sig2: 'নির্বাহী প্রকৌশলী (যান্ত্রিক)\nআশুগঞ্জ ৪৫০মেঃওঃ সিসিপিপি (নর্থ)\nএপিএসসিএল',
+  sig3: 'তত্ত্বাবধায়ক প্রকৌশলী (যান্ত্রিক)\nআশুগঞ্জ ৪৫০মেঃওঃ সিসিপিপি (নর্থ)\nএপিএসসিএল',
+  sig4: 'প্রধান প্রকৌশলী\nআশুগঞ্জ ৪৫০মেঃওঃ সিসিপিপি (নর্থ)\nএপিএসসিএল',
+  sig5: 'নির্বাহী পরিচালক (প্রকৌশল)\nএপিএসসিএল',
+  sig6: 'ব্যবস্থাপনা পরিচালক\nএপিএসসিএল'
+};
+/* Admin-editable via the Report Settings tab; falls back to the
+   template's original text if a field is blank/missing. */
+function getReportSettings_() {
+  const stored = sheetKVToObj_(TAB.orgconfig);
+  const cfg = {};
+  Object.keys(RPT_DEFAULTS_).forEach(k => { cfg[k] = (stored[k] && String(stored[k]).trim()) ? stored[k] : RPT_DEFAULTS_[k]; });
+  return cfg;
+}
+
+function bnForce_(input) {
+  if (input === null || input === undefined) return '';
+  return String(input).replace(/[0-9]/g, d => BN_DIGITS_[+d]);
+}
+function ymLabel_(ym) {
+  const p = ym.split('-'); const y = parseInt(p[0], 10), m = parseInt(p[1], 10);
+  return BN_MONTHS_[m - 1] + ' ' + bnForce_(y) + 'ইং';
+}
+function bnDateDMY_(iso) {
+  const p = iso.split('-');
+  return bnForce_(parseInt(p[2], 10)) + '/' + bnForce_(parseInt(p[1], 10)) + '/' + bnForce_(parseInt(p[0], 10));
+}
+function trimNum_(n) { return Math.round(n * 100) / 100; }
+function toMin2_(hhmm) {
+  if (!hhmm) return null;
+  const p = String(hhmm).split(':');
+  return parseInt(p[0], 10) * 60 + parseInt(p[1], 10);
+}
+function durationHours2_(s, e) {
+  let a = toMin2_(s), b = toMin2_(e);
+  if (a === null || b === null) return 0;
+  if (b <= a) b += 1440;
+  return Math.round(((b - a) / 60) * 100) / 100;
+}
+function daysInMonth_(ym) {
+  const p = ym.split('-');
+  return new Date(parseInt(p[0], 10), parseInt(p[1], 10), 0).getDate();
+}
+function weekRangesFor_(dim) {
+  return [[1, 7], [8, 14], [15, 21], [22, 28], [29, dim]].filter(r => r[0] <= dim);
+}
+/* the summary sheets (weekly/monthly/monthly_as_per_Week) show a shorter
+   name form without the "জনাব" honorific — matches the template exactly;
+   Entry Form keeps the full formal name. */
+function stripHonorific_(name) {
+  return String(name || '').replace(/^জনাব\s+/, '');
+}
+
+/* Writes the work description into a cell, with the division name appended
+   on its own line in bold+italic — a single cell can't mix two font styles
+   via setValue(), so this uses Apps Script's RichTextValue API. */
+function setWorkDescriptionWithDivision_(range, workDescription, divisionName) {
+  if (!divisionName) {
+    range.setValue(workDescription);
+    range.setFontFamily(TEMPLATE_FONT).setFontSize(11).setFontWeight('normal').setFontStyle('normal');
+    return;
+  }
+  const fullText = workDescription ? (workDescription + '\n' + divisionName) : divisionName;
+  // Font family/size are baked into each TextStyle segment itself, so no
+  // later blanket range.setFontWeight()/setFontFamily() call can reset the
+  // division name's bold+italic styling back to normal.
+  const normalStyle = SpreadsheetApp.newTextStyle().setFontFamily(TEMPLATE_FONT).setFontSize(11).setBold(false).setItalic(false).build();
+  const divStyle = SpreadsheetApp.newTextStyle().setFontFamily(TEMPLATE_FONT).setFontSize(11).setBold(true).setItalic(true).build();
+  const descLen = workDescription ? workDescription.length : 0;
+  const builder = SpreadsheetApp.newRichTextValue().setText(fullText);
+  if (descLen > 0) builder.setTextStyle(0, descLen, normalStyle);
+  builder.setTextStyle(descLen, fullText.length, divStyle);
+  range.setRichTextValue(builder.build());
+}
+
+/* New sheets default to a 26-column (A–Z) grid. The monthly sheet needs
+   up to 35 columns for a 31-day month, so writing/merging beyond column
+   26 without expanding first throws "coordinates ... out of bounds". */
+function ensureColumns_(sh, neededCols) {
+  const current = sh.getMaxColumns();
+  if (current < neededCols) {
+    sh.insertColumnsAfter(current, neededCols - current);
+  }
+}
+
+function excelColWidthToPx_(w) { return Math.round(w * 7 + 5); }
+function excelRowHeightToPx_(pts) { return Math.round(pts * 4 / 3); }
+function setColWidthRange_(sh, fromCol, toCol, excelWidth) {
+  const px = excelColWidthToPx_(excelWidth);
+  for (let c = fromCol; c <= toCol; c++) sh.setColumnWidth(c, px);
+}
+function styleTableRange_(range, opts) {
+  opts = opts || {};
+  range.setFontFamily(TEMPLATE_FONT);
+  if (opts.size) range.setFontSize(opts.size);
+  if (opts.bold !== undefined) range.setFontWeight(opts.bold ? 'bold' : 'normal');
+  range.setHorizontalAlignment(opts.hAlign || 'center');
+  range.setVerticalAlignment(opts.vAlign || 'middle');
+  // WRAP so all cell content is visible; row heights are auto-fit (or the
+  // cell is deliberately merged across extra rows for known long content)
+  // to avoid Google Sheets' Bengali grapheme-cluster wrap bug forcing a
+  // mid-word break, which only happens when a single word can't fit the
+  // column width at all.
+  if (opts.wrap) range.setWrapStrategy(SpreadsheetApp.WrapStrategy.WRAP);
+  if (opts.border !== false) range.setBorder(true, true, true, true, true, true, '#000000', SpreadsheetApp.BorderStyle.SOLID);
+  return range;
+}
+function styleFreeText_(range, opts) {
+  opts = opts || {};
+  range.setFontFamily(TEMPLATE_FONT);
+  if (opts.size) range.setFontSize(opts.size);
+  if (opts.bold !== undefined) range.setFontWeight(opts.bold ? 'bold' : 'normal');
+  range.setHorizontalAlignment(opts.hAlign || 'center');
+  range.setVerticalAlignment(opts.vAlign || 'top');
+  if (opts.wrap !== false) range.setWrapStrategy(SpreadsheetApp.WrapStrategy.WRAP);
+  return range;
+}
+function applyGreaterThanZeroCF_(sh, ranges) {
+  if (!ranges || ranges.length === 0) return;
+  const rule = SpreadsheetApp.newConditionalFormatRule()
+    .whenNumberGreaterThan(0)
+    .setBackground(CF_FILL)
+    .setFontColor(CF_FONT)
+    .setRanges(ranges)
+    .build();
+  const existing = sh.getConditionalFormatRules();
+  existing.push(rule);
+  sh.setConditionalFormatRules(existing);
+}
+
+function computeMonthlyData_(ym) {
+  const employees = sheetToObjects_(TAB.employees)
+    .filter(e => isTruthyCell_(e.active))
+    .map(e => ({
+      id: e.id, name: e.name, designation: e.designation,
+      employee_code: e.employee_code || '', basic_salary: e.basic_salary || ''
+    }));
+  const dim = daysInMonth_(ym);
+  const data = employees.map(e => ({ emp: e, sheetsCount: 0, totalHours: 0, days: new Array(dim + 1).fill(0) }));
+  const rawSheets = sheetToObjects_(TAB.otsheets);
+  rawSheets.forEach(r => {
+    const date = formatDateVal_(r.date);
+    if (!date || String(date).indexOf(ym) !== 0) return;
+    const day = parseInt(String(date).split('-')[2], 10);
+    const emps = safeParse_(r.employees_json, []);
+    emps.forEach(se => {
+      const rec = data.find(d => d.emp.id === se.employee_id);
+      if (!rec) return;
       let hrs = 0;
-      se.adjustments.forEach(a=> hrs += durationHours(a.actual_start,a.actual_end));
+      (se.adjustments || []).forEach(a => { hrs += durationHours2_(a.actual_start, a.actual_end); });
       rec.sheetsCount += 1; rec.totalHours += hrs; rec.days[day] += hrs;
     });
   });
-  return {dim, data};
+  return { dim: dim, data: data };
+}
+function sheetsInMonth_(ym) {
+  const rawSheets = sheetToObjects_(TAB.otsheets);
+  return rawSheets
+    .map(r => ({
+      date: formatDateVal_(r.date), work_description: r.work_description || '', remarks: r.remarks || '',
+      division_id: r.division_id || '', employees: safeParse_(r.employees_json, [])
+    }))
+    .filter(s => s.date && String(s.date).indexOf(ym) === 0)
+    .sort((a, b) => (a.date < b.date ? -1 : 1));
 }
 
-function renderSummary(){
-  const {dim, data} = computeMonthlyData(summaryMonth);
-  const grandTotal = data.reduce((s,d)=>s+d.totalHours,0);
-  const totalSheets = STATE.sheets.filter(s=>s.date.startsWith(summaryMonth)).length;
+/* Entry Form: only dates that actually have an OT sheet are included
+   (no blank placeholder rows for days without one). For each such
+   date, every active employee is listed — actual time/hours if they
+   were on that day's sheet, "X" if not. */
+function buildEntryFormSheet_(ss, ym) {
+  const sh = ss.insertSheet('Entry Form');
+  ensureColumns_(sh, 7);
+  const employees = sheetToObjects_(TAB.employees).filter(e => isTruthyCell_(e.active));
+  const divisions = sheetToObjects_(TAB.divisions);
+  const divNameById = {}; divisions.forEach(d => { divNameById[d.id] = d.name_bn || d.name_en || ''; });
+  const headers = ['তারিখ', 'অতিরিক্ত কাজের বিবরণী', 'কর্মচারীদের নাম', 'পদবী', 'সময়কাল', 'মোট ঘন্টা', 'মন্তব্য'];
+  sh.getRange(1, 1, 1, headers.length).setValues([headers]);
+  styleTableRange_(sh.getRange(1, 1, 1, headers.length), { size: 12, bold: true, wrap: true });
+  sh.getRange(1, 1, 1, headers.length).setBackground('#EDEAE1');
+  sh.setRowHeight(1, excelRowHeightToPx_(60.75));
 
-  return `
-  <div class="section-head">
-    <div><h2>${t('totalOtHours')}</h2><div class="sub">${t('summaryTitle')}</div></div>
-  </div>
-  <div class="card">
-    <div class="row2" style="align-items:end;">
-      <div class="field" style="margin-bottom:0;">
-        <label>${t('month')}</label>
-        <input type="month" id="monthPicker" value="${summaryMonth}">
-      </div>
-      ${canExport()? `<button class="btn btn-amber" id="btnExportCsv">${t('exportCsv')}</button>` : ''}
-    </div>
-  </div>
-
-  <div class="stat-row">
-    <div class="stat-box"><div class="sn mono">${bnum(grandTotal.toFixed(1))}</div><div class="sl">${t('totalHours')}</div></div>
-    <div class="stat-box"><div class="sn mono">${bnum(totalSheets)}</div><div class="sl">${t('otSheetsCount')}</div></div>
-  </div>
-
-  <div class="card">
-    <div class="card-title"><span class="tag">Σ</span> ${t('name')} / ${t('totalHours')}</div>
-    <div class="tbl-wrap">
-      <table>
-        <thead><tr><th>${t('name')}</th><th>${t('designation')}</th><th>${t('noOfSheets')}</th><th>${t('totalHours')}</th></tr></thead>
-        <tbody>
-        ${data.length===0? `<tr><td colspan="4">${t('noData')}</td></tr>` :
-          data.map(d=>`<tr>
-            <td>${esc(d.emp.name)}</td><td>${esc(d.emp.designation)}</td><td>${bnum(d.sheetsCount)}</td>
-            <td class="mono">${bnum(d.totalHours.toFixed(2))}</td>
-          </tr>`).join('')
-        }
-        </tbody>
-      </table>
-    </div>
-  </div>
-
-  <div class="card">
-    <div class="card-title"><span class="tag">☷</span> ${t('calendar')}</div>
-    <div class="tbl-wrap">
-      <table>
-        <thead><tr>
-          <th>${t('name')}</th>
-          ${Array.from({length:dim},(_,i)=>`<th>${bnum(i+1)}</th>`).join('')}
-          <th>${t('total')}</th>
-        </tr></thead>
-        <tbody>
-        ${data.length===0? `<tr><td colspan="${dim+2}">${t('noData')}</td></tr>` :
-          data.map(d=>`<tr>
-            <td>${esc(d.emp.name)}</td>
-            ${d.days.slice(1).map(h=> h>0? `<td class="cell-h">${bnum(trimNum(h))}</td>` : `<td class="cell-x">X</td>`).join('')}
-            <td class="mono" style="font-weight:700;">${bnum(d.totalHours.toFixed(1))}</td>
-          </tr>`).join('')
-        }
-        </tbody>
-      </table>
-    </div>
-  </div>
-  `;
-}
-function trimNum(n){ return (Math.round(n*100)/100).toString(); }
-
-function bindSummary(){
-  const mp = document.getElementById('monthPicker');
-  if(mp) mp.onchange = e=>{ summaryMonth = e.target.value; render(); };
-  const exp = document.getElementById('btnExportCsv');
-  if(exp) exp.onclick = ()=>{
-    if(!canExport()){ return; }
-    generateFullReport(summaryMonth);
-  };
-}
-
-function generateFullReport(ym){
-  toast(t('generatingReport'));
-  API.call('generateReport', {ym})
-    .then(res=>{
-      if(!res.ok){
-        if(res.error==='auth_required'){
-          openReportAuthHelpModal();
-        } else {
-          toast(t('reportGenFailed') + (res.detail? ' — '+String(res.detail).slice(0,160) : ''), true);
-        }
-        return;
+  const sheetsInM = sheetsInMonth_(ym);
+  let row = 2;
+  if (sheetsInM.length === 0 || employees.length === 0) {
+    sh.getRange(row, 1, 1, 7).setValues([['', '', 'এই মাসে কোনো ওটি শিট পাওয়া যায়নি', '', '', '', '']]);
+    row++;
+  }
+  sheetsInM.forEach(s => {
+    const empMap = {};
+    (s.employees || []).forEach(se => { empMap[se.employee_id] = se; });
+    const startRow = row;
+    const divName = divNameById[s.division_id] || '';
+    employees.forEach((emp, i) => {
+      const se = empMap[emp.id];
+      let hrs = 'X', timeStr = 'X';
+      if (se) {
+        let sum = 0; const times = [];
+        (se.adjustments || []).forEach(a => { sum += durationHours2_(a.actual_start, a.actual_end); times.push(a.actual_start + '-' + a.actual_end); });
+        hrs = sum; timeStr = times.join('\n') || 'X';
       }
-      const byteChars = atob(res.base64);
-      const bytes = new Uint8Array(byteChars.length);
-      for(let i=0;i<byteChars.length;i++) bytes[i] = byteChars.charCodeAt(i);
-      const blob = new Blob([bytes], {type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url; a.download = res.filename || ('OT_Report_'+ym+'.xlsx');
-      document.body.appendChild(a); a.click(); document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-      toast(t('savedOk'));
-    })
-    .catch((e)=>{ toast(diagnoseErr(e), true); });
-}
-
-function openReportAuthHelpModal(){
-  const modal = document.createElement('div');
-  modal.className = 'modal-bg center';
-  modal.innerHTML = `
-    <div class="modal-box">
-      <div class="modal-title">${t('authRequiredTitle')}</div>
-      <div class="modal-sub">${t('authRequiredBody')}</div>
-      <div class="steps-box">${t('authRequiredSteps')}</div>
-      <button class="btn btn-primary btn-block" id="btnAuthClose" style="margin-top:14px;">${t('close')}</button>
-    </div>`;
-  document.body.appendChild(modal);
-  modal.onclick = e=>{ if(e.target===modal) modal.remove(); };
-  modal.querySelector('#btnAuthClose').onclick = ()=> modal.remove();
-}
-
-/* =========================================================
-   SETTINGS
-   Employees + Divisions available to both roles (add-employee
-   is admin-only). Account and Organization tabs are admin-only.
-   There is no "Google Sync" tab at all — the frontend has no
-   Google integration to configure.
-   ========================================================= */
-let settingsTab = 'employees';
-function renderSettings(){
-  const tabs = [
-    {id:'employees', label:t('empMgmt')},
-    {id:'divisions', label:t('divMgmt')}
-  ];
-  if(isAdmin()) tabs.push({id:'account', label:t('account')});
-  if(isAdmin()) tabs.push({id:'reportSettings', label:t('reportSettingsTab')});
-  if(!isAdmin() && (settingsTab==='account' || settingsTab==='reportSettings')) settingsTab = 'employees';
-
-  return `
-  <div class="section-head"><div><h2>${t('settingsTitle')}</h2></div></div>
-
-  <div class="pill-scroll">
-    ${tabs.map(tb=>`<div class="pill ${settingsTab===tb.id?'active':''}" data-stab="${tb.id}">${tb.label}</div>`).join('')}
-  </div>
-
-  ${settingsTab==='employees'? renderEmpSettings() : ''}
-  ${settingsTab==='divisions'? renderDivSettings() : ''}
-  ${settingsTab==='account' && isAdmin()? renderAccountSettings() : ''}
-  ${settingsTab==='reportSettings' && isAdmin()? renderReportSettings() : ''}
-  `;
-}
-
-function renderReportSettings(){
-  const oc = STATE.orgConfig || {};
-  return `
-  <div class="card">
-    <div class="card-title">${t('reportSettingsTab')}</div>
-    <p style="font-size:12px;color:var(--ink-soft);margin:0 0 12px;">${t('reportSettingsHelp')}</p>
-    <div class="field"><label>${t('rsHeaderText')}</label><textarea id="rsHeaderText" style="min-height:90px;">${esc(oc.header_text||'')}</textarea></div>
-    <div class="field"><label>${t('rsWeekLine1')}</label><input type="text" id="rsWeekLine1" value="${esc(oc.weekly_header_line1||'')}"></div>
-    <div class="field"><label>${t('rsWeekLine2')}</label><input type="text" id="rsWeekLine2" value="${esc(oc.weekly_header_line2||'')}"></div>
-    <div class="field"><label>${t('rsWeekLine3')}</label><input type="text" id="rsWeekLine3" value="${esc(oc.weekly_header_line3||'')}"></div>
-  </div>
-  <div class="card">
-    <div class="card-title">${t('rsOfficers')}</div>
-    <div class="field"><label>${t('rsSig1')}</label><textarea id="rsSig1">${esc(oc.sig1||'')}</textarea></div>
-    <div class="field"><label>${t('rsSig2')}</label><textarea id="rsSig2">${esc(oc.sig2||'')}</textarea></div>
-    <div class="field"><label>${t('rsSig3')}</label><textarea id="rsSig3">${esc(oc.sig3||'')}</textarea></div>
-    <div class="field"><label>${t('rsSig4')}</label><textarea id="rsSig4">${esc(oc.sig4||'')}</textarea></div>
-    <div class="field"><label>${t('rsSig5')}</label><textarea id="rsSig5">${esc(oc.sig5||'')}</textarea></div>
-    <div class="field"><label>${t('rsSig6')}</label><textarea id="rsSig6">${esc(oc.sig6||'')}</textarea></div>
-    <button class="btn btn-primary btn-block" id="btnSaveReportSettings">${t('saveBtn')}</button>
-  </div>`;
-}
-
-function renderEmpSettings(){
-  const emps = STATE.employees;
-  return `
-  <div class="card">
-    <div class="card-title">${t('empMgmt')}</div>
-    ${emps.map(e=>`
-      <div class="emp-row">
-        <div style="flex:1;">
-          <div class="emp-name">${esc(e.name)} ${!e.active?`<span class="badge badge-gray">${t('inactive')}</span>`:''}</div>
-          <div class="emp-desig">${esc(e.designation)}</div>
-        </div>
-        <div style="display:flex;gap:6px;">
-          <button class="btn btn-ghost btn-sm" data-emp-edit="${e.id}">${t('edit')}</button>
-          <button class="btn btn-danger btn-sm" data-emp-del="${e.id}">${t('del')}</button>
-        </div>
-      </div>
-    `).join('')}
-    ${canAddEmployee()? `<button class="btn btn-amber btn-block" id="btnAddEmp" style="margin-top:10px;">${t('addEmployee')}</button>` :
-      `<div class="info-box" style="margin-top:10px;">${t('permNoAddEmp')}</div>`}
-    ${canAddEmployee()? `<button class="btn btn-outline btn-block" id="btnRestoreDefaults" style="margin-top:8px;">${t('restoreDefaults')}</button>`:''}
-  </div>`;
-}
-
-function renderDivSettings(){
-  const divs = STATE.divisions;
-  return `
-  <div class="card">
-    <div class="card-title">${t('divMgmt')}</div>
-    ${divs.map(d=>`
-      <div class="emp-row">
-        <div style="flex:1;">
-          <div class="emp-name">${esc(STATE.lang==='bn'?d.name_bn:d.name_en)} ${d.is_default?`<span class="badge badge-gray">default</span>`:''}</div>
-          <div class="emp-desig">${esc(STATE.lang==='bn'?d.name_en:d.name_bn)}</div>
-        </div>
-        ${!d.is_default? `<button class="btn btn-danger btn-sm" data-div-del="${d.id}">${t('del')}</button>` : ''}
-      </div>
-    `).join('')}
-    <button class="btn btn-amber btn-block" id="btnAddDiv" style="margin-top:10px;">${t('addDivision')}</button>
-  </div>`;
-}
-
-function renderAccountSettings(){
-  return `
-  <div class="card">
-    <div class="card-title">${t('account')}</div>
-    <p style="font-size:13px;color:var(--ink-soft);margin:0 0 12px;">${t('loggedInAs')}: <b>${esc(STATE.session.username)}</b> (${STATE.session.role==='admin'?t('roleAdmin'):t('roleEmployee')})</p>
-    <div class="field">
-      <label>${t('changePw')} — Admin</label>
-      <input type="password" id="pwAdmin" placeholder="${t('newPw')}">
-    </div>
-    <div class="field">
-      <label>${t('changePw')} — ${t('roleEmployee')}</label>
-      <input type="password" id="pwEmp" placeholder="${t('newPw')}">
-    </div>
-    <button class="btn btn-primary btn-block" id="btnSavePw">${t('saveBtn')}</button>
-  </div>
-  <div class="card">
-    <div class="card-title">${t('langSet')}</div>
-    <div class="lang-toggle">
-      <button data-l2="bn" class="${STATE.lang==='bn'?'active':''}">বাংলা</button>
-      <button data-l2="en" class="${STATE.lang==='en'?'active':''}">English</button>
-    </div>
-  </div>
-  <div class="card">
-    <div class="card-title">Server</div>
-    <button class="btn btn-outline btn-block" id="btnChangeServer">${t('editApiUrl')}</button>
-  </div>`;
-}
-
-function bindSettings(){
-  document.querySelectorAll('[data-stab]').forEach(el=>{
-    el.onclick = ()=>{ settingsTab = el.getAttribute('data-stab'); render(); };
-  });
-
-  const addEmpBtn = document.getElementById('btnAddEmp');
-  if(addEmpBtn) addEmpBtn.onclick = ()=> openEmpModal(null);
-  const restoreBtn = document.getElementById('btnRestoreDefaults');
-  if(restoreBtn) restoreBtn.onclick = restoreDefaultEmployees;
-  document.querySelectorAll('[data-emp-edit]').forEach(el=>{ el.onclick = ()=> openEmpModal(el.getAttribute('data-emp-edit')); });
-  document.querySelectorAll('[data-emp-del]').forEach(el=>{
-    el.onclick = async ()=>{
-      const id = el.getAttribute('data-emp-del');
-      try{
-        const res = await API.call('deleteEmployee', {id});
-        if(res.ok){ STATE.employees = STATE.employees.filter(e=>e.id!==id); toast(t('empDeleted')); }
-        else toast(t('networkErr'), true);
-      }catch(e){ toast(t('networkErr'), true); }
-      render();
-    };
-  });
-
-  const addDivBtn = document.getElementById('btnAddDiv');
-  if(addDivBtn) addDivBtn.onclick = ()=> openDivModal();
-  document.querySelectorAll('[data-div-del]').forEach(el=>{
-    el.onclick = async ()=>{
-      const id = el.getAttribute('data-div-del');
-      try{
-        const res = await API.call('deleteDivision', {id});
-        if(res.ok){ STATE.divisions = STATE.divisions.filter(d=>d.id!==id); toast(t('divDeleted')); }
-        else if(res.error==='default'){ toast(t('cannotDeleteDefault'), true); }
-        else toast(t('networkErr'), true);
-      }catch(e){ toast(t('networkErr'), true); }
-      render();
-    };
-  });
-
-  document.querySelectorAll('[data-l2]').forEach(el=>{
-    el.onclick = ()=>{ STATE.lang = el.getAttribute('data-l2'); LS.set('otr_lang',STATE.lang); render(); };
-  });
-  const savePwBtn = document.getElementById('btnSavePw');
-  if(savePwBtn) savePwBtn.onclick = async ()=>{
-    const pa = document.getElementById('pwAdmin').value.trim();
-    const pe = document.getElementById('pwEmp').value.trim();
-    try{
-      if(pa) await API.call('changePassword', {role:'admin', newPassword:pa});
-      if(pe) await API.call('changePassword', {role:'employee', newPassword:pe});
-      if(pa||pe) toast(t('pwChanged'));
-    }catch(e){ toast(t('networkErr'), true); }
-  };
-  const changeServerBtn = document.getElementById('btnChangeServer');
-  if(changeServerBtn) changeServerBtn.onclick = ()=> API.changeServer();
-
-  const saveRSBtn = document.getElementById('btnSaveReportSettings');
-  if(saveRSBtn) saveRSBtn.onclick = async ()=>{
-    const cfg = {
-      header_text: document.getElementById('rsHeaderText').value,
-      weekly_header_line1: document.getElementById('rsWeekLine1').value,
-      weekly_header_line2: document.getElementById('rsWeekLine2').value,
-      weekly_header_line3: document.getElementById('rsWeekLine3').value,
-      sig1: document.getElementById('rsSig1').value,
-      sig2: document.getElementById('rsSig2').value,
-      sig3: document.getElementById('rsSig3').value,
-      sig4: document.getElementById('rsSig4').value,
-      sig5: document.getElementById('rsSig5').value,
-      sig6: document.getElementById('rsSig6').value
-    };
-    try{
-      const res = await API.call('saveOrgConfig', {orgConfig: cfg});
-      if(res.ok){ STATE.orgConfig = cfg; toast(t('savedOk')); }
-      else toast(diagnoseErr(new Error(res.error||'bad_response')), true);
-    }catch(e){ toast(diagnoseErr(e), true); }
-  };
-}
-
-async function restoreDefaultEmployees(){
-  try{
-    const res = await API.call('restoreDefaultEmployees');
-    if(res.ok){
-      if(res.added && res.added.length){
-        res.added.slice().reverse().forEach(emp => STATE.employees.unshift(emp));
-        toast(t('savedOk'));
-      } else {
-        toast(t('noneMissing'));
+      sh.getRange(row, 1, 1, 7).setValues([[
+        i === 0 ? bnDateDMY_(s.date) : '',
+        '', // work description written separately below (needs mixed bold/italic styling for the division name)
+        bnForce_(i + 1) + '। ' + emp.name,
+        emp.designation,
+        timeStr, hrs,
+        i === 0 ? s.remarks : ''
+      ]]);
+      if (i === 0) {
+        setWorkDescriptionWithDivision_(sh.getRange(row, 2), s.work_description || '', divName);
       }
-    } else {
-      toast(diagnoseErr(new Error(res.error||'bad_response')), true);
+      row++;
+    });
+    if (employees.length > 1) {
+      sh.getRange(startRow, 1, employees.length, 1).merge();
+      sh.getRange(startRow, 2, employees.length, 1).merge();
+      sh.getRange(startRow, 7, employees.length, 1).merge();
     }
-  }catch(e){ toast(diagnoseErr(e), true); }
-  render();
-}
-
-function openEmpModal(empId){
-  if(!empId && !canAddEmployee()){ toast(t('permNoAddEmp'), true); return; }
-  const emp = empId ? STATE.employees.find(e=>e.id===empId) : {name:'', designation:'', active:true, employee_code:'', basic_salary:''};
-  const modal = document.createElement('div');
-  modal.className = 'modal-bg center';
-  modal.innerHTML = `
-    <div class="modal-box">
-      <div class="modal-title">${empId? t('edit') : t('addEmployee')}</div>
-      <div class="field"><label>${t('empName')}</label><input type="text" id="mEmpName" value="${esc(emp.name)}"></div>
-      <div class="field"><label>${t('empDesig')}</label><input type="text" id="mEmpDesig" value="${esc(emp.designation)}"></div>
-      <div class="row2">
-        <div class="field"><label>${t('empCode')}</label><input type="text" id="mEmpCode" value="${esc(emp.employee_code||'')}"></div>
-        <div class="field"><label>${t('empSalary')}</label><input type="text" id="mEmpSalary" value="${esc(emp.basic_salary||'')}"></div>
-      </div>
-      <div style="display:flex;gap:8px;">
-        <button class="btn btn-outline btn-block" id="mCancel">${t('cancel')}</button>
-        <button class="btn btn-primary btn-block" id="mSave">${t('saveBtn')}</button>
-      </div>
-    </div>`;
-  document.body.appendChild(modal);
-  modal.querySelector('#mCancel').onclick = ()=> modal.remove();
-  modal.querySelector('#mSave').onclick = async ()=>{
-    const name = document.getElementById('mEmpName').value.trim();
-    const desig = document.getElementById('mEmpDesig').value.trim();
-    const code = document.getElementById('mEmpCode').value.trim();
-    const salary = document.getElementById('mEmpSalary').value.trim();
-    if(!name){ toast(t('fillRequired'), true); return; }
-    try{
-      const payloadEmp = empId? {id:empId, name, designation:desig, active:true, employee_code:code, basic_salary:salary}
-                               : {name, designation:desig, active:true, employee_code:code, basic_salary:salary};
-      const res = await API.call('saveEmployee', {employee: payloadEmp});
-      if(res.ok){
-        if(empId){
-          const rec = STATE.employees.find(e=>e.id===empId);
-          Object.assign(rec, res.employee);
-        } else {
-          STATE.employees.unshift(res.employee);
-        }
-        toast(t('savedOk'));
-      } else if(res.error==='forbidden'){ toast(t('permNoAddEmp'), true); }
-      else { toast(t('networkErr'), true); }
-    }catch(e){ toast(t('networkErr'), true); }
-    modal.remove();
-    render();
-  };
-}
-
-function openDivModal(){
-  const modal = document.createElement('div');
-  modal.className = 'modal-bg center';
-  modal.innerHTML = `
-    <div class="modal-box">
-      <div class="modal-title">${t('addDivision')}</div>
-      <div class="field"><label>${t('nameBn')}</label><input type="text" id="mDivBn"></div>
-      <div class="field"><label>${t('nameEn')}</label><input type="text" id="mDivEn"></div>
-      <div style="display:flex;gap:8px;">
-        <button class="btn btn-outline btn-block" id="mCancel">${t('cancel')}</button>
-        <button class="btn btn-primary btn-block" id="mSave">${t('saveBtn')}</button>
-      </div>
-    </div>`;
-  document.body.appendChild(modal);
-  modal.querySelector('#mCancel').onclick = ()=> modal.remove();
-  modal.querySelector('#mSave').onclick = async ()=>{
-    const bn = document.getElementById('mDivBn').value.trim();
-    const en = document.getElementById('mDivEn').value.trim();
-    if(!bn && !en){ toast(t('fillRequired'), true); return; }
-    try{
-      const res = await API.call('saveDivision', {division:{name_bn:bn||en, name_en:en||bn, is_default:false, active:true}});
-      if(res.ok){ STATE.divisions.push(res.division); toast(t('savedOk')); }
-      else toast(t('networkErr'), true);
-    }catch(e){ toast(t('networkErr'), true); }
-    modal.remove();
-    render();
-  };
-}
-/* ---------- render root (app screens only; assumes an authenticated session) ---------- */
-function render(){
-  const root = document.getElementById('root');
-  document.documentElement.lang = STATE.lang;
-
-  if(!STATE.session){
-    // shouldn't normally happen (boot() redirects first), but never show
-    // app internals without a session — bounce back to the login page
-    window.location.href = 'index.html';
-    return;
+  });
+  const lastRow = row - 1;
+  if (lastRow >= 2) {
+    const dataRange = sh.getRange(2, 1, lastRow - 1, 7);
+    // border + wrap + alignment apply safely to the whole block — these don't
+    // conflict with column 2's per-segment RichText styling.
+    dataRange.setBorder(true, true, true, true, true, true, '#000000', SpreadsheetApp.BorderStyle.SOLID);
+    dataRange.setWrapStrategy(SpreadsheetApp.WrapStrategy.WRAP);
+    dataRange.setVerticalAlignment('middle');
+    dataRange.setHorizontalAlignment('center');
+    sh.getRange(2, 2, lastRow - 1, 1).setHorizontalAlignment('left'); // work description
+    sh.getRange(2, 3, lastRow - 1, 1).setHorizontalAlignment('left'); // employee name
+    sh.getRange(2, 7, lastRow - 1, 1).setHorizontalAlignment('left'); // remarks
+    // font family/size/weight for every column EXCEPT column 2, which keeps
+    // its own RichText styling (division name bold+italic) untouched
+    sh.getRange(2, 1, lastRow - 1, 1).setFontFamily(TEMPLATE_FONT).setFontSize(11).setFontWeight('normal');
+    sh.getRange(2, 3, lastRow - 1, 5).setFontFamily(TEMPLATE_FONT).setFontSize(11).setFontWeight('normal');
+    // auto-fit each row's height to whatever content it actually holds
+    // (multi-slot time strings, long remarks, etc.) instead of a fixed height
+    sh.autoResizeRows(2, lastRow - 1);
   }
 
-  let body = '';
-  if(STATE.screen==='new') body = renderNewSheet();
-  else if(STATE.screen==='records') body = renderRecords();
-  else if(STATE.screen==='summary') body = renderSummary();
-  else if(STATE.screen==='settings') body = renderSettings();
-  else body = renderNewSheet();
+  // exact template widths (mapped to this sheet's 7 meaningful columns)
+  setColWidthRange_(sh, 1, 1, 4.3046875);    // তারিখ
+  setColWidthRange_(sh, 2, 2, 39.546875);    // অতিরিক্ত কাজের বিবরণী
+  setColWidthRange_(sh, 3, 3, 25.828125);    // কর্মচারীদের নাম
+  setColWidthRange_(sh, 4, 4, 17.21875);     // পদবী
+  setColWidthRange_(sh, 5, 5, 17.75390625);  // সময়কাল
+  setColWidthRange_(sh, 6, 6, 5.24609375);   // মোট ঘন্টা
+  setColWidthRange_(sh, 7, 7, 34.97265625);  // মন্তব্য
 
-  root.innerHTML = `
-    ${renderTopbar()}
-    <main>${body}</main>
-    ${renderBottomNav()}
-  `;
-  bindGlobal();
+  sh.setFrozenRows(1);
+  return sh;
 }
 
-function renderTopbar(){
-  return `
-  <div class="topbar">
-    <div class="brand">
-      <div class="brand-mark">OT</div>
-      <div>
-        <div class="brand-title">${t('appName')}</div>
-        <div class="brand-sub">${t('appSub')}</div>
-      </div>
-    </div>
-    <div class="topbar-actions">
-      <div class="topbar-sync" title="API"><span class="sync-dot ${API.status==='on'?'on':(API.status==='busy'?'busy':'off')}" id="syncStatusDot"></span></div>
-      <div class="icon-btn" id="btnLangTop" title="lang">${STATE.lang==='bn'?'EN':'বাং'}</div>
-      <div class="icon-btn" id="btnLogout" title="logout">⏻</div>
-    </div>
-  </div>`;
-}
-function renderBottomNav(){
-  const items = [
-    {id:'new', ico:'✎', label:t('navNew')},
-    {id:'records', ico:'▤', label:t('navRecords')},
-    {id:'summary', ico:'◱', label:t('navSummary')},
-    {id:'settings', ico:'⚙', label:t('navSettings')}
-  ];
-  return `<div class="bottomnav">
-    ${items.map(i=>`<div class="navitem ${STATE.screen===i.id?'active':''}" data-nav="${i.id}">
-      <div class="ni-ico">${i.ico}</div><div>${i.label}</div>
-    </div>`).join('')}
-  </div>`;
-}
+/* Splits the weekly report into one tab per PAIR of weeks
+   (১ম+২য়, ৩য়+৪র্থ, ৫ম alone) instead of one long continuous sheet.
+   Apps Script's Sheets service has no API for print page breaks or
+   print area — those only exist in Sheets/Excel's own Print dialog —
+   so this is the practical way to guarantee "two weeks together":
+   each tab prints cleanly as its own page via Excel's built-in
+   "Fit Sheet on One Page" option, with no manual page-break setup
+   needed from you. */
+function buildWeeklySheets_(ss, ym) {
+  const monthly = computeMonthlyData_(ym);
+  const dim = monthly.dim, data = monthly.data;
+  const weekRanges = weekRangesFor_(dim);
+  const cfg = getReportSettings_();
 
-function bindGlobal(){
-  document.getElementById('btnLangTop').onclick = ()=>{
-    STATE.lang = STATE.lang==='bn'?'en':'bn';
-    LS.set('otr_lang', STATE.lang);
-    render();
-  };
-  document.getElementById('btnLogout').onclick = async ()=>{
-    await API.logout();
-    STATE.session = null;
-    window.location.href = 'index.html';
-  };
-  document.querySelectorAll('[data-nav]').forEach(el=>{
-    el.onclick = ()=>{ STATE.screen = el.getAttribute('data-nav'); STATE.editingSheetId=null; render(); };
+  const pairs = [];
+  for (let i = 0; i < weekRanges.length; i += 2) pairs.push(weekRanges.slice(i, i + 2).map((r, k) => ({ range: r, weekIndex: i + k })));
+
+  const sheets = [];
+  pairs.forEach((pairInfo, pairIdx) => {
+    const label = pairInfo.length === 2
+      ? (ORD_WEEK_[pairInfo[0].weekIndex] + '-' + ORD_WEEK_[pairInfo[1].weekIndex])
+      : ORD_WEEK_[pairInfo[0].weekIndex];
+    const sheetName = pairIdx === 0 ? 'weekly' : ('weekly (' + label + ')');
+    sheets.push(buildOneWeeklyPairSheet_(ss, sheetName, ym, pairInfo, dim, data, cfg));
   });
-  bindScreenSpecific();
+  return sheets;
 }
 
-/* ---------- boot sequence ---------- */
-(async function boot(){
-  STATE.screen = 'boot';
-  render_boot_placeholder();
+function buildOneWeeklyPairSheet_(ss, sheetName, ym, pairInfo, dim, data, cfg) {
+  const sh = ss.insertSheet(sheetName);
+  ensureColumns_(sh, 11);
+  const monthLabel = ymLabel_(ym);
+  const weeklyHeaderText = cfg.weekly_header_line1 + '\n' + cfg.weekly_header_line2 + '\n' + cfg.weekly_header_line3;
+  let row = 1;
+  const cfRanges = [];
+  let widestLastCol = 11;
 
-  if(!API.baseUrl || !API.token){
-    // no server configured or no session on this device — go set up / log in
-    window.location.href = 'index.html';
-    return;
+  // exact template widths: A=5, B=20.14, C=16.43, D..(day cols)=6.57 each, total col=7.71
+  setColWidthRange_(sh, 1, 1, 4.9765625);
+  setColWidthRange_(sh, 2, 2, 20.17578125);
+  setColWidthRange_(sh, 3, 3, 16.41015625);
+  setColWidthRange_(sh, 4, 10, 6.58984375);
+  setColWidthRange_(sh, 11, 11, 7.6640625);
+
+  pairInfo.forEach(({ range, weekIndex }) => {
+    const startDay = range[0], endDay = Math.min(range[1], dim);
+    const dayCols = []; for (let d = startDay; d <= endDay; d++) dayCols.push(d);
+    const lastCol = 3 + dayCols.length + 1;
+    widestLastCol = Math.max(widestLastCol, lastCol);
+
+    // org header is inherently 3 lines — merge across 2 rows instead of
+    // forcing one very tall row, avoiding oversized/distorted rows nearby
+    const titleRow = row;
+    sh.getRange(row, 1, 2, lastCol).merge().setValue(weeklyHeaderText);
+    styleFreeText_(sh.getRange(row, 1), { size: 14, bold: false, vAlign: 'middle' });
+    sh.setRowHeight(row, excelRowHeightToPx_(29));
+    sh.setRowHeight(row + 1, excelRowHeightToPx_(29));
+    row += 2;
+
+    sh.getRange(row, 1, 1, lastCol).merge()
+      .setValue('অধিকাল ভাতা সম্পর্কিত ' + monthLabel + ' মাসের ' + ORD_WEEK_[weekIndex] + ' প্রতিবেদনঃ');
+    styleTableRange_(sh.getRange(row, 1), { size: 11, bold: false, border: false });
+    row++;
+
+    // ক্রঃ নং / কর্মচারীদের নাম / পদবী / মোট ঘন্টা each span this header row
+    // AND the day-number row directly below (matches the template's own
+    // merge layout exactly: A3:A4, B3:B4, C3:C4, K3:K4).
+    const headRow = row;
+    sh.getRange(row, 1).setValue('ক্রঃ নং');
+    sh.getRange(row, 2).setValue('কর্মচারীদের নাম');
+    sh.getRange(row, 3).setValue('পদবী');
+    sh.getRange(row, 4, 1, dayCols.length).merge().setValue('তারিখ');
+    sh.getRange(row, 4 + dayCols.length).setValue('মোট ঘন্টা');
+    styleTableRange_(sh.getRange(row, 1, 1, lastCol), { size: 9, bold: false, wrap: true });
+    row++;
+
+    dayCols.forEach((d, i) => sh.getRange(row, 4 + i).setValue(d));
+    styleTableRange_(sh.getRange(row, 4, 1, dayCols.length), { size: 10, bold: false });
+    row++;
+
+    sh.getRange(headRow, 1, 2, 1).merge();
+    sh.getRange(headRow, 2, 2, 1).merge();
+    sh.getRange(headRow, 3, 2, 1).merge();
+    sh.getRange(headRow, 4 + dayCols.length, 2, 1).merge();
+    styleTableRange_(sh.getRange(headRow, 1, 2, 1), { size: 9, bold: false, wrap: true });
+    styleTableRange_(sh.getRange(headRow, 2, 2, 1), { size: 9, bold: false, wrap: true });
+    styleTableRange_(sh.getRange(headRow, 3, 2, 1), { size: 9, bold: false, wrap: true });
+    styleTableRange_(sh.getRange(headRow, 4 + dayCols.length, 2, 1), { size: 9, bold: false, wrap: true });
+
+    const dataStartRow = row;
+    data.forEach((d, idx) => {
+      const rowVals = [idx + 1, stripHonorific_(d.emp.name), d.emp.designation];
+      let weekTotal = 0;
+      dayCols.forEach(dayNum => { const h = d.days[dayNum] || 0; weekTotal += h; rowVals.push(h); });
+      rowVals.push(trimNum_(weekTotal));
+      sh.getRange(row, 1, 1, rowVals.length).setValues([rowVals]);
+      row++;
+    });
+    if (data.length > 0) {
+      styleTableRange_(sh.getRange(dataStartRow, 1, data.length, lastCol), { size: 10, bold: false });
+      sh.getRange(dataStartRow, 2, data.length, 1).setHorizontalAlignment('left');
+      sh.autoResizeRows(dataStartRow, data.length);
+      if (dayCols.length > 0) cfRanges.push(sh.getRange(dataStartRow, 4, data.length, dayCols.length));
+    }
+    row++; // spacer
+  });
+
+  // officer signatures: sig1/sig2/sig3 on one row, sig4/sig5/sig6 on the
+  // next, each merged across at least 3 adjacent columns so the officer's
+  // name + designation + address text has room to sit on separate lines
+  // without looking cramped or wrapping awkwardly.
+  const span = Math.max(3, Math.floor(widestLastCol / 3));
+  const pos1 = 1, pos2 = 1 + span, pos3 = Math.min(1 + 2 * span, Math.max(widestLastCol - span + 1, 1 + 2 * span));
+  const span3 = Math.max(span, widestLastCol - pos3 + 1);
+
+  row += 1;
+  sh.getRange(row, pos1, 1, span).merge().setValue(cfg.sig1);
+  sh.getRange(row, pos2, 1, span).merge().setValue(cfg.sig2);
+  sh.getRange(row, pos3, 1, span3).merge().setValue(cfg.sig3);
+  styleFreeText_(sh.getRange(row, 1, 1, widestLastCol), { size: 10, bold: false, hAlign: 'center' });
+  sh.autoResizeRows(row, 1);
+  row += 5;
+  sh.getRange(row, pos1, 1, span).merge().setValue(cfg.sig4);
+  sh.getRange(row, pos2, 1, span).merge().setValue(cfg.sig5);
+  sh.getRange(row, pos3, 1, span3).merge().setValue(cfg.sig6);
+  styleFreeText_(sh.getRange(row, 1, 1, widestLastCol), { size: 10, bold: false, hAlign: 'center' });
+  sh.autoResizeRows(row, 1);
+
+  if (cfRanges.length) applyGreaterThanZeroCF_(sh, cfRanges);
+  sh.setFrozenRows(0);
+  return sh;
+}
+
+function buildMonthlySheet_(ss, ym) {
+  const sh = ss.insertSheet('monthly');
+  const monthly = computeMonthlyData_(ym);
+  const dim = monthly.dim, data = monthly.data;
+  const monthLabel = ymLabel_(ym);
+  const cfg = getReportSettings_();
+  const lastCol = 3 + dim + 1;
+  ensureColumns_(sh, Math.max(lastCol, 30)); // signatures are placed as far right as column 30
+
+  setColWidthRange_(sh, 1, 1, 4.140625);
+  setColWidthRange_(sh, 2, 2, 16.7109375);
+  setColWidthRange_(sh, 3, 3, 15.85546875);
+  setColWidthRange_(sh, 4, 3 + dim, 3.359375);
+  setColWidthRange_(sh, 4 + dim, 4 + dim, 9);
+
+  sh.getRange(1, 1, 3, lastCol).merge()
+    .setValue(cfg.header_text + ' ' + monthLabel + ' মাসের ৩২ ঘন্টার ঊর্দ্ধে অধীকাল কর্মঘন্টার বিবরণী।');
+  styleFreeText_(sh.getRange(1, 1), { size: 12, bold: true, vAlign: 'top' });
+  sh.setRowHeight(1, excelRowHeightToPx_(15));
+  sh.setRowHeight(2, excelRowHeightToPx_(15));
+  sh.setRowHeight(3, excelRowHeightToPx_(15));
+
+  let row = 4;
+  sh.getRange(row, 1, 1, lastCol).setFontWeight('bold');
+  sh.getRange(row, 1).setValue('ক্রঃ নং');
+  sh.getRange(row, 2).setValue('কর্মচারীদের নাম');
+  sh.getRange(row, 3).setValue('পদবী');
+  sh.getRange(row, 4, 1, dim).merge().setValue('মাসের নামঃ ' + monthLabel);
+  sh.getRange(row, 4 + dim).setValue('মোট ঘন্টা');
+  styleTableRange_(sh.getRange(row, 1, 1, lastCol), { size: 12, bold: false, wrap: true });
+  row++;
+
+  const weekRanges = weekRangesFor_(dim);
+  let colCursor = 4;
+  weekRanges.forEach((r, i) => {
+    const span = Math.min(r[1], dim) - r[0] + 1;
+    sh.getRange(row, colCursor, 1, span).merge().setValue(ORD_WEEK_[i]);
+    colCursor += span;
+  });
+  styleTableRange_(sh.getRange(row, 4, 1, dim), { size: 13, bold: false });
+  row++;
+
+  const dayNumRow = [];
+  for (let d = 1; d <= dim; d++) dayNumRow.push(d);
+  sh.getRange(row, 4, 1, dim).setValues([dayNumRow]);
+  styleTableRange_(sh.getRange(row, 4, 1, dim), { size: 12, bold: false });
+  row++;
+
+  const dataStartRow = row;
+  data.forEach((d, idx) => {
+    const rowVals = [idx + 1, stripHonorific_(d.emp.name), d.emp.designation];
+    for (let dd = 1; dd <= dim; dd++) rowVals.push(d.days[dd] || 0);
+    rowVals.push(trimNum_(d.totalHours));
+    sh.getRange(row, 1, 1, rowVals.length).setValues([rowVals]);
+    sh.setRowHeight(row, excelRowHeightToPx_(15.75));
+    row++;
+  });
+  if (data.length > 0) {
+    styleTableRange_(sh.getRange(dataStartRow, 1, data.length, lastCol), { size: 11, bold: false });
+    sh.getRange(dataStartRow, 2, data.length, 1).setHorizontalAlignment('left');
+    sh.autoResizeRows(dataStartRow, data.length);
+    applyGreaterThanZeroCF_(sh, [sh.getRange(dataStartRow, 4, data.length, dim)]);
   }
 
-  try{
-    const res = await API.call('verifySession');
-    if(res && res.ok){
-      STATE.session = {username: res.username, role: res.role};
-      await loadBootstrap();
-      STATE.screen = 'new';
-      render();
-      return;
-    }
-  }catch(e){ /* fall through to redirect */ }
+  const grandTotal = data.reduce((s, d) => s + d.totalHours, 0);
+  sh.getRange(row, 1).setValue(monthLabel + ' মাসের মোট অধিকাল মোট কর্মঘন্টার পরিমান ');
+  sh.getRange(row, 4 + dim).setValue(trimNum_(grandTotal));
+  styleFreeText_(sh.getRange(row, 1), { size: 11, bold: true, hAlign: 'left', wrap: false });
+  row += 2;
+  sh.getRange(row, 1).setValue(cfg.sig1);
+  sh.getRange(row, Math.min(11, lastCol)).setValue(cfg.sig2);
+  sh.getRange(row, Math.min(26, lastCol)).setValue(cfg.sig3);
+  styleFreeText_(sh.getRange(row, 1, 1, lastCol), { size: 10, bold: false, hAlign: 'center' });
+  row += 5;
+  sh.getRange(row, 1).setValue(cfg.sig4);
+  sh.getRange(row, Math.min(14, lastCol)).setValue(cfg.sig5);
+  sh.getRange(row, Math.min(30, lastCol)).setValue(cfg.sig6);
+  styleFreeText_(sh.getRange(row, 1, 1, lastCol), { size: 10, bold: false, hAlign: 'center' });
 
-  // token missing/expired/invalid, or server unreachable — back to login,
-  // which will show the right diagnostic if the server itself is the problem
-  window.location.href = 'index.html';
-})();
-
-function render_boot_placeholder(){
-  document.getElementById('root').innerHTML = `
-  <div class="login-wrap">
-    <div class="login-card" style="text-align:center;">
-      <div class="login-logo">OT</div>
-      <div class="spin"></div>
-      <div class="disp" style="font-size:16px;font-weight:700;">${t('connecting')}</div>
-    </div>
-  </div>`;
+  sh.setFrozenRows(4);
+  return sh;
 }
 
-</script>
-</body>
-</html>
+function buildMonthlyAsPerWeekSheet_(ss, ym) {
+  const sh = ss.insertSheet('monthly_as_per_Week');
+  const monthly = computeMonthlyData_(ym);
+  const dim = monthly.dim, data = monthly.data;
+  const weekRanges = weekRangesFor_(dim);
+  const monthLabel = ymLabel_(ym);
+  const cfg = getReportSettings_();
+  const lastCol = 4 + weekRanges.length + 2; // serial+name+desig+empid + weeks + total + basic salary
+  ensureColumns_(sh, lastCol);
+
+  setColWidthRange_(sh, 1, 1, 4.140625);
+  setColWidthRange_(sh, 2, 2, 23.140625);
+  setColWidthRange_(sh, 3, 3, 18.5703125);
+  setColWidthRange_(sh, 4, 4, 14.42578125);
+  setColWidthRange_(sh, 5, 4 + weekRanges.length, 17.140625);
+  setColWidthRange_(sh, 5 + weekRanges.length, 5 + weekRanges.length, 5.28515625);
+  setColWidthRange_(sh, lastCol, lastCol, 8.28515625);
+
+  sh.getRange(1, 1, 2, lastCol).merge()
+    .setValue(cfg.header_text + ' ' + monthLabel + ' মাসের ৩২ ঘন্টার ঊর্দ্ধে অধীকাল কর্মঘন্টার বিবরণী (সাপ্তাহিক ভিত্তিতে)।');
+  styleFreeText_(sh.getRange(1, 1), { size: 11, bold: true, vAlign: 'top' });
+  sh.setRowHeight(1, excelRowHeightToPx_(20));
+  sh.setRowHeight(2, excelRowHeightToPx_(20));
+
+  let row = 3;
+  const headers = ['ক্রঃ নং', 'কর্মচারীদের নাম', 'পদবী', 'Employee ID']
+    .concat(ORD_WEEK_.slice(0, weekRanges.length))
+    .concat(['মোট ঘন্টা', 'মূল বেতন']);
+  sh.getRange(row, 1, 1, headers.length).setValues([headers]);
+  styleTableRange_(sh.getRange(row, 1, 1, lastCol), { size: 9, bold: true, wrap: true });
+  row++;
+
+  const dataStartRow = row;
+  data.forEach((d, idx) => {
+    const rowVals = [idx + 1, stripHonorific_(d.emp.name), d.emp.designation, d.emp.employee_code || ''];
+    weekRanges.forEach(r => {
+      const end = Math.min(r[1], dim); let sum = 0;
+      for (let day = r[0]; day <= end; day++) sum += d.days[day] || 0;
+      rowVals.push(trimNum_(sum));
+    });
+    rowVals.push(trimNum_(d.totalHours));
+    rowVals.push(d.emp.basic_salary || '');
+    sh.getRange(row, 1, 1, rowVals.length).setValues([rowVals]);
+    sh.setRowHeight(row, excelRowHeightToPx_(15.75));
+    row++;
+  });
+  if (data.length > 0) {
+    styleTableRange_(sh.getRange(dataStartRow, 1, data.length, lastCol), { size: 10, bold: false });
+    sh.getRange(dataStartRow, 2, data.length, 1).setHorizontalAlignment('left');
+    sh.autoResizeRows(dataStartRow, data.length);
+    if (weekRanges.length > 0) applyGreaterThanZeroCF_(sh, [sh.getRange(dataStartRow, 5, data.length, weekRanges.length)]);
+  }
+
+  const grandTotal = data.reduce((s, d) => s + d.totalHours, 0);
+  sh.getRange(row, 1).setValue(monthLabel + ' মাসের মোট অধিকাল মোট কর্মঘন্টার পরিমান ');
+  sh.getRange(row, 5 + weekRanges.length).setValue(trimNum_(grandTotal));
+  styleFreeText_(sh.getRange(row, 1), { size: 10, bold: true, hAlign: 'left', wrap: false });
+  row += 2;
+  sh.getRange(row, 1).setValue(cfg.sig1);
+  styleFreeText_(sh.getRange(row, 1), { size: 10, bold: false, hAlign: 'center' });
+  row += 5;
+  sh.getRange(row, 1).setValue(cfg.sig4);
+  styleFreeText_(sh.getRange(row, 1), { size: 10, bold: false, hAlign: 'center' });
+
+  sh.setFrozenRows(3);
+  return sh;
+}
+
+/* Apps Script's own authorization/permission exceptions have very
+   recognizable text even though there's no structured error code. */
+function isAuthError_(err) {
+  const msg = String(err && err.message ? err.message : err).toLowerCase();
+  return msg.indexOf('permission') !== -1 ||
+    msg.indexOf('authoriz') !== -1 ||
+    msg.indexOf('authenticat') !== -1 ||
+    msg.indexOf('scope') !== -1;
+}
+
+/* One-time authorization helper — run manually from the Apps Script
+   editor (select "authorizeReportFeature", click ▶ Run) so Google
+   prompts for every scope the report generator needs, in one go.
+   Re-deploy afterward (Deploy > Manage deployments > Edit > New
+   version > Deploy). */
+function authorizeReportFeature() {
+  const ss = SpreadsheetApp.create('OT_Record_Auth_Test_' + Utilities.getUuid());
+  try {
+    const exportUrl = 'https://docs.google.com/spreadsheets/d/' + ss.getId() + '/export?format=xlsx';
+    UrlFetchApp.fetch(exportUrl, {
+      headers: { Authorization: 'Bearer ' + ScriptApp.getOAuthToken() },
+      muteHttpExceptions: true
+    });
+  } finally {
+    DriveApp.getFileById(ss.getId()).setTrashed(true);
+  }
+  Logger.log('Authorization check complete — all required scopes are granted. You can now re-deploy.');
+}
+
+function actionGenerateReport_(payload, sess) {
+  ensureSetup_();
+  const ym = payload.ym;
+  if (!ym) return { ok: false, error: 'missing_month' };
+
+  let tempSS;
+  try {
+    tempSS = SpreadsheetApp.create('OT_Report_TEMP_' + Utilities.getUuid());
+  } catch (err) {
+    return { ok: false, error: isAuthError_(err) ? 'auth_required' : 'server_error', detail: String(err) };
+  }
+
+  try {
+    buildEntryFormSheet_(tempSS, ym);
+    buildWeeklySheets_(tempSS, ym);
+    buildMonthlySheet_(tempSS, ym);
+    buildMonthlyAsPerWeekSheet_(tempSS, ym);
+    const defaultSheet = tempSS.getSheetByName('Sheet1');
+    if (defaultSheet) tempSS.deleteSheet(defaultSheet);
+    SpreadsheetApp.flush();
+
+    const exportUrl = 'https://docs.google.com/spreadsheets/d/' + tempSS.getId() + '/export?format=xlsx';
+    let resp;
+    try {
+      resp = UrlFetchApp.fetch(exportUrl, {
+        headers: { Authorization: 'Bearer ' + ScriptApp.getOAuthToken() },
+        muteHttpExceptions: true
+      });
+    } catch (fetchErr) {
+      return { ok: false, error: isAuthError_(fetchErr) ? 'auth_required' : 'server_error', detail: String(fetchErr) };
+    }
+    if (resp.getResponseCode() !== 200) {
+      const body = resp.getContentText().slice(0, 500);
+      return { ok: false, error: 'export_failed', detail: body };
+    }
+    const base64 = Utilities.base64Encode(resp.getContent());
+    return { ok: true, filename: buildReportFilename_(ym), base64: base64 };
+  } catch (err) {
+    return { ok: false, error: isAuthError_(err) ? 'auth_required' : 'server_error', detail: String(err) };
+  } finally {
+    try { DriveApp.getFileById(tempSS.getId()).setTrashed(true); } catch (e) {}
+  }
+}
